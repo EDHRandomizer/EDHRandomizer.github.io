@@ -457,10 +457,11 @@ class handler(BaseHTTPRequestHandler):
                 powerup_full = next((p for p in all_powerups if p['id'] == powerup_ref['id']), None)
                 if powerup_full:
                     player_powerups.append(powerup_full)
-                    # Store name and description for display
+                    # Store name, description, and rarity for display
                     powerup_display_list.append({
                         'name': powerup_full.get('name', 'Unknown Powerup'),
-                        'description': powerup_full.get('description', '')
+                        'description': powerup_full.get('description', ''),
+                        'rarity': powerup_full.get('rarity', 'common')
                     })
             
             # Generate pack config by combining all powerup effects
