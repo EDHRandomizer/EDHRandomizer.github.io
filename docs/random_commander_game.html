@@ -620,7 +620,7 @@
                     <!-- Host Settings -->
                     <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 6px; margin: 1rem 0;">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Powerups Per Player:</label>
-                        <input type="number" id="create-powerups-count" class="form-control" value="3" min="1" max="5" style="width: 100px;">
+                        <input type="number" id="create-powerups-count" class="form-control" value="3" min="1" max="10" style="width: 100px;">
                         <p style="opacity: 0.7; font-size: 0.85rem; margin: 0.5rem 0 0 0;">Players will each get this many random powerups</p>
                     </div>
                     
@@ -1050,9 +1050,20 @@
             const quantityModifier = powerups.reduce((sum, p) => sum + (p?.effects?.commanderQuantity || 0), 0);
             const totalQuantity = baseQuantity + quantityModifier;
             
+            // Collect all powerup effects into a single object
+            const allEffects = {
+                commanderQuantity: quantityModifier
+            };
+            
             // Collect all color filter effects
             const colorEffects = powerups.map(p => p?.effects).filter(e => e?.colorFilterMode);
             const primaryColorEffect = colorEffects[0] || {};
+            
+            // Merge color filter into allEffects if present
+            if (primaryColorEffect.colorFilterMode) {
+                allEffects.colorFilterMode = primaryColorEffect.colorFilterMode;
+                allEffects.colorFilterCount = primaryColorEffect.colorFilterCount;
+            }
             
             // Render powerups in compact stacked format
             const powerupsHTML = powerups.length > 0 ? `
@@ -1079,7 +1090,7 @@
                 </div>
                 
                 ${isCurrentPlayer && !player.commanderLocked && !playerCommandersGenerated[player.number] ? `
-                    <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(primaryColorEffect).replace(/"/g, '&quot;')})">
+                    <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(allEffects).replace(/"/g, '&quot;')})">
                         🎲 Generate ${totalQuantity} Commander${totalQuantity > 1 ? 's' : ''}
                     </button>
                 ` : ''}
