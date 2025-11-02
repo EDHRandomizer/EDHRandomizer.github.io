@@ -1,3 +1,4 @@
 # API Requirements for Vercel Serverless Functions
-# Minimal dependencies - using Python standard library only
-# No external packages needed for basic functionality
+
+# Redis client for Vercel KV (used for pack code persistence)
+redis>=5.0.0

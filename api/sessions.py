@@ -1,23 +1,51 @@
 # Session Management API for EDH Randomizer Game Mode
 # Vercel serverless function
-# Updated: 2025-11-01
+# Updated: 2025-11-02
 
 from http.server import BaseHTTPRequestHandler
 import json
 import time
 import random
 import string
+import os
 from typing import Dict, List, Optional
 
-# In-memory session storage (for MVP - replace with Redis/database for production)
+# Vercel KV (Redis) for pack code persistence
+try:
+    import redis
+    REDIS_URL = os.environ.get('KV_REST_API_URL', '')
+    REDIS_TOKEN = os.environ.get('KV_REST_API_TOKEN', '')
+    
+    if REDIS_URL and REDIS_TOKEN:
+        # Use redis-py with Vercel KV REST API
+        # Format: redis://default:TOKEN@REST_API_URL
+        kv_client = redis.from_url(
+            REDIS_URL,
+            password=REDIS_TOKEN,
+            decode_responses=True
+        )
+        KV_ENABLED = True
+        print("✅ Vercel KV enabled for pack code storage")
+    else:
+        kv_client = None
+        KV_ENABLED = False
+        print("⚠️ Vercel KV not configured - pack codes will use in-memory storage")
+except ImportError:
+    kv_client = None
+    KV_ENABLED = False
+    print("⚠️ redis package not installed - pack codes will use in-memory storage")
+
+# In-memory session storage (sessions are temporary, pack codes use KV)
 SESSIONS: Dict[str, dict] = {}
+
+# In-memory pack code fallback (only used if KV is not available)
+PACK_CODES: Dict[str, dict] = {}
 
 # Session expiration time (2 hours of inactivity)
 SESSION_TTL = 2 * 60 * 60
 
-# Note: In-memory storage only persists within a single serverless instance
-# Sessions may be lost when Vercel spins down inactive functions (typically after 5-15 minutes)
-# For production, consider using Vercel KV (Redis) or a database for persistent storage
+# Pack code expiration time (2 hours - stored in Vercel KV with TTL)
+PACK_CODE_TTL = 2 * 60 * 60
 
 def generate_session_code() -> str:
     """Generate a random 5-character session code"""
@@ -31,6 +59,76 @@ def generate_pack_code() -> str:
     """Generate a unique pack code"""
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
+def store_pack_code(pack_code: str, data: dict) -> bool:
+    """
+    Store pack code data with TTL
+    Uses Vercel KV if available, falls back to in-memory
+    """
+    try:
+        if KV_ENABLED and kv_client:
+            # Store in Vercel KV with 2-hour TTL
+            key = f"pack:{pack_code}"
+            kv_client.setex(key, PACK_CODE_TTL, json.dumps(data))
+            print(f"✅ Stored pack code {pack_code} in Vercel KV (TTL: {PACK_CODE_TTL}s)")
+            return True
+        else:
+            # Fallback to in-memory storage
+            PACK_CODES[pack_code] = {
+                'data': data,
+                'expires_at': time.time() + PACK_CODE_TTL
+            }
+            print(f"⚠️ Stored pack code {pack_code} in memory (will be lost on function restart)")
+            return True
+    except Exception as e:
+        print(f"❌ Error storing pack code {pack_code}: {e}")
+        # Fallback to in-memory
+        PACK_CODES[pack_code] = {
+            'data': data,
+            'expires_at': time.time() + PACK_CODE_TTL
+        }
+        return False
+
+def get_pack_code(pack_code: str) -> Optional[dict]:
+    """
+    Retrieve pack code data
+    Checks Vercel KV first, then in-memory fallback
+    """
+    try:
+        if KV_ENABLED and kv_client:
+            # Try Vercel KV first
+            key = f"pack:{pack_code}"
+            data_str = kv_client.get(key)
+            if data_str:
+                print(f"✅ Retrieved pack code {pack_code} from Vercel KV")
+                return json.loads(data_str)
+            else:
+                print(f"⚠️ Pack code {pack_code} not found in Vercel KV")
+                return None
+        else:
+            # Use in-memory fallback
+            if pack_code in PACK_CODES:
+                entry = PACK_CODES[pack_code]
+                # Check if expired
+                if time.time() < entry['expires_at']:
+                    print(f"✅ Retrieved pack code {pack_code} from memory")
+                    return entry['data']
+                else:
+                    # Expired, remove it
+                    del PACK_CODES[pack_code]
+                    print(f"⚠️ Pack code {pack_code} expired and removed from memory")
+                    return None
+            else:
+                print(f"⚠️ Pack code {pack_code} not found in memory")
+                return None
+    except Exception as e:
+        print(f"❌ Error retrieving pack code {pack_code}: {e}")
+        # Try in-memory fallback
+        if pack_code in PACK_CODES:
+            entry = PACK_CODES[pack_code]
+            if time.time() < entry['expires_at']:
+                return entry['data']
+        return None
+
 def cleanup_expired_sessions():
     """Remove expired sessions based on lastActivity"""
     current_time = time.time()
@@ -38,6 +136,13 @@ def cleanup_expired_sessions():
                if current_time - session.get('lastActivity', session['created_at']) > SESSION_TTL]
     for code in expired:
         del SESSIONS[code]
+    
+    # Also cleanup expired in-memory pack codes (if not using KV)
+    if not KV_ENABLED:
+        expired_packs = [code for code, entry in PACK_CODES.items()
+                        if current_time > entry['expires_at']]
+        for code in expired_packs:
+            del PACK_CODES[code]
 
 def touch_session(session_code: str):
     """Update session's last activity timestamp"""
@@ -423,7 +528,15 @@ class handler(BaseHTTPRequestHandler):
 
     def handle_get_pack(self, pack_code):
         """Get pack configuration by pack code"""
-        # Find session with this pack code
+        # Try to get from Vercel KV first (persistent storage)
+        pack_data = get_pack_code(pack_code)
+        
+        if pack_data:
+            # Found in KV storage
+            self.send_json_response(200, pack_data)
+            return
+        
+        # Fallback: search in active sessions (in-memory)
         for session in SESSIONS.values():
             for player in session['players']:
                 if player.get('packCode') == pack_code:
@@ -436,7 +549,7 @@ class handler(BaseHTTPRequestHandler):
                     self.send_json_response(200, response)
                     return
         
-        self.send_error_response(404, 'Pack code not found')
+        self.send_error_response(404, 'Pack code not found or expired')
 
     def generate_pack_codes_internal(self, session):
         """Internal helper to generate pack codes and configs"""
@@ -483,6 +596,14 @@ class handler(BaseHTTPRequestHandler):
             
             # Generate pack config by combining all powerup effects
             pack_config = self.apply_powerups_to_config(player_powerups, player['commanderUrl'])
+            
+            # Store pack code data in Vercel KV (with fallback to in-memory)
+            pack_data = {
+                'commanderUrl': player['commanderUrl'],
+                'config': pack_config,
+                'powerups': powerup_display_list
+            }
+            store_pack_code(pack_code, pack_data)
             
             player['packCode'] = pack_code
             player['packConfig'] = pack_config
