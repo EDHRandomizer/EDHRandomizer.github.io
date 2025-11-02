@@ -51,13 +51,14 @@ async def test_create_session_ui():
         
         # Enable console logging
         page.on("console", lambda msg: print(f"[Console] {msg.type}: {msg.text}"))
+        page.on("pageerror", lambda err: print(f"[Page Error] {err}"))
         
         print("\n🌐 Loading game page...")
         await page.goto(GAME_URL, wait_until='networkidle', timeout=30000)
         
-        print("✍️ Setting powerups count...")
-        powerups_input = page.locator('#create-powerups-count')
-        await powerups_input.fill('2')
+        print("✍️ Setting perks count...")
+        perks_input = page.locator('#create-perks-count')
+        await perks_input.fill('2')
         
         print("🖱️ Clicking create session button...")
         create_btn = page.locator('#create-session-btn')

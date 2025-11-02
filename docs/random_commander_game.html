@@ -760,7 +760,7 @@
 
         // Initialize
         let sessionManager;
-        let PerkLoader;
+        let perkLoader;
         let packConfigGenerator;
         let gameModeController;
         let currentSession = null;
@@ -797,14 +797,14 @@
                 sessionManager = new SessionManager();
                 
                 console.log('🎮 [INIT] Creating PerkLoader...');
-                PerkLoader = new PerkLoader();
+                perkLoader = new PerkLoader();
                 
                 console.log('🎮 [INIT] Creating PackConfigGenerator...');
                 packConfigGenerator = new PackConfigGenerator();
                 
                 // Load perks
                 console.log('📦 [INIT] Loading perks data...');
-                perksData = await PerkLoader.loadPerks();
+                perksData = await perkLoader.loadPerks();
                 console.log('✅ [INIT] Perks loaded:', perksData.length, 'perks');
                 
                 // Load CSV data for randomizer
@@ -816,7 +816,7 @@
                 console.log('🎮 [INIT] Creating GameModeController...');
                 gameModeController = new GameModeController(
                     sessionManager,
-                    PerkLoader,
+                    perkLoader,
                     packConfigGenerator
                 );
                 console.log('✅ [INIT] GameModeController created');
