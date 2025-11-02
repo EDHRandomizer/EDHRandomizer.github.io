@@ -122,7 +122,7 @@ class handler(BaseHTTPRequestHandler):
         
         # Get powerups count from host settings (default 3)
         powerups_count = data.get('powerupsCount', 3)
-        powerups_count = max(1, min(5, int(powerups_count)))  # Clamp between 1-5
+        powerups_count = max(1, min(10, int(powerups_count)))  # Clamp between 1-10
         
         session_code = generate_session_code()
         while session_code in SESSIONS:
