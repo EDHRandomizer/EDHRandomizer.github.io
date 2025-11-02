@@ -105,10 +105,23 @@ async def test_two_player_complete_flow():
             # PHASE 3: VERIFY BOTH SEE EACH OTHER
             # ==========================================
             print("\n📍 PHASE 3: Verify Both Players See Each Other")
-            await host_page.wait_for_timeout(2000)  # Let polling update
+            
+            # Wait for polling to update (session polls every 2 seconds)
+            await host_page.wait_for_timeout(3000)
+            
+            # Wait for player items to appear
+            try:
+                await expect(host_page.locator('.player-item').first).to_be_visible(timeout=10000)
+                await expect(p2_page.locator('.player-item').first).to_be_visible(timeout=10000)
+            except Exception as e:
+                print(f"⚠️ Warning: Player items not visible yet: {e}")
+                await host_page.screenshot(path="debug_lobby_items.png")
             
             host_player_count = await host_page.locator('.player-item').count()
             p2_player_count = await p2_page.locator('.player-item').count()
+            
+            print(f"   Host sees: {host_player_count} players")
+            print(f"   Player 2 sees: {p2_player_count} players")
             
             assert host_player_count == 2, f"Host sees {host_player_count} players, expected 2"
             assert p2_player_count == 2, f"Player 2 sees {p2_player_count} players, expected 2"
