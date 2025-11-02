@@ -1,6 +1,6 @@
 /**
  * Config Generator Module
- * Applies powerup effects to base pack configuration
+ * Applies perk effects to base pack configuration
  */
 
 class ConfigGenerator {
@@ -18,21 +18,21 @@ class ConfigGenerator {
     }
 
     /**
-     * Generate pack configuration with powerup effects applied
-     * @param {Object} powerup - The powerup object
+     * Generate pack configuration with perk effects applied
+     * @param {Object} perk - The perk object
      * @param {string} commanderUrl - EDHRec or Scryfall commander URL
      * @param {number} basePackCount - Base number of packs (default 3)
      */
-    generateConfig(powerup, commanderUrl, basePackCount = 3) {
+    generateConfig(perk, commanderUrl, basePackCount = 3) {
         const config = JSON.parse(JSON.stringify(this.baseConfig));
         
         // Start with base pack count
         let packQuantity = basePackCount;
         let budgetTier = config.slots[0].budgetTier;
 
-        // Apply powerup effects
-        if (powerup.effects) {
-            const effects = powerup.effects;
+        // Apply perk effects
+        if (perk.effects) {
+            const effects = perk.effects;
 
             // Handle pack quantity modifications
             if (effects.packQuantity) {
@@ -65,26 +65,26 @@ class ConfigGenerator {
             commanderUrl: commanderUrl,
             packQuantity: packQuantity,
             config: config,
-            powerup: {
-                id: powerup.id,
-                name: powerup.name,
-                rarity: powerup.rarity
+            perk: {
+                id: perk.id,
+                name: perk.name,
+                rarity: perk.rarity
             }
         };
     }
 
     /**
-     * Validate commander selection against powerup restrictions
-     * @param {Object} powerup - The powerup object
+     * Validate commander selection against perk restrictions
+     * @param {Object} perk - The perk object
      * @param {Object} commanderData - Commander data from EDHRec/Scryfall
      * @returns {Object} - { valid: boolean, reason: string }
      */
-    validateCommander(powerup, commanderData) {
+    validateCommander(perk, commanderData) {
         if (!powerup.effects) {
             return { valid: true };
         }
 
-        const effects = powerup.effects;
+        const effects = perk.effects;
 
         // Check color restrictions
         if (effects.commanderColorRestriction) {
@@ -131,15 +131,15 @@ class ConfigGenerator {
 
     /**
      * Get commander restrictions as human-readable text
-     * @param {Object} powerup - The powerup object
+     * @param {Object} perk - The perk object
      * @returns {string} - Human-readable restrictions
      */
-    getRestrictionText(powerup) {
+    getRestrictionText(perk) {
         if (!powerup.effects) {
             return 'None';
         }
 
-        const effects = powerup.effects;
+        const effects = perk.effects;
         const restrictions = [];
 
         if (effects.commanderColorRestriction === 'mono') {

@@ -8,9 +8,9 @@ import { getCardImageUrl } from '../api/scryfall.js';
 import { commanderNameToUrl } from '../api/edhrec.js';
 
 export class GameModeController {
-    constructor(sessionManager, powerupLoader, packConfigGenerator) {
+    constructor(sessionManager, perkLoader, packConfigGenerator) {
         this.sessionManager = sessionManager;
-        this.powerupLoader = powerupLoader;
+        this.perkLoader = perkLoader;
         this.packConfigGenerator = packConfigGenerator;
         
         this.currentSession = null;
@@ -20,29 +20,29 @@ export class GameModeController {
     }
 
     /**
-     * Generate commanders for a specific player with powerup effects
+     * Generate commanders for a specific player with perk effects
      * @param {number} playerNumber - Player number (1-4)
-     * @param {Object} powerupEffects - Powerup effects object
+     * @param {Object} perkEffects - perk effects object
      * @param {Object} colorSelections - Color filter selections {selected: ['W', 'U'], mode: 'include'}
      * @returns {Promise<Array>} Array of commander objects
      */
-    async generateCommandersForPlayer(playerNumber, powerupEffects, colorSelections = null) {
+    async generateCommandersForPlayer(playerNumber, perkEffects, colorSelections = null) {
         // Base configuration
         const timePeriod = 'Monthly'; // Monthly time period
         const minRank = 1;
         const maxRank = 1400;
         const excludePartners = true;
         
-        // Calculate quantity from powerup
+        // Calculate quantity from perk
         const baseQuantity = 3;
-        const quantityModifier = powerupEffects.commanderQuantity || 0;
+        const quantityModifier = perkEffects.commanderQuantity || 0;
         const quantity = baseQuantity + quantityModifier;
         
-        // Create normal distribution function centered at 1100 (adjustable by powerups)
+        // Create normal distribution function centered at 1100 (adjustable by perks)
         // Lower distributionCenter = stronger commanders (lower rank numbers)
         // Higher distributionCenter = weaker commanders (higher rank numbers)
         const baseDistributionCenter = 1100;
-        const distributionShift = powerupEffects.distributionShift || 0; // Negative = stronger, Positive = weaker
+        const distributionShift = perkEffects.distributionShift || 0; // Negative = stronger, Positive = weaker
         const distributionCenter = baseDistributionCenter + distributionShift;
         const distributionWidth = 300; // Standard deviation
         
@@ -54,9 +54,9 @@ export class GameModeController {
         
         console.log(`🎲 [COMMANDER-GEN] Player ${playerNumber} - Base: ${baseQuantity}, Modifier: ${quantityModifier}, Total: ${quantity}`);
         console.log(`🎲 [COMMANDER-GEN] Distribution: Center=${distributionCenter} (base=${baseDistributionCenter}, shift=${distributionShift}), Width=${distributionWidth}`);
-        console.log(`🎲 [COMMANDER-GEN] Powerup effects:`, powerupEffects);
+        console.log(`🎲 [COMMANDER-GEN] perk effects:`, perkEffects);
         
-        // Handle color filter from powerup
+        // Handle color filter from perk
         let colors = null;
         let colorMode = 'exactly';
         let numColors = null;
@@ -80,8 +80,8 @@ export class GameModeController {
             }
         }
         
-        // Handle salt mode from powerup
-        const saltMode = powerupEffects.saltMode || null;
+        // Handle salt mode from perk
+        const saltMode = perkEffects.saltMode || null;
         
         try {
             const result = await randomizeCommanders(
@@ -96,7 +96,7 @@ export class GameModeController {
                 excludePartners,
                 null, // min_cmc
                 null, // max_cmc
-                saltMode, // salt_mode (from powerup)
+                saltMode, // salt_mode (from perk)
                 distributionFunc  // Use normal distribution centered at distributionCenter
             );
             
@@ -204,7 +204,7 @@ export class GameModeController {
     }
 
     /**
-     * Parse color filter selections from powerup effects and UI state
+     * Parse color filter selections from perk effects and UI state
      * @param {HTMLElement} colorFilterContainer - Container with color symbols
      * @returns {Object|null} {selected: ['W', 'U'], mode: 'include'} or null
      */
@@ -230,3 +230,4 @@ export class GameModeController {
         };
     }
 }
+

@@ -3,7 +3,7 @@
  * Manages the UI state and user interactions for the game mode
  */
 
-import { powerupLoader } from './powerupLoader.js';
+import { perkLoader } from './perkLoader.js';
 import { configGenerator } from './configGenerator.js';
 import { sessionManager } from './sessionManager.js';
 
@@ -18,9 +18,9 @@ class GameUI {
      */
     async init() {
         try {
-            // Load powerups data
-            await powerupLoader.loadPowerups();
-            console.log('Powerups loaded successfully');
+            // Load perks data
+            await perkLoader.loadPerks();
+            console.log('Perks loaded successfully');
 
             // Register session update callback
             sessionManager.onUpdate(this.handleSessionUpdate.bind(this));
@@ -97,12 +97,12 @@ class GameUI {
     }
 
     /**
-     * Roll powerups (host only)
+     * Roll perks (host only)
      */
-    async rollPowerups() {
+    async rollPerks() {
         this.showLoading(true);
         try {
-            const result = await sessionManager.rollPowerups();
+            const result = await sessionManager.rollPerks();
             this.sessionData = result;
             
             // Transition to selection screen
@@ -112,7 +112,7 @@ class GameUI {
             this.showLoading(false);
         } catch (error) {
             this.showLoading(false);
-            this.showError('Failed to roll powerups: ' + error.message);
+            this.showError('Failed to Roll perks: ' + error.message);
         }
     }
 
@@ -138,10 +138,10 @@ class GameUI {
             partner: false
         };
 
-        // Validate against powerup restrictions
+        // Validate against perk restrictions
         const currentPlayer = sessionManager.getCurrentPlayer(this.sessionData);
-        const powerup = powerupLoader.getPowerupById(currentPlayer.powerup.id);
-        const validation = configGenerator.validateCommander(powerup, commanderData);
+        const perk = perkLoader.getPerkById(currentPlayer.perk.id);
+        const validation = configGenerator.validateCommander(perk, commanderData);
 
         if (!validation.valid) {
             this.showError(validation.reason);
@@ -224,7 +224,7 @@ class GameUI {
         }
 
         // Enable/disable roll button (only host can roll, need at least 2 players)
-        const rollBtn = document.getElementById('rollPowerupsBtn');
+        const rollBtn = document.getElementById('rollPerksBtn');
         const isHost = sessionManager.isHost(sessionData);
         const hasEnoughPlayers = sessionData.players.length >= 2;
         rollBtn.disabled = !isHost || !hasEnoughPlayers;
@@ -239,23 +239,23 @@ class GameUI {
 
         // Get current player
         const currentPlayer = sessionManager.getCurrentPlayer(sessionData);
-        if (!currentPlayer || !currentPlayer.powerup) {
+        if (!currentPlayer || !currentPlayer.perk) {
             return;
         }
 
-        // Display powerup
-        const powerup = powerupLoader.getPowerupById(currentPlayer.powerup.id);
-        const powerupContainer = document.getElementById('yourPowerup');
+        // Display perk
+        const perk = perkLoader.getPerkById(currentPlayer.perk.id);
+        const powerupContainer = document.getElementById('yourPerk');
         powerupContainer.innerHTML = `
-            <div class="powerup-card ${powerup.rarity}">
-                <div class="powerup-name">${powerup.name}</div>
-                <div class="powerup-description">${powerup.description}</div>
-                <div class="powerup-flavor">${powerup.flavor}</div>
+            <div class="perk-card ${perk.rarity}">
+                <div class="perk-name">${perk.name}</div>
+                <div class="perk-description">${perk.description}</div>
+                <div class="perk-flavor">${perk.flavor}</div>
             </div>
         `;
 
         // Display restrictions
-        const restrictionText = configGenerator.getRestrictionText(powerup);
+        const restrictionText = configGenerator.getRestrictionText(perk);
         document.getElementById('restrictionText').textContent = restrictionText;
 
         // Update lock button state
@@ -278,13 +278,13 @@ class GameUI {
                 playerCard.classList.add('locked');
             }
 
-            const powerupName = player.powerup ? powerupLoader.getPowerupById(player.powerup.id).name : 'Unknown';
+            const perkName = player.perk ? perkLoader.getPerkById(player.perk.id).name : 'Unknown';
             const status = player.commanderLocked ? '✓ Commander Locked' : 'Selecting commander...';
 
             playerCard.innerHTML = `
                 <div class="player-number">${index + 1}</div>
                 <h3>Player ${index + 1}</h3>
-                <div style="font-size: 0.9rem; margin: 0.5rem 0;">${powerupName}</div>
+                <div style="font-size: 0.9rem; margin: 0.5rem 0;">${perkName}</div>
                 <div class="player-status">${status}</div>
             `;
 
@@ -312,10 +312,10 @@ class GameUI {
             const playerDiv = document.createElement('div');
             playerDiv.style.cssText = 'padding: 1rem; margin: 0.5rem 0; background: var(--input-bg, #1a1a1a); border-radius: 6px;';
             
-            const powerupName = powerupLoader.getPowerupById(player.powerup.id).name;
+            const perkName = perkLoader.getPerkById(player.perk.id).name;
             playerDiv.innerHTML = `
                 <strong>Player ${index + 1}</strong><br>
-                Powerup: ${powerupName}<br>
+                Perk: ${perkName}<br>
                 Commander: ${player.commanderData?.name || 'Unknown'}<br>
                 Pack Code: <code>${player.packCode}</code>
             `;

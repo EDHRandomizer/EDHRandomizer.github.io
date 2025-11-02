@@ -346,10 +346,10 @@ class handler(BaseHTTPRequestHandler):
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"✏️ [REQ-{request_id}] Updating name in session: {session_code}")
             self.handle_update_name(data)
-        elif path == '/roll-powerups':
+        elif path == '/roll-perks':
             session_code = data.get('sessionCode', 'UNKNOWN')
-            print(f"🎲 [REQ-{request_id}] Rolling powerups for session: {session_code}")
-            self.handle_roll_powerups(data)
+            print(f"🎲 [REQ-{request_id}] Rolling perks for session: {session_code}")
+            self.handle_roll_perks(data)
         elif path == '/lock-commander':
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"🔒 [REQ-{request_id}] Locking commander in session: {session_code}")
@@ -412,9 +412,9 @@ class handler(BaseHTTPRequestHandler):
         if not player_name:
             player_name = 'Player 1'
         
-        # Get powerups count from host settings (default 3)
-        powerups_count = data.get('powerupsCount', 3)
-        powerups_count = max(1, min(10, int(powerups_count)))  # Clamp between 1-10
+        # Get perks count from host settings (default 3)
+        perks_count = data.get('perksCount', 3)
+        perks_count = max(1, min(10, int(perks_count)))  # Clamp between 1-10
         
         session_code = generate_session_code()
         while session_code in SESSIONS:
@@ -427,14 +427,14 @@ class handler(BaseHTTPRequestHandler):
             'hostId': player_id,
             'state': 'waiting',  # waiting, rolling, selecting, complete
             'settings': {
-                'powerupsCount': powerups_count
+                'perksCount': perks_count
             },
             'players': [
                 {
                     'id': player_id,
                     'number': 1,
                     'name': player_name,
-                    'powerups': [],
+                    'perks': [],
                     'commanderUrl': None,
                     'commanderData': None,
                     'commanderLocked': False,
@@ -491,7 +491,7 @@ class handler(BaseHTTPRequestHandler):
             'id': player_id,
             'number': player_number,
             'name': player_name,
-            'powerups': [],
+            'perks': [],
             'commanderUrl': None,
             'commanderData': None,
             'commanderLocked': False,
@@ -536,8 +536,8 @@ class handler(BaseHTTPRequestHandler):
         
         self.send_json_response(200, session)
 
-    def handle_roll_powerups(self, data):
-        """Roll powerups for all players (host only)"""
+    def handle_roll_perks(self, data):
+        """Roll perks for all players (host only)"""
         session_code = data.get('sessionCode', '').upper()
         player_id = data.get('playerId', '')
         
@@ -550,58 +550,58 @@ class handler(BaseHTTPRequestHandler):
         
         # Verify host
         if session['hostId'] != player_id:
-            self.send_error_response(403, 'Only host can roll powerups')
+            self.send_error_response(403, 'Only host can Roll perks')
             return
         
-        # Get powerups count from session settings
-        powerups_count = session.get('settings', {}).get('powerupsCount', 3)
+        # Get perks count from session settings
+        perks_count = session.get('settings', {}).get('perksCount', 3)
         
-        # Roll powerups for each player
-        # Load powerups data
+        # Roll perks for each player
+        # Load perks data
         import os
         import sys
         
-        # Get powerups.json path
+        # Get perks.json path
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        powerups_path = os.path.join(current_dir, '..', 'data', 'powerups.json')
+        perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
         
         try:
-            with open(powerups_path, 'r') as f:
-                powerups_data = json.load(f)
+            with open(perks_path, 'r') as f:
+                perks_data = json.load(f)
         except FileNotFoundError:
-            # Fallback: use hardcoded powerup selection
-            powerups_data = {
+            # Fallback: use hardcoded perk selection
+            perks_data = {
                 'rarityWeights': {'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3},
-                'powerups': []  # Will be loaded from file in production
+                'perks': []  # Will be loaded from file in production
             }
         
-        # Generate multiple powerups for each player with type-based deduplication
+        # Generate multiple perks for each player with type-based deduplication
         for player in session['players']:
-            player_powerups = []
-            used_types = set()  # Track powerup types to prevent duplicates
+            player_perks = []
+            used_types = set()  # Track perk types to prevent duplicates
             
             attempts = 0
-            max_attempts = powerups_count * 10  # Prevent infinite loop
+            max_attempts = perks_count * 10  # Prevent infinite loop
             
-            while len(player_powerups) < powerups_count and attempts < max_attempts:
-                powerup = self.get_random_powerup(powerups_data)
-                powerup_type = self.get_powerup_type(powerup, powerups_data)
+            while len(player_perks) < perks_count and attempts < max_attempts:
+                perk = self.get_random_perk(perks_data)
+                perk_type = self.get_perk_type(perk, perks_data)
                 
                 # Check if this type is already used
-                if powerup_type not in used_types:
-                    player_powerups.append({
-                        'id': powerup['id'],
-                        'name': powerup['name'],
-                        'rarity': powerup['rarity'],
-                        'description': powerup.get('description', ''),
-                        'perkPhase': powerup.get('perkPhase', 'drafting'),
-                        'effects': powerup.get('effects', {})
+                if perk_type not in used_types:
+                    player_perks.append({
+                        'id': perk['id'],
+                        'name': perk['name'],
+                        'rarity': perk['rarity'],
+                        'description': perk.get('description', ''),
+                        'perkPhase': perk.get('perkPhase', 'drafting'),
+                        'effects': perk.get('effects', {})
                     })
-                    used_types.add(powerup_type)
+                    used_types.add(perk_type)
                 
                 attempts += 1
             
-            player['powerups'] = player_powerups
+            player['perks'] = player_perks
         
         session['state'] = 'selecting'
         session['updated_at'] = time.time()
@@ -726,11 +726,11 @@ class handler(BaseHTTPRequestHandler):
         for session in SESSIONS.values():
             for player in session['players']:
                 if player.get('packCode') == pack_code:
-                    # Return the pack config with commander URL and powerups
+                    # Return the pack config with commander URL and perks
                     response = {
                         'commanderUrl': player.get('commanderUrl', ''),
                         'config': player.get('packConfig', {}),
-                        'powerups': player.get('powerupsList', [])
+                        'perks': player.get('perksList', [])
                     }
                     self.send_json_response(200, response)
                     return
@@ -739,26 +739,26 @@ class handler(BaseHTTPRequestHandler):
 
     def generate_pack_codes_internal(self, session):
         """Internal helper to generate pack codes and configs"""
-        # Load powerups to get effects
+        # Load perks to get effects
         import os
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        powerups_path = os.path.join(current_dir, '..', 'data', 'powerups.json')
+        perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
         
         try:
-            with open(powerups_path, 'r') as f:
-                powerups_data = json.load(f)
+            with open(perks_path, 'r') as f:
+                perks_data = json.load(f)
         except:
-            powerups_data = {'powerups': []}
+            perks_data = {'perks': []}
         
-        # Get all powerups - support both formats
-        if 'powerupTypes' in powerups_data:
-            # V2 format - flatten powerupTypes
-            all_powerups = []
-            for ptype in powerups_data.get('powerupTypes', []):
-                all_powerups.extend(ptype.get('powerups', []))
+        # Get all perks - support both formats
+        if 'perkTypes' in perks_data:
+            # V2 format - flatten perkTypes
+            all_perks = []
+            for ptype in perks_data.get('perkTypes', []):
+                all_perks.extend(ptype.get('perks', []))
         else:
-            # V1 format - direct powerups array
-            all_powerups = powerups_data.get('powerups', [])
+            # V1 format - direct perks array
+            all_perks = perks_data.get('perks', [])
         
         for player in session['players']:
             # Generate unique pack code
@@ -766,40 +766,40 @@ class handler(BaseHTTPRequestHandler):
             while any(p.get('packCode') == pack_code for s in SESSIONS.values() for p in s['players']):
                 pack_code = generate_pack_code()
             
-            # Get all powerup objects with full effects
-            player_powerups = []
-            powerup_display_list = []  # For TTS chat display (drafting perks only)
-            for powerup_ref in player.get('powerups', []):
-                powerup_full = next((p for p in all_powerups if p['id'] == powerup_ref['id']), None)
-                if powerup_full:
-                    player_powerups.append(powerup_full)
+            # Get all perk objects with full effects
+            player_perks = []
+            perk_display_list = []  # For TTS chat display (drafting perks only)
+            for perk_ref in player.get('perks', []):
+                perk_full = next((p for p in all_perks if p['id'] == perk_ref['id']), None)
+                if perk_full:
+                    player_perks.append(perk_full)
                     # Only add drafting perks to TTS display list
-                    if powerup_full.get('perkPhase') == 'drafting':
-                        powerup_display_list.append({
-                            'name': powerup_full.get('name', 'Unknown Powerup'),
-                            'description': powerup_full.get('description', ''),
-                            'rarity': powerup_full.get('rarity', 'common'),
+                    if perk_full.get('perkPhase') == 'drafting':
+                        perk_display_list.append({
+                            'name': perk_full.get('name', 'Unknown perk'),
+                            'description': perk_full.get('description', ''),
+                            'rarity': perk_full.get('rarity', 'common'),
                             'perkPhase': 'drafting'
                         })
             
-            # Generate pack config by combining all powerup effects
-            pack_config = self.apply_powerups_to_config(player_powerups, player['commanderUrl'])
+            # Generate pack config by combining all perk effects
+            pack_config = self.apply_perks_to_config(player_perks, player['commanderUrl'])
             
             # Store pack code data in Vercel KV (with fallback to in-memory)
             pack_data = {
                 'commanderUrl': player['commanderUrl'],
                 'config': pack_config,
-                'powerups': powerup_display_list
+                'perks': perk_display_list
             }
             store_pack_code(pack_code, pack_data)
             
             player['packCode'] = pack_code
             player['packConfig'] = pack_config
-            player['powerupsList'] = powerup_display_list  # Store for API retrieval
+            player['perksList'] = perk_display_list  # Store for API retrieval
     
-    def apply_powerups_to_config(self, powerups, commander_url):
-        """Generate bundle config from multiple powerup effects (combines all effects)"""
-        # Combine all effects from powerups
+    def apply_perks_to_config(self, perks, commander_url):
+        """Generate bundle config from multiple perk effects (combines all effects)"""
+        # Combine all effects from perks
         combined_effects = {
             'packQuantity': 0,  # Additive
             'budgetUpgradePacks': 0,  # Additive
@@ -814,10 +814,10 @@ class handler(BaseHTTPRequestHandler):
             'includeColorless': None  # Take first non-None
         }
         
-        for powerup in powerups:
-            if not powerup:
+        for perk in perks:
+            if not perk:
                 continue
-            effects = powerup.get('effects', {})
+            effects = perk.get('effects', {})
             
             # Additive effects
             combined_effects['packQuantity'] += effects.get('packQuantity', 0)
@@ -849,10 +849,10 @@ class handler(BaseHTTPRequestHandler):
                 combined_effects['includeColorless'] = effects.get('includeColorless', True)
         
         # Now apply combined effects to config
-        return self.apply_powerup_to_config_internal(combined_effects, commander_url)
+        return self.apply_perk_to_config_internal(combined_effects, commander_url)
     
-    def apply_powerup_to_config_internal(self, effects, commander_url):
-        """Generate bundle config from combined powerup effects"""
+    def apply_perk_to_config_internal(self, effects, commander_url):
+        """Generate bundle config from combined perk effects"""
         bundle_config = {'packTypes': []}
         
         # Base standard pack (1 expensive, 11 budget, 3 lands)
@@ -887,7 +887,7 @@ class handler(BaseHTTPRequestHandler):
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'deckUrl': None,  # Will be filled from powerup effect
+                    'deckUrl': None,  # Will be filled from perk effect
                     'count': 1
                 }]
             },
@@ -897,7 +897,7 @@ class handler(BaseHTTPRequestHandler):
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'deckUrl': None,  # Will be filled from powerup effect
+                    'deckUrl': None,  # Will be filled from perk effect
                     'count': 1
                 }]
             },
@@ -907,7 +907,7 @@ class handler(BaseHTTPRequestHandler):
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'deckUrl': None,  # Will be filled from powerup effect
+                    'deckUrl': None,  # Will be filled from perk effect
                     'count': 1
                 }]
             },
@@ -1014,24 +1014,24 @@ class handler(BaseHTTPRequestHandler):
         
         return bundle_config
 
-    def get_random_powerup(self, powerups_data):
-        """Get random powerup based on rarity weights - supports both v1 and v2 format"""
-        weights = powerups_data.get('rarityWeights', {
+    def get_random_perk(self, perks_data):
+        """Get random perk based on rarity weights - supports both v1 and v2 format"""
+        weights = perks_data.get('rarityWeights', {
             'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3
         })
         
-        # Get all powerups - support both formats
-        if 'powerupTypes' in powerups_data:
-            # V2 format - flatten powerupTypes
-            powerups = []
-            for ptype in powerups_data.get('powerupTypes', []):
-                powerups.extend(ptype.get('powerups', []))
+        # Get all perks - support both formats
+        if 'perkTypes' in perks_data:
+            # V2 format - flatten perkTypes
+            perks = []
+            for ptype in perks_data.get('perkTypes', []):
+                perks.extend(ptype.get('perks', []))
         else:
-            # V1 format - direct powerups array
-            powerups = powerups_data.get('powerups', [])
+            # V1 format - direct perks array
+            perks = perks_data.get('perks', [])
         
-        if not powerups:
-            # Fallback powerup
+        if not perks:
+            # Fallback perk
             return {
                 'id': 'default',
                 'name': 'Standard Pack',
@@ -1053,47 +1053,47 @@ class handler(BaseHTTPRequestHandler):
                 selected_rarity = rarity
                 break
         
-        # Get powerups of that rarity
-        rarity_powerups = [p for p in powerups if p['rarity'] == selected_rarity]
-        if not rarity_powerups:
-            rarity_powerups = [p for p in powerups if p['rarity'] == 'common']
+        # Get perks of that rarity
+        rarity_perks = [p for p in perks if p['rarity'] == selected_rarity]
+        if not rarity_perks:
+            rarity_perks = [p for p in perks if p['rarity'] == 'common']
         
-        return random.choice(rarity_powerups)
+        return random.choice(rarity_perks)
 
-    def get_powerup_type(self, powerup, powerups_data):
-        """Get the type category for a powerup (for deduplication)"""
+    def get_perk_type(self, perk, perks_data):
+        """Get the type category for a perk (for deduplication)"""
         # V2 format - explicit types
-        if 'powerupTypes' in powerups_data:
-            for ptype in powerups_data.get('powerupTypes', []):
-                for p in ptype.get('powerups', []):
-                    if p['id'] == powerup['id']:
+        if 'perkTypes' in perks_data:
+            for ptype in perks_data.get('perkTypes', []):
+                for p in ptype.get('perks', []):
+                    if p['id'] == perk['id']:
                         return ptype['type']
         
         # V1 format - infer type from ID prefix
-        powerup_id = powerup['id']
-        if powerup_id.startswith('commander_options_') or powerup_id.startswith('reroll_'):
+        perk_id = perk['id']
+        if perk_id.startswith('commander_options_') or perk_id.startswith('reroll_'):
             return 'commander_quantity'
-        elif powerup_id.startswith('color_'):
+        elif perk_id.startswith('color_'):
             return 'color_filter'
-        elif powerup_id.startswith('budget_upgrade_'):
+        elif perk_id.startswith('budget_upgrade_'):
             return 'budget_upgrade'
-        elif powerup_id.startswith('budget_full_expensive_'):
+        elif perk_id.startswith('budget_full_expensive_'):
             return 'expensive_packs'
-        elif powerup_id.startswith('extra_pack'):
+        elif perk_id.startswith('extra_pack'):
             return 'extra_packs'
-        elif powerup_id.startswith('upgrade_bracket_'):
+        elif perk_id.startswith('upgrade_bracket_'):
             return 'bracket_upgrade'
-        elif 'gamechanger' in powerup_id:
+        elif 'gamechanger' in perk_id:
             return 'gamechanger_cards'
-        elif 'conspiracy' in powerup_id:
+        elif 'conspiracy' in perk_id:
             return 'conspiracy_cards'
-        elif 'banned' in powerup_id:
+        elif 'banned' in perk_id:
             return 'banned_cards'
-        elif 'manabase' in powerup_id:
+        elif 'manabase' in perk_id:
             return 'manabase'
         
-        # Default: use the powerup ID itself as the type (unique)
-        return powerup_id
+        # Default: use the perk ID itself as the type (unique)
+        return perk_id
 
     def send_json_response(self, status_code, data):
         """Send JSON response with CORS headers"""
@@ -1107,3 +1107,5 @@ class handler(BaseHTTPRequestHandler):
     def send_error_response(self, status_code, message):
         """Send error response"""
         self.send_json_response(status_code, {'error': True, 'message': message})
+
+

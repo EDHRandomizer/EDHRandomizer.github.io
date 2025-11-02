@@ -1,6 +1,6 @@
 /**
  * Pack Configuration Generator for EDH Randomizer Game Mode
- * Converts powerup effects into bundle configurations for the pack generator API
+ * Converts perk effects into bundle configurations for the pack generator API
  */
 
 export class PackConfigGenerator {
@@ -117,18 +117,18 @@ export class PackConfigGenerator {
     }
 
     /**
-     * Generate complete bundle config from powerup effects
-     * @param {Object} powerup - Powerup object with effects
+     * Generate complete bundle config from perk effects
+     * @param {Object} perk - perk object with effects
      * @param {string} commanderUrl - Commander URL (for context, not used in config yet)
      * @returns {Object} Bundle configuration for pack generator
      */
-    generateBundleConfig(powerup, commanderUrl) {
+    generateBundleConfig(perk, commanderUrl) {
         const bundleConfig = {
             packTypes: []
         };
 
-        if (!powerup || !powerup.effects) {
-            // No powerup, return default 5 standard packs
+        if (!perk || !perk.effects) {
+            // No perk, return default 5 standard packs
             bundleConfig.packTypes.push({
                 count: 5,
                 ...JSON.parse(JSON.stringify(this.baseStandardPack))
@@ -136,7 +136,7 @@ export class PackConfigGenerator {
             return bundleConfig;
         }
 
-        const effects = powerup.effects;
+        const effects = perk.effects;
         
         // Calculate base pack count (default 5 + extra packs)
         let basePackCount = 5;
@@ -164,9 +164,9 @@ export class PackConfigGenerator {
     }
 
     /**
-     * Generate standard packs with powerup modifications
+     * Generate standard packs with perk modifications
      * @param {number} totalPacks - Total number of standard packs
-     * @param {Object} effects - Powerup effects
+     * @param {Object} effects - perk effects
      * @returns {Array} Array of pack type configurations
      */
     generateStandardPacks(totalPacks, effects) {
@@ -344,3 +344,4 @@ export class PackConfigGenerator {
         };
     }
 }
+

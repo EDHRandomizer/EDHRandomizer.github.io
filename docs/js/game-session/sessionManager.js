@@ -98,10 +98,10 @@ class SessionManager {
     /**
      * Create a new game session
      * @param {string} playerName - Player's display name
-     * @param {number} powerupsCount - Number of powerups per player (default 3)
+     * @param {number} perksCount - Number of perks per player (default 3)
      * @returns {Promise<Object>} - { sessionCode, playerId, sessionData }
      */
-    async createSession(playerName = '', powerupsCount = 3) {
+    async createSession(playerName = '', perksCount = 3) {
         try {
             const response = await this.fetchWithRetry(`${this.apiBase}/create`, {
                 method: 'POST',
@@ -110,7 +110,7 @@ class SessionManager {
                 },
                 body: JSON.stringify({ 
                     playerName: playerName.trim(),
-                    powerupsCount: parseInt(powerupsCount) || 3
+                    perksCount: parseInt(perksCount) || 3
                 })
             });
 
@@ -229,16 +229,16 @@ class SessionManager {
     }
 
     /**
-     * Roll powerups for all players (host only)
-     * @returns {Promise<Object>} - Updated session data with powerups
+     * Roll perks for all players (host only)
+     * @returns {Promise<Object>} - Updated session data with perks
      */
-    async rollPowerups() {
+    async rollPerks() {
         if (!this.currentSession) {
             throw new Error('No active session');
         }
 
         try {
-            const response = await this.fetchWithRetry(`${this.apiBase}/roll-powerups`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/roll-perks`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -251,12 +251,12 @@ class SessionManager {
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.message || `Failed to roll powerups: ${response.statusText}`);
+                throw new Error(error.message || `Failed to roll perks: ${response.statusText}`);
             }
 
             return await response.json();
         } catch (error) {
-            console.error('Error rolling powerups:', error);
+            console.error('Error rolling perks:', error);
             throw error;
         }
     }
@@ -510,3 +510,4 @@ class SessionManager {
 // Export both the class and singleton instance
 export { SessionManager };
 export const sessionManager = new SessionManager();
+
