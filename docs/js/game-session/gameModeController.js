@@ -44,17 +44,20 @@ export class GameModeController {
         let numColors = null;
         
         if (colorSelections && colorSelections.selected && colorSelections.selected.length > 0) {
-            colors = colorSelections.selected.join('');
-            
             if (colorSelections.mode === 'exclude') {
-                // Exclude mode: select all colors EXCEPT the excluded ones
+                // Exclude mode: commanders CANNOT have any of these colors
+                // Use 'atmost' mode with all colors EXCEPT the excluded ones
                 const allColors = ['W', 'U', 'B', 'R', 'G'];
                 const included = allColors.filter(c => !colorSelections.selected.includes(c));
                 colors = included.join('');
-                colorMode = 'including';
+                colorMode = 'atmost'; // Commander can only use these colors (not the excluded ones)
             } else if (colorSelections.mode === 'include') {
+                // Include mode: commanders MUST have these colors (but can have more)
+                colors = colorSelections.selected.join('');
                 colorMode = 'including';
             } else if (colorSelections.mode === 'exact') {
+                // Exact mode: commanders must have EXACTLY these colors
+                colors = colorSelections.selected.join('');
                 colorMode = 'exactly';
             }
         }
