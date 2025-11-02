@@ -832,21 +832,25 @@ class handler(BaseHTTPRequestHandler):
             },
             'any_cost_lands': {
                 'name': 'Any Cost Lands',
-                'source': 'moxfield',
+                'source': 'edhrec',
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'moxfieldDeck': None,  # Will be filled from powerup effect
+                    'cardType': 'lands',
+                    'budget': 'any',
+                    'bracket': 'any',
                     'count': 1
                 }]
             },
             'expensive_lands': {
                 'name': 'Expensive Lands',
-                'source': 'scryfall',
+                'source': 'edhrec',
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'query': 'https://scryfall.com/search?q=t%3Aland+%28o%3A%22add+%7B%22+OR+o%3A%22mana+of+any%22%29+usd%3E10&unique=cards&as=grid&order=usd',
+                    'cardType': 'lands',
+                    'budget': 'expensive',
+                    'bracket': 'any',
                     'count': 1
                 }]
             }
