@@ -946,23 +946,23 @@
         }
 
         rollPerksBtn.addEventListener('click', async () => {
-            console.log('🎲 [POWERUPS] Roll powerups button clicked');
+            console.log('🎲 [PERKS] Roll perks button clicked');
             try {
-                showStatus('Rolling powerups...');
-                console.log('📡 [POWERUPS] Calling sessionManager.rollPowerups()...');
-                const session = await sessionManager.rollPowerups(
+                showStatus('Rolling perks...');
+                console.log('📡 [PERKS] Calling sessionManager.rollPerks()...');
+                const session = await sessionManager.rollPerks(
                     currentSession.sessionCode,
                     currentPlayerId
                 );
-                console.log('✅ [POWERUPS] Powerups rolled:', session);
+                console.log('✅ [PERKS] Perks rolled:', session);
                 
                 currentSession = session;
-                console.log('💾 [POWERUPS] Updated session state');
+                console.log('💾 [PERKS] Updated session state');
                 
                 enterGameMode();
             } catch (error) {
-                console.error('❌ [POWERUPS] Roll powerups error:', error);
-                showStatus('Failed to roll powerups. Please try again.');
+                console.error('❌ [PERKS] Roll perks error:', error);
+                showStatus('Failed to roll perks. Please try again.');
             }
         });
 
