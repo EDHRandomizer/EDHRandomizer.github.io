@@ -2,8 +2,7 @@
 
 -------------------------------------------
 
-Change EDHRandomizer site to use vercel backend, maybe that would let us do more fun stuff?
-
+Players cannot be offered the same commanders.
 
 **Randomizer Powerups:**
 

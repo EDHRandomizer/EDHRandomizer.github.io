@@ -410,10 +410,11 @@ class handler(BaseHTTPRequestHandler):
         for session in SESSIONS.values():
             for player in session['players']:
                 if player.get('packCode') == pack_code:
-                    # Return the pack config with commander URL
+                    # Return the pack config with commander URL and powerups
                     response = {
                         'commanderUrl': player.get('commanderUrl', ''),
-                        'config': player.get('packConfig', {})
+                        'config': player.get('packConfig', {}),
+                        'powerups': player.get('powerupsList', [])
                     }
                     self.send_json_response(200, response)
                     return
@@ -451,16 +452,23 @@ class handler(BaseHTTPRequestHandler):
             
             # Get all powerup objects with full effects
             player_powerups = []
+            powerup_display_list = []  # For TTS chat display
             for powerup_ref in player.get('powerups', []):
                 powerup_full = next((p for p in all_powerups if p['id'] == powerup_ref['id']), None)
                 if powerup_full:
                     player_powerups.append(powerup_full)
+                    # Store name and description for display
+                    powerup_display_list.append({
+                        'name': powerup_full.get('name', 'Unknown Powerup'),
+                        'description': powerup_full.get('description', '')
+                    })
             
             # Generate pack config by combining all powerup effects
             pack_config = self.apply_powerups_to_config(player_powerups, player['commanderUrl'])
             
             player['packCode'] = pack_code
             player['packConfig'] = pack_config
+            player['powerupsList'] = powerup_display_list  # Store for API retrieval
     
     def apply_powerups_to_config(self, powerups, commander_url):
         """Generate bundle config from multiple powerup effects (combines all effects)"""
