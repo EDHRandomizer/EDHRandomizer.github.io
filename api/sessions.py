@@ -120,6 +120,10 @@ class handler(BaseHTTPRequestHandler):
         if not player_name:
             player_name = 'Player 1'
         
+        # Get powerups count from host settings (default 3)
+        powerups_count = data.get('powerupsCount', 3)
+        powerups_count = max(1, min(5, int(powerups_count)))  # Clamp between 1-5
+        
         session_code = generate_session_code()
         while session_code in SESSIONS:
             session_code = generate_session_code()
@@ -130,12 +134,15 @@ class handler(BaseHTTPRequestHandler):
             'sessionCode': session_code,
             'hostId': player_id,
             'state': 'waiting',  # waiting, rolling, selecting, complete
+            'settings': {
+                'powerupsCount': powerups_count
+            },
             'players': [
                 {
                     'id': player_id,
                     'number': 1,
                     'name': player_name,
-                    'powerup': None,
+                    'powerups': [],
                     'commanderUrl': None,
                     'commanderData': None,
                     'commanderLocked': False,
@@ -189,7 +196,7 @@ class handler(BaseHTTPRequestHandler):
             'id': player_id,
             'number': player_number,
             'name': player_name,
-            'powerup': None,
+            'powerups': [],
             'commanderUrl': None,
             'commanderData': None,
             'commanderLocked': False,
@@ -247,6 +254,9 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(403, 'Only host can roll powerups')
             return
         
+        # Get powerups count from session settings
+        powerups_count = session.get('settings', {}).get('powerupsCount', 3)
+        
         # Roll powerups for each player
         # Load powerups data
         import os
@@ -266,14 +276,18 @@ class handler(BaseHTTPRequestHandler):
                 'powerups': []  # Will be loaded from file in production
             }
         
-        # Generate powerup for each player using weighted random
+        # Generate multiple powerups for each player
         for player in session['players']:
-            powerup = self.get_random_powerup(powerups_data)
-            player['powerup'] = {
-                'id': powerup['id'],
-                'name': powerup['name'],
-                'rarity': powerup['rarity']
-            }
+            player_powerups = []
+            for _ in range(powerups_count):
+                powerup = self.get_random_powerup(powerups_data)
+                player_powerups.append({
+                    'id': powerup['id'],
+                    'name': powerup['name'],
+                    'rarity': powerup['rarity'],
+                    'effects': powerup.get('effects', {})
+                })
+            player['powerups'] = player_powerups
         
         session['state'] = 'selecting'
         session['updated_at'] = time.time()
@@ -412,18 +426,68 @@ class handler(BaseHTTPRequestHandler):
             while any(p.get('packCode') == pack_code for s in SESSIONS.values() for p in s['players']):
                 pack_code = generate_pack_code()
             
-            # Get powerup effects
-            powerup = next((p for p in powerups_data.get('powerups', []) 
-                          if p['id'] == player['powerup']['id']), None)
+            # Get all powerup objects with full effects
+            player_powerups = []
+            for powerup_ref in player.get('powerups', []):
+                powerup_full = next((p for p in powerups_data.get('powerups', []) 
+                              if p['id'] == powerup_ref['id']), None)
+                if powerup_full:
+                    player_powerups.append(powerup_full)
             
-            # Generate pack config
-            pack_config = self.apply_powerup_to_config(powerup, player['commanderUrl'])
+            # Generate pack config by combining all powerup effects
+            pack_config = self.apply_powerups_to_config(player_powerups, player['commanderUrl'])
             
             player['packCode'] = pack_code
             player['packConfig'] = pack_config
-
-    def apply_powerup_to_config(self, powerup, commander_url):
-        """Generate bundle config from powerup effects (matches packConfigGenerator.js)"""
+    
+    def apply_powerups_to_config(self, powerups, commander_url):
+        """Generate bundle config from multiple powerup effects (combines all effects)"""
+        # Combine all effects from powerups
+        combined_effects = {
+            'packQuantity': 0,  # Additive
+            'budgetUpgradePacks': 0,  # Additive
+            'fullExpensivePacks': 0,  # Additive
+            'bracketUpgrade': None,  # Take highest
+            'specialPacks': [],  # Concatenate
+            'commanderQuantity': 0,  # Additive (affects commander selection, not pack config)
+            'colorFilterMode': None,  # Take first non-None
+            'allowedColors': None,  # Take first non-None
+            'includeColorless': None  # Take first non-None
+        }
+        
+        for powerup in powerups:
+            if not powerup:
+                continue
+            effects = powerup.get('effects', {})
+            
+            # Additive effects
+            combined_effects['packQuantity'] += effects.get('packQuantity', 0)
+            combined_effects['budgetUpgradePacks'] += effects.get('budgetUpgradePacks', 0)
+            combined_effects['fullExpensivePacks'] += effects.get('fullExpensivePacks', 0)
+            combined_effects['commanderQuantity'] += effects.get('commanderQuantity', 0)
+            
+            # Bracket upgrade (take highest)
+            if effects.get('bracketUpgrade'):
+                current_bracket = combined_effects['bracketUpgrade']
+                new_bracket = effects['bracketUpgrade']
+                if current_bracket is None or new_bracket > current_bracket:
+                    combined_effects['bracketUpgrade'] = new_bracket
+            
+            # Special packs (concatenate)
+            if effects.get('specialPack'):
+                combined_effects['specialPacks'].append(effects['specialPack'])
+            
+            # Color filters (take first)
+            if combined_effects['colorFilterMode'] is None and effects.get('colorFilterMode'):
+                combined_effects['colorFilterMode'] = effects['colorFilterMode']
+                combined_effects['allowedColors'] = effects.get('allowedColors')
+                combined_effects['includeColorless'] = effects.get('includeColorless', True)
+        
+        # Now apply combined effects to config
+        return self.apply_powerup_to_config_internal(combined_effects, commander_url)
+    
+    def apply_powerup_to_config_internal(self, effects, commander_url):
+        """Generate bundle config from combined powerup effects"""
         bundle_config = {'packTypes': []}
         
         # Base standard pack (1 expensive, 11 budget, 3 lands)
@@ -473,9 +537,6 @@ class handler(BaseHTTPRequestHandler):
                 }]
             }
         }
-        
-        # Get effects or use defaults
-        effects = powerup.get('effects', {}) if powerup else {}
         
         # Calculate base pack count
         base_pack_count = 5 + effects.get('packQuantity', 0)

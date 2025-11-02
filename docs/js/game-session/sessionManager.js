@@ -16,16 +16,20 @@ class SessionManager {
     /**
      * Create a new game session
      * @param {string} playerName - Player's display name
+     * @param {number} powerupsCount - Number of powerups per player (default 3)
      * @returns {Promise<Object>} - { sessionCode, playerId, sessionData }
      */
-    async createSession(playerName = '') {
+    async createSession(playerName = '', powerupsCount = 3) {
         try {
             const response = await fetch(`${this.apiBase}/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ playerName: playerName.trim() })
+                body: JSON.stringify({ 
+                    playerName: playerName.trim(),
+                    powerupsCount: parseInt(powerupsCount) || 3
+                })
             });
 
             if (!response.ok) {

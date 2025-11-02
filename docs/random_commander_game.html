@@ -135,38 +135,48 @@
         }
 
         .powerup-display {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #616161;
             border-radius: 6px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 36px;
         }
 
         .powerup-display.common {
-            background: linear-gradient(135deg, #616161 0%, #9e9e9e 100%);
+            background: #616161;
         }
 
         .powerup-display.uncommon {
-            background: linear-gradient(135deg, #1e88e5 0%, #42a5f5 100%);
+            background: #2e7d32;
         }
 
         .powerup-display.rare {
-            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-            color: #000;
+            background: #7b1fa2;
         }
 
         .powerup-display.mythic {
-            background: linear-gradient(135deg, #d84315 0%, #ff6f00 100%);
+            background: #ef6c00;
         }
 
         .powerup-name {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 0.3rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            flex: 1;
         }
 
-        .powerup-description {
-            font-size: 0.9rem;
+        .powerup-rarity {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
             opacity: 0.9;
+            padding-left: 1rem;
+        }
+
+        .powerups-container {
+            margin-bottom: 1rem;
         }
 
         .player-settings {
@@ -446,10 +456,44 @@
             margin: 0;
         }
 
-        .pack-player-powerup {
-            font-size: 0.9rem;
-            margin: 0.25rem 0 0 0;
-            opacity: 0.9;
+        .pack-player-powerups {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+
+        .powerup-badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid;
+        }
+
+        .powerup-badge.common {
+            background: #616161;
+            border-color: #757575;
+            color: #e0e0e0;
+        }
+
+        .powerup-badge.uncommon {
+            background: #2e7d32;
+            border-color: #388e3c;
+            color: #a5d6a7;
+        }
+
+        .powerup-badge.rare {
+            background: #7b1fa2;
+            border-color: #8e24aa;
+            color: #ce93d8;
+        }
+
+        .powerup-badge.mythic {
+            background: #ef6c00;
+            border-color: #f57c00;
+            color: #ffcc80;
         }
 
         .pack-commander-display {
@@ -559,8 +603,19 @@
         <section id="enter-name-section" class="lobby-section hidden">
             <h2>Choose Your Name</h2>
             <p style="text-align: center; opacity: 0.8;">Enter your display name for this session</p>
-            <div style="max-width: 400px; margin: 1.5rem auto;">
+            <div style="max-width: 500px; margin: 1.5rem auto;">
                 <input type="text" id="player-name-input" class="form-control" placeholder="Enter your name" maxlength="20" style="margin-bottom: 1rem; font-size: 1.1rem;">
+                
+                <!-- Host Settings (only shown for session creator) -->
+                <div id="host-settings" class="hidden" style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0; font-size: 1.1rem; margin-bottom: 1rem;">🎮 Host Settings</h3>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem;">Powerups Per Player:</label>
+                        <input type="number" id="powerups-count-input" class="form-control" value="3" min="1" max="10" style="width: 100px;">
+                    </div>
+                </div>
+                
                 <button class="btn btn-primary" id="confirm-name-btn" style="width: 100%;">Confirm Name</button>
             </div>
             <p style="text-align: center; opacity: 0.6; font-size: 0.85rem; margin-top: 1rem;">
@@ -701,8 +756,13 @@
             
             try {
                 showStatus('Creating session...');
+                
+                // Get powerups count from input (default 3)
+                const powerupsCountInput = document.getElementById('powerups-count-input');
+                const powerupsCount = powerupsCountInput ? parseInt(powerupsCountInput.value) || 3 : 3;
+                
                 console.log('📡 [CREATE] Calling sessionManager.createSession()...');
-                const result = await sessionManager.createSession(''); // Empty name initially
+                const result = await sessionManager.createSession('', powerupsCount); // Empty name initially, pass powerups count
                 console.log('✅ [CREATE] Session created:', result);
                 
                 currentSession = result.sessionData;
@@ -790,6 +850,24 @@
             tempSessionCode.textContent = currentSession.sessionCode;
             playerNameInput.value = '';
             playerNameInput.focus();
+            
+            // Show/hide host settings based on whether player is host
+            const hostSettings = document.getElementById('host-settings');
+            if (hostSettings) {
+                const isHost = currentSession.hostId === currentPlayerId;
+                console.log(`👑 [NAME] Is host: ${isHost}`);
+                hostSettings.style.display = isHost ? 'block' : 'none';
+                
+                // Populate current powerups count if host
+                if (isHost) {
+                    const powerupsCountInput = document.getElementById('powerups-count-input');
+                    if (powerupsCountInput && currentSession.settings) {
+                        powerupsCountInput.value = currentSession.settings.powerupsCount || 3;
+                        console.log(`⚙️ [NAME] Set powerups count to: ${powerupsCountInput.value}`);
+                    }
+                }
+            }
+            
             showStatus('');
         }
 
@@ -956,13 +1034,29 @@
                 section.classList.add('locked');
             }
             
-            const powerup = player.powerup;
-            const effects = powerup?.effects || {};
+            // Get powerups (now an array)
+            const powerups = player.powerups || (player.powerup ? [player.powerup] : []);
             
-            // Calculate quantity
+            // Calculate total commander quantity from all powerups
             const baseQuantity = 3;
-            const quantityModifier = effects.commanderQuantity || 0;
+            const quantityModifier = powerups.reduce((sum, p) => sum + (p?.effects?.commanderQuantity || 0), 0);
             const totalQuantity = baseQuantity + quantityModifier;
+            
+            // Collect all color filter effects
+            const colorEffects = powerups.map(p => p?.effects).filter(e => e?.colorFilterMode);
+            const primaryColorEffect = colorEffects[0] || {};
+            
+            // Render powerups in compact stacked format
+            const powerupsHTML = powerups.length > 0 ? `
+                <div class="powerups-container">
+                    ${powerups.map(powerup => `
+                        <div class="powerup-display ${powerup.rarity || 'common'}">
+                            <span class="powerup-name">⚡ ${powerup.name || 'Unknown'}</span>
+                            <span class="powerup-rarity">${powerup.rarity || 'common'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
             
             section.innerHTML = `
                 <div class="player-header">
@@ -970,25 +1064,15 @@
                     <span class="player-status">${player.commanderLocked ? '🔒 Locked' : 'Selecting...'}</span>
                 </div>
                 
-                <div class="powerup-display ${powerup?.rarity || ''}">
-                    <div class="powerup-name">⚡ ${powerup?.name || 'No Powerup'}</div>
-                    <div class="powerup-description">${powerup?.description || ''}</div>
-                </div>
+                ${powerupsHTML}
                 
                 <div class="player-settings">
-                    <div class="setting-row">
-                        <span class="setting-label"># of Commander Options:</span>
-                        <span class="quantity-display">
-                            ${totalQuantity}
-                            ${quantityModifier !== 0 ? `<span class="quantity-modifier">(${baseQuantity}${quantityModifier > 0 ? '+' : ''}${quantityModifier})</span>` : ''}
-                        </span>
-                    </div>
-                    ${renderColorFilter(effects)}
+                    ${renderColorFilter(primaryColorEffect)}
                 </div>
                 
                 ${isCurrentPlayer && !player.commanderLocked && !playerCommandersGenerated[player.number] ? `
-                    <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(effects).replace(/"/g, '&quot;')})">
-                        🎲 Generate Commanders
+                    <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(primaryColorEffect).replace(/"/g, '&quot;')})">
+                        🎲 Generate ${totalQuantity} Commander${totalQuantity > 1 ? 's' : ''}
                     </button>
                 ` : ''}
                 
@@ -1433,17 +1517,18 @@
                 const commanderImage = commanderData.image_url || 'images/card-back.png';
                 const commanderUrl = player.commanderUrl || '#';
                 
-                // Get powerup data
-                const powerup = player.powerup || {};
-                const powerupName = powerup.name || 'No Powerup';
-                const powerupRarity = powerup.rarity || 'common';
+                // Get powerup data (now an array)
+                const powerups = player.powerups || (player.powerup ? [player.powerup] : []);
+                const powerupsHTML = powerups.length > 0 ? 
+                    powerups.map(p => `<span class="powerup-badge ${p.rarity || 'common'}">⚡ ${p.name || 'Unknown'}</span>`).join(' ') :
+                    '<span class="powerup-badge">No Powerups</span>';
                 
                 const div = document.createElement('div');
                 div.className = 'pack-code-item';
                 div.innerHTML = `
                     <div class="pack-player-header">
                         <h3 class="pack-player-name">${player.name}</h3>
-                        <p class="pack-player-powerup">🎲 ${powerupName} <span style="opacity: 0.7;">(${powerupRarity})</span></p>
+                        <div class="pack-player-powerups">${powerupsHTML}</div>
                     </div>
                     
                     <div class="pack-commander-display">
