@@ -54,8 +54,9 @@ SESSIONS: Dict[str, dict] = {}
 # In-memory pack code fallback (only used if KV is not available)
 PACK_CODES: Dict[str, dict] = {}
 
-# Session expiration time (2 hours of inactivity)
-SESSION_TTL = 2 * 60 * 60
+# Session expiration time (12 hours - increased to prevent premature expiration during long game sessions)
+# TTL is refreshed on every update, so active sessions stay alive indefinitely
+SESSION_TTL = 12 * 60 * 60
 
 # Pack code expiration time (24 hours - auto-removed when memory full via LRU eviction)
 # Redis will automatically remove oldest pack codes if memory limit reached
@@ -180,7 +181,7 @@ def get_session(session_code: str) -> Optional[dict]:
             if data_str:
                 session_data = json.loads(data_str)
                 print(f"✅ Retrieved session {session_code} from Vercel KV")
-                # Also cache in memory for this request
+                # Also cache in memory for this function instance
                 SESSIONS[session_code] = session_data
                 return session_data
             else:
@@ -230,19 +231,25 @@ def delete_session(session_code: str) -> bool:
         return False
 
 def cleanup_expired_sessions():
-    """Remove expired sessions based on lastActivity"""
+    """
+    Remove expired sessions from in-memory cache
+    NOTE: Only used when KV is disabled. When KV is enabled, Redis handles TTL automatically.
+    """
+    if KV_ENABLED:
+        # KV handles TTL automatically, no cleanup needed
+        return
+    
     current_time = time.time()
     expired = [code for code, session in SESSIONS.items() 
                if current_time - session.get('lastActivity', session['created_at']) > SESSION_TTL]
     for code in expired:
         del SESSIONS[code]
     
-    # Also cleanup expired in-memory pack codes (if not using KV)
-    if not KV_ENABLED:
-        expired_packs = [code for code, entry in PACK_CODES.items()
-                        if current_time > entry['expires_at']]
-        for code in expired_packs:
-            del PACK_CODES[code]
+    # Also cleanup expired in-memory pack codes
+    expired_packs = [code for code, entry in PACK_CODES.items()
+                    if current_time > entry['expires_at']]
+    for code in expired_packs:
+        del PACK_CODES[code]
 
 def touch_session(session_code: str):
     """Update session's last activity timestamp"""
