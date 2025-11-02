@@ -12,8 +12,12 @@ from typing import Dict, List, Optional
 # In-memory session storage (for MVP - replace with Redis/database for production)
 SESSIONS: Dict[str, dict] = {}
 
-# Session expiration time (24 hours)
-SESSION_TTL = 24 * 60 * 60
+# Session expiration time (2 hours of inactivity)
+SESSION_TTL = 2 * 60 * 60
+
+# Note: In-memory storage only persists within a single serverless instance
+# Sessions may be lost when Vercel spins down inactive functions (typically after 5-15 minutes)
+# For production, consider using Vercel KV (Redis) or a database for persistent storage
 
 def generate_session_code() -> str:
     """Generate a random 5-character session code"""
@@ -28,12 +32,18 @@ def generate_pack_code() -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 def cleanup_expired_sessions():
-    """Remove expired sessions"""
+    """Remove expired sessions based on lastActivity"""
     current_time = time.time()
     expired = [code for code, session in SESSIONS.items() 
-               if current_time - session['created_at'] > SESSION_TTL]
+               if current_time - session.get('lastActivity', session['created_at']) > SESSION_TTL]
     for code in expired:
         del SESSIONS[code]
+
+def touch_session(session_code: str):
+    """Update session's last activity timestamp"""
+    if session_code in SESSIONS:
+        SESSIONS[session_code]['lastActivity'] = time.time()
+        SESSIONS[session_code]['updated_at'] = time.time()
 
 def cors_headers():
     """Return CORS headers for all responses"""
@@ -152,7 +162,8 @@ class handler(BaseHTTPRequestHandler):
                 }
             ],
             'created_at': time.time(),
-            'updated_at': time.time()
+            'updated_at': time.time(),
+            'lastActivity': time.time()
         }
         
         SESSIONS[session_code] = session
@@ -172,6 +183,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
+        touch_session(session_code)
         session = SESSIONS[session_code]
         
         # Check if session is full (max 4 players)
@@ -222,9 +234,10 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
+        touch_session(session_code)
         session = SESSIONS[session_code]
         
-        # Find player
+        # Find the player
         player = next((p for p in session['players'] if p['id'] == player_id), None)
         if not player:
             self.send_error_response(404, 'Player not found')
@@ -247,9 +260,10 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
+        touch_session(session_code)
         session = SESSIONS[session_code]
         
-        # Verify player is host
+        # Verify host
         if session['hostId'] != player_id:
             self.send_error_response(403, 'Only host can roll powerups')
             return
@@ -347,7 +361,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_json_response(200, session)
 
     def handle_update_commanders(self, data):
-        """Update generated commanders for a player"""
+        """Update generated commanders for current player"""
         session_code = data.get('sessionCode', '').upper()
         player_id = data.get('playerId', '')
         commanders = data.get('commanders', [])
@@ -356,6 +370,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
+        touch_session(session_code)
         session = SESSIONS[session_code]
         
         # Find player
@@ -381,9 +396,10 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
+        touch_session(session_code)
         session = SESSIONS[session_code]
         
-        # Verify all players locked in
+        # Check if all players have locked
         all_locked = all(p['commanderLocked'] for p in session['players'])
         if not all_locked:
             self.send_error_response(400, 'Not all players have locked in')
@@ -397,11 +413,12 @@ class handler(BaseHTTPRequestHandler):
         self.send_json_response(200, session)
 
     def handle_get_session(self, session_code):
-        """Get session data"""
+        """Get current session data"""
         if session_code not in SESSIONS:
             self.send_error_response(404, 'Session not found')
             return
         
+        touch_session(session_code)
         self.send_json_response(200, SESSIONS[session_code])
 
     def handle_get_pack(self, pack_code):
