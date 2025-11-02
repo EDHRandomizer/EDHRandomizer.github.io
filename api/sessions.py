@@ -13,25 +13,36 @@ from typing import Dict, List, Optional
 # Vercel KV (Redis) for pack code persistence
 try:
     import redis
-    REDIS_URL = os.environ.get('KV_REST_API_URL', '')
+    
+    # Try multiple possible environment variable names (Vercel uses different names)
+    REDIS_URL = (
+        os.environ.get('KV_REST_API_URL') or 
+        os.environ.get('KV_URL') or 
+        os.environ.get('REDIS_URL') or 
+        ''
+    )
     REDIS_TOKEN = os.environ.get('KV_REST_API_TOKEN', '')
     
-    if REDIS_URL and REDIS_TOKEN:
-        # Use redis-py with Vercel KV REST API
-        # Format: redis://default:TOKEN@REST_API_URL
-        kv_client = redis.from_url(
-            REDIS_URL,
-            password=REDIS_TOKEN,
-            decode_responses=True
-        )
-        KV_ENABLED = True
-        print("✅ Vercel KV enabled for pack code storage")
+    if REDIS_URL:
+        # Vercel KV provides a complete URL, try to use it directly
+        try:
+            kv_client = redis.from_url(
+                REDIS_URL,
+                decode_responses=True
+            )
+            # Test connection
+            kv_client.ping()
+            KV_ENABLED = True
+            print(f"✅ Vercel KV enabled using {REDIS_URL[:20]}...")
+        except Exception as e:
+            print(f"❌ Failed to connect to Redis: {e}")
+            kv_client = None
+            KV_ENABLED = False
     else:
         kv_client = None
         KV_ENABLED = False
         print("⚠️ Vercel KV not configured - using in-memory storage")
-        print(f"   KV_REST_API_URL: {'SET' if REDIS_URL else 'NOT SET'}")
-        print(f"   KV_REST_API_TOKEN: {'SET' if REDIS_TOKEN else 'NOT SET'}")
+        print(f"   Checked: KV_REST_API_URL, KV_URL, REDIS_URL - all NOT SET")
 except ImportError:
     kv_client = None
     KV_ENABLED = False
