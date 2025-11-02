@@ -526,29 +526,81 @@
 
         .pack-commander-display {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 1.5rem;
+            padding: 1rem 0;
+        }
+        
+        .pack-commander-img-container {
+            flex-shrink: 0;
         }
 
         .pack-commander-img {
-            width: 200px;
+            width: 300px;
             height: auto;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             transition: transform 0.2s;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
 
         .pack-commander-img:hover {
             transform: scale(1.05);
         }
+        
+        .pack-commander-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
 
         .pack-commander-name {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            text-align: center;
             margin: 0;
+            color: #ffffff;
+        }
+        
+        .pack-powerups-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .pack-powerup-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-left: 4px solid;
+        }
+        
+        .pack-powerup-item.common {
+            background: rgba(97, 97, 97, 0.3);
+            border-color: #757575;
+            color: #e0e0e0;
+        }
+
+        .pack-powerup-item.uncommon {
+            background: rgba(46, 125, 50, 0.3);
+            border-color: #4aba4a;
+            color: #a5d6a7;
+        }
+
+        .pack-powerup-item.rare {
+            background: rgba(123, 31, 162, 0.3);
+            border-color: #c084fc;
+            color: #e1bee7;
+        }
+
+        .pack-powerup-item.mythic {
+            background: rgba(239, 108, 0, 0.3);
+            border-color: #d4af37;
+            color: #ffd54f;
         }
 
         .pack-code-display {
@@ -1557,25 +1609,35 @@
                     return rarityA - rarityB;
                 });
                 
-                const powerupsHTML = sortedPowerups.length > 0 ? 
-                    sortedPowerups.map(p => `<span class="powerup-badge ${p.rarity || 'common'}">⚡ ${p.name || 'Unknown'}</span>`).join(' ') :
-                    '<span class="powerup-badge">No Powerups</span>';
+                const powerupsListHTML = sortedPowerups.length > 0 ? 
+                    sortedPowerups.map(p => `
+                        <div class="pack-powerup-item ${p.rarity || 'common'}">
+                            ⚡ ${p.name || 'Unknown'}
+                        </div>
+                    `).join('') :
+                    '<div class="pack-powerup-item common">No Powerups</div>';
                 
                 const div = document.createElement('div');
                 div.className = 'pack-code-item';
                 div.innerHTML = `
                     <div class="pack-player-header">
                         <h3 class="pack-player-name">${player.name}</h3>
-                        <div class="pack-player-powerups">${powerupsHTML}</div>
                     </div>
                     
                     <div class="pack-commander-display">
-                        <img src="${commanderImage}" 
-                             alt="${commanderName}" 
-                             class="pack-commander-img"
-                             onclick="openCommanderLink('${commanderUrl}')"
-                             title="Click to view on EDHRec">
-                        <h4 class="pack-commander-name">${commanderName}</h4>
+                        <div class="pack-commander-img-container">
+                            <img src="${commanderImage}" 
+                                 alt="${commanderName}" 
+                                 class="pack-commander-img"
+                                 onclick="openCommanderLink('${commanderUrl}')"
+                                 title="Click to view on EDHRec">
+                        </div>
+                        <div class="pack-commander-info">
+                            <h4 class="pack-commander-name">${commanderName}</h4>
+                            <div class="pack-powerups-list">
+                                ${powerupsListHTML}
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="pack-code-display">
