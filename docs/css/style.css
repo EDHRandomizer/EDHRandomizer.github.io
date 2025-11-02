@@ -27,9 +27,9 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    width: 100%;
     margin: 0 auto;
-    padding: 15px;
+    padding: 20px 40px;
     overflow-x: hidden; /* Prevent horizontal scroll */
     box-sizing: border-box; /* Include padding in width */
 }
