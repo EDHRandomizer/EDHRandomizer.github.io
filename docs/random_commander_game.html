@@ -1155,9 +1155,11 @@
                 
                 ${powerupsHTML}
                 
-                <div class="player-settings">
-                    ${renderColorFilter(primaryColorEffect)}
-                </div>
+                ${primaryColorEffect?.colorFilterMode ? `
+                    <div class="player-settings">
+                        ${renderColorFilter(primaryColorEffect)}
+                    </div>
+                ` : ''}
                 
                 ${isCurrentPlayer && !player.commanderLocked && !playerCommandersGenerated[player.number] ? `
                     <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(allEffects).replace(/"/g, '&quot;')})">
