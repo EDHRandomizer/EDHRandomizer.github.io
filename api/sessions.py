@@ -276,17 +276,30 @@ class handler(BaseHTTPRequestHandler):
                 'powerups': []  # Will be loaded from file in production
             }
         
-        # Generate multiple powerups for each player
+        # Generate multiple powerups for each player with type-based deduplication
         for player in session['players']:
             player_powerups = []
-            for _ in range(powerups_count):
+            used_types = set()  # Track powerup types to prevent duplicates
+            
+            attempts = 0
+            max_attempts = powerups_count * 10  # Prevent infinite loop
+            
+            while len(player_powerups) < powerups_count and attempts < max_attempts:
                 powerup = self.get_random_powerup(powerups_data)
-                player_powerups.append({
-                    'id': powerup['id'],
-                    'name': powerup['name'],
-                    'rarity': powerup['rarity'],
-                    'effects': powerup.get('effects', {})
-                })
+                powerup_type = self.get_powerup_type(powerup, powerups_data)
+                
+                # Check if this type is already used
+                if powerup_type not in used_types:
+                    player_powerups.append({
+                        'id': powerup['id'],
+                        'name': powerup['name'],
+                        'rarity': powerup['rarity'],
+                        'effects': powerup.get('effects', {})
+                    })
+                    used_types.add(powerup_type)
+                
+                attempts += 1
+            
             player['powerups'] = player_powerups
         
         session['state'] = 'selecting'
@@ -420,6 +433,16 @@ class handler(BaseHTTPRequestHandler):
         except:
             powerups_data = {'powerups': []}
         
+        # Get all powerups - support both formats
+        if 'powerupTypes' in powerups_data:
+            # V2 format - flatten powerupTypes
+            all_powerups = []
+            for ptype in powerups_data.get('powerupTypes', []):
+                all_powerups.extend(ptype.get('powerups', []))
+        else:
+            # V1 format - direct powerups array
+            all_powerups = powerups_data.get('powerups', [])
+        
         for player in session['players']:
             # Generate unique pack code
             pack_code = generate_pack_code()
@@ -429,8 +452,7 @@ class handler(BaseHTTPRequestHandler):
             # Get all powerup objects with full effects
             player_powerups = []
             for powerup_ref in player.get('powerups', []):
-                powerup_full = next((p for p in powerups_data.get('powerups', []) 
-                              if p['id'] == powerup_ref['id']), None)
+                powerup_full = next((p for p in all_powerups if p['id'] == powerup_ref['id']), None)
                 if powerup_full:
                     player_powerups.append(powerup_full)
             
@@ -605,11 +627,20 @@ class handler(BaseHTTPRequestHandler):
         return bundle_config
 
     def get_random_powerup(self, powerups_data):
-        """Get random powerup based on rarity weights"""
+        """Get random powerup based on rarity weights - supports both v1 and v2 format"""
         weights = powerups_data.get('rarityWeights', {
             'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3
         })
-        powerups = powerups_data.get('powerups', [])
+        
+        # Get all powerups - support both formats
+        if 'powerupTypes' in powerups_data:
+            # V2 format - flatten powerupTypes
+            powerups = []
+            for ptype in powerups_data.get('powerupTypes', []):
+                powerups.extend(ptype.get('powerups', []))
+        else:
+            # V1 format - direct powerups array
+            powerups = powerups_data.get('powerups', [])
         
         if not powerups:
             # Fallback powerup
@@ -640,6 +671,41 @@ class handler(BaseHTTPRequestHandler):
             rarity_powerups = [p for p in powerups if p['rarity'] == 'common']
         
         return random.choice(rarity_powerups)
+
+    def get_powerup_type(self, powerup, powerups_data):
+        """Get the type category for a powerup (for deduplication)"""
+        # V2 format - explicit types
+        if 'powerupTypes' in powerups_data:
+            for ptype in powerups_data.get('powerupTypes', []):
+                for p in ptype.get('powerups', []):
+                    if p['id'] == powerup['id']:
+                        return ptype['type']
+        
+        # V1 format - infer type from ID prefix
+        powerup_id = powerup['id']
+        if powerup_id.startswith('commander_options_') or powerup_id.startswith('reroll_'):
+            return 'commander_quantity'
+        elif powerup_id.startswith('color_'):
+            return 'color_filter'
+        elif powerup_id.startswith('budget_upgrade_'):
+            return 'budget_upgrade'
+        elif powerup_id.startswith('budget_full_expensive_'):
+            return 'expensive_packs'
+        elif powerup_id.startswith('extra_pack'):
+            return 'extra_packs'
+        elif powerup_id.startswith('upgrade_bracket_'):
+            return 'bracket_upgrade'
+        elif 'gamechanger' in powerup_id:
+            return 'gamechanger_cards'
+        elif 'conspiracy' in powerup_id:
+            return 'conspiracy_cards'
+        elif 'banned' in powerup_id:
+            return 'banned_cards'
+        elif 'manabase' in powerup_id:
+            return 'manabase'
+        
+        # Default: use the powerup ID itself as the type (unique)
+        return powerup_id
 
     def send_json_response(self, status_code, data):
         """Send JSON response with CORS headers"""

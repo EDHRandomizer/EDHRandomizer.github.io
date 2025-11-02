@@ -588,6 +588,14 @@
                 <div>
                     <h3>Host New Game</h3>
                     <p style="opacity: 0.8; font-size: 0.9rem;">Create a new session and invite friends</p>
+                    
+                    <!-- Host Settings -->
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 6px; margin: 1rem 0;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Powerups Per Player:</label>
+                        <input type="number" id="create-powerups-count" class="form-control" value="3" min="1" max="5" style="width: 100px;">
+                        <p style="opacity: 0.7; font-size: 0.85rem; margin: 0.5rem 0 0 0;">Players will each get this many random powerups</p>
+                    </div>
+                    
                     <button class="btn btn-primary" id="create-session-btn">Create Session</button>
                 </div>
                 <div>
@@ -605,16 +613,6 @@
             <p style="text-align: center; opacity: 0.8;">Enter your display name for this session</p>
             <div style="max-width: 500px; margin: 1.5rem auto;">
                 <input type="text" id="player-name-input" class="form-control" placeholder="Enter your name" maxlength="20" style="margin-bottom: 1rem; font-size: 1.1rem;">
-                
-                <!-- Host Settings (only shown for session creator) -->
-                <div id="host-settings" class="hidden" style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <h3 style="margin-top: 0; font-size: 1.1rem; margin-bottom: 1rem;">🎮 Host Settings</h3>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <label style="display: block; margin-bottom: 0.5rem;">Powerups Per Player:</label>
-                        <input type="number" id="powerups-count-input" class="form-control" value="3" min="1" max="10" style="width: 100px;">
-                    </div>
-                </div>
                 
                 <button class="btn btn-primary" id="confirm-name-btn" style="width: 100%;">Confirm Name</button>
             </div>
@@ -758,7 +756,7 @@
                 showStatus('Creating session...');
                 
                 // Get powerups count from input (default 3)
-                const powerupsCountInput = document.getElementById('powerups-count-input');
+                const powerupsCountInput = document.getElementById('create-powerups-count');
                 const powerupsCount = powerupsCountInput ? parseInt(powerupsCountInput.value) || 3 : 3;
                 
                 console.log('📡 [CREATE] Calling sessionManager.createSession()...');
@@ -850,24 +848,6 @@
             tempSessionCode.textContent = currentSession.sessionCode;
             playerNameInput.value = '';
             playerNameInput.focus();
-            
-            // Show/hide host settings based on whether player is host
-            const hostSettings = document.getElementById('host-settings');
-            if (hostSettings) {
-                const isHost = currentSession.hostId === currentPlayerId;
-                console.log(`👑 [NAME] Is host: ${isHost}`);
-                hostSettings.style.display = isHost ? 'block' : 'none';
-                
-                // Populate current powerups count if host
-                if (isHost) {
-                    const powerupsCountInput = document.getElementById('powerups-count-input');
-                    if (powerupsCountInput && currentSession.settings) {
-                        powerupsCountInput.value = currentSession.settings.powerupsCount || 3;
-                        console.log(`⚙️ [NAME] Set powerups count to: ${powerupsCountInput.value}`);
-                    }
-                }
-            }
-            
             showStatus('');
         }
 
