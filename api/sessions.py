@@ -726,8 +726,9 @@ class handler(BaseHTTPRequestHandler):
             'budgetUpgradePacks': 0,  # Additive
             'fullExpensivePacks': 0,  # Additive
             'bracketUpgrade': None,  # Take highest
-            'specialPacks': [],  # Concatenate
+            'specialPacks': [],  # Concatenate - list of {type, count, moxfieldDeck}
             'commanderQuantity': 0,  # Additive (affects commander selection, not pack config)
+            'distributionShift': 0,  # Additive (affects commander selection, not pack config)
             'colorFilterMode': None,  # Take first non-None
             'allowedColors': None,  # Take first non-None
             'includeColorless': None  # Take first non-None
@@ -743,6 +744,7 @@ class handler(BaseHTTPRequestHandler):
             combined_effects['budgetUpgradePacks'] += effects.get('budgetUpgradePacks', 0)
             combined_effects['fullExpensivePacks'] += effects.get('fullExpensivePacks', 0)
             combined_effects['commanderQuantity'] += effects.get('commanderQuantity', 0)
+            combined_effects['distributionShift'] += effects.get('distributionShift', 0)
             
             # Bracket upgrade (take highest)
             if effects.get('bracketUpgrade'):
@@ -751,9 +753,13 @@ class handler(BaseHTTPRequestHandler):
                 if current_bracket is None or new_bracket > current_bracket:
                     combined_effects['bracketUpgrade'] = new_bracket
             
-            # Special packs (concatenate)
+            # Special packs (concatenate with moxfieldDeck)
             if effects.get('specialPack'):
-                combined_effects['specialPacks'].append(effects['specialPack'])
+                combined_effects['specialPacks'].append({
+                    'type': effects['specialPack'],
+                    'count': effects.get('specialPackCount', 1),
+                    'moxfieldDeck': effects.get('moxfieldDeck')
+                })
             
             # Color filters (take first)
             if combined_effects['colorFilterMode'] is None and effects.get('colorFilterMode'):
@@ -801,6 +807,36 @@ class handler(BaseHTTPRequestHandler):
                 'useCommanderColorIdentity': True,
                 'slots': [{
                     'query': 'https://scryfall.com/search?q=banned%3Acommander+-f%3Aduel&unique=cards&as=grid&order=name',
+                    'count': 1
+                }]
+            },
+            'test_cards': {
+                'name': 'Test Cards',
+                'source': 'moxfield',
+                'count': 1,
+                'useCommanderColorIdentity': True,
+                'slots': [{
+                    'moxfieldDeck': None,  # Will be filled from powerup effect
+                    'count': 1
+                }]
+            },
+            'silly_cards': {
+                'name': 'Silly Cards',
+                'source': 'moxfield',
+                'count': 1,
+                'useCommanderColorIdentity': True,
+                'slots': [{
+                    'moxfieldDeck': None,  # Will be filled from powerup effect
+                    'count': 1
+                }]
+            },
+            'any_cost_lands': {
+                'name': 'Any Cost Lands',
+                'source': 'moxfield',
+                'count': 1,
+                'useCommanderColorIdentity': True,
+                'slots': [{
+                    'moxfieldDeck': None,  # Will be filled from powerup effect
                     'count': 1
                 }]
             },
@@ -872,13 +908,23 @@ class handler(BaseHTTPRequestHandler):
             }
             bundle_config['packTypes'].append(pack)
         
-        # Add special pack if specified
-        special_pack = effects.get('specialPack')
-        special_pack_count = effects.get('specialPackCount', 1)
-        if special_pack and special_pack in special_pack_templates:
-            pack = json.loads(json.dumps(special_pack_templates[special_pack]))
-            pack['slots'][0]['count'] = special_pack_count
-            bundle_config['packTypes'].append(pack)
+        # Add special packs
+        for special_pack_info in effects.get('specialPacks', []):
+            special_pack_type = special_pack_info['type']
+            special_pack_count = special_pack_info['count']
+            moxfield_deck = special_pack_info.get('moxfieldDeck')
+            
+            if special_pack_type in special_pack_templates:
+                pack = json.loads(json.dumps(special_pack_templates[special_pack_type]))
+                
+                # Set the count for the slot
+                pack['slots'][0]['count'] = special_pack_count
+                
+                # If this pack needs a moxfieldDeck, set it
+                if moxfield_deck and 'moxfieldDeck' in pack['slots'][0]:
+                    pack['slots'][0]['moxfieldDeck'] = moxfield_deck
+                
+                bundle_config['packTypes'].append(pack)
         
         return bundle_config
 
