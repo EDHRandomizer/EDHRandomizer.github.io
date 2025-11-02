@@ -1,5 +1,5 @@
 # Session Management API for EDH Randomizer Game Mode
-# Vercel serverless function
+# Vercel serverless function with Redis/Vercel KV support
 # Updated: 2025-11-02
 
 from http.server import BaseHTTPRequestHandler
