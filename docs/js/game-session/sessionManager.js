@@ -85,6 +85,41 @@ class SessionManager {
     }
 
     /**
+     * Update player name in session
+     * @param {string} playerName - New player name
+     * @returns {Promise<Object>} - Updated session data
+     */
+    async updatePlayerName(playerName) {
+        if (!this.currentSession || !this.currentPlayerId) {
+            throw new Error('No active session');
+        }
+
+        try {
+            const response = await fetch(`${this.apiBase}/update-name`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionCode: this.currentSession,
+                    playerId: this.currentPlayerId,
+                    playerName: playerName
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Failed to update name: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error updating player name:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get current session data
      * @returns {Promise<Object>} - Full session data
      */

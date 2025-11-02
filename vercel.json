@@ -6,6 +6,7 @@
     { "source": "/api/test-cors", "destination": "/api/test-cors" },
     { "source": "/api/sessions/create", "destination": "/api/sessions" },
     { "source": "/api/sessions/join", "destination": "/api/sessions" },
+    { "source": "/api/sessions/update-name", "destination": "/api/sessions" },
     { "source": "/api/sessions/roll-powerups", "destination": "/api/sessions" },
     { "source": "/api/sessions/lock-commander", "destination": "/api/sessions" },
     { "source": "/api/sessions/update-commanders", "destination": "/api/sessions" },

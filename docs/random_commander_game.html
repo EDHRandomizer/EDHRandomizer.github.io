@@ -543,16 +543,29 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
                 <div>
                     <h3>Host New Game</h3>
-                    <input type="text" id="create-name-input" class="form-control" placeholder="Enter your name" maxlength="20" style="margin-bottom: 0.5rem;">
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Create a new session and invite friends</p>
                     <button class="btn btn-primary" id="create-session-btn">Create Session</button>
                 </div>
                 <div>
                     <h3>Join Existing Game</h3>
-                    <input type="text" id="join-name-input" class="form-control" placeholder="Enter your name" maxlength="20" style="margin-bottom: 0.5rem;">
+                    <p style="opacity: 0.8; font-size: 0.9rem;">Enter a session code to join</p>
                     <input type="text" id="join-code-input" class="form-control" placeholder="Enter session code" maxlength="5" style="margin-bottom: 0.5rem; text-transform: uppercase;">
                     <button class="btn btn-primary" id="join-session-btn">Join Session</button>
                 </div>
             </div>
+        </section>
+
+        <!-- Enter Name Section (after joining/creating) -->
+        <section id="enter-name-section" class="lobby-section hidden">
+            <h2>Choose Your Name</h2>
+            <p style="text-align: center; opacity: 0.8;">Enter your display name for this session</p>
+            <div style="max-width: 400px; margin: 1.5rem auto;">
+                <input type="text" id="player-name-input" class="form-control" placeholder="Enter your name" maxlength="20" style="margin-bottom: 1rem; font-size: 1.1rem;">
+                <button class="btn btn-primary" id="confirm-name-btn" style="width: 100%;">Confirm Name</button>
+            </div>
+            <p style="text-align: center; opacity: 0.6; font-size: 0.85rem; margin-top: 1rem;">
+                Session Code: <strong id="temp-session-code">-----</strong>
+            </p>
         </section>
 
         <!-- Lobby (before powerups rolled) -->
@@ -612,9 +625,13 @@
         const packCodesSection = document.getElementById('pack-codes-section');
         const sessionInfo = document.getElementById('session-info');
         const sessionCodeDisplay = document.getElementById('session-code-display');
+        const enterNameSection = document.getElementById('enter-name-section');
         const createSessionBtn = document.getElementById('create-session-btn');
         const joinSessionBtn = document.getElementById('join-session-btn');
         const joinCodeInput = document.getElementById('join-code-input');
+        const confirmNameBtn = document.getElementById('confirm-name-btn');
+        const playerNameInput = document.getElementById('player-name-input');
+        const tempSessionCode = document.getElementById('temp-session-code');
         const rollPowerupsBtn = document.getElementById('roll-powerups-btn');
         const copySessionCodeBtn = document.getElementById('copy-session-code');
         const leaveSessionBtn = document.getElementById('leave-session');
@@ -656,9 +673,25 @@
                 
                 console.log('✅ [INIT] Initialization complete!');
                 showStatus('Ready! Create or join a session.');
+                
+                // Check for session code in URL
+                checkURLParameters();
             } catch (error) {
                 console.error('❌ [INIT] Initialization error:', error);
                 showStatus('Error loading. Please refresh the page.');
+            }
+        }
+
+        // Check URL parameters for direct session joining
+        function checkURLParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionCode = urlParams.get('session');
+            
+            if (sessionCode) {
+                console.log('🔗 [URL] Session code found in URL:', sessionCode);
+                joinCodeInput.value = sessionCode.toUpperCase();
+                // Automatically trigger join
+                joinSessionBtn.click();
             }
         }
 
@@ -666,19 +699,22 @@
         createSessionBtn.addEventListener('click', async () => {
             console.log('🎲 [CREATE] Create session button clicked');
             
-            const playerName = document.getElementById('create-name-input').value.trim();
-            
             try {
                 showStatus('Creating session...');
                 console.log('📡 [CREATE] Calling sessionManager.createSession()...');
-                const result = await sessionManager.createSession(playerName);
+                const result = await sessionManager.createSession(''); // Empty name initially
                 console.log('✅ [CREATE] Session created:', result);
                 
                 currentSession = result.sessionData;
                 currentPlayerId = result.playerId;
                 console.log('💾 [CREATE] Stored session:', currentSession.sessionCode, 'playerId:', currentPlayerId);
                 
-                enterLobby();
+                // Update URL with session code
+                const url = new URL(window.location);
+                url.searchParams.set('session', currentSession.sessionCode);
+                window.history.pushState({}, '', url);
+                
+                showEnterNameScreen();
             } catch (error) {
                 console.error('❌ [CREATE] Create session error:', error);
                 showStatus('Failed to create session. Please try again.');
@@ -686,7 +722,6 @@
         });
 
         joinSessionBtn.addEventListener('click', async () => {
-            const playerName = document.getElementById('join-name-input').value.trim();
             const code = joinCodeInput.value.trim().toUpperCase();
             console.log('🎲 [JOIN] Join session button clicked, code:', code);
             
@@ -699,19 +734,64 @@
             try {
                 showStatus('Joining session...');
                 console.log('📡 [JOIN] Calling sessionManager.joinSession()...');
-                const result = await sessionManager.joinSession(code, playerName);
+                const result = await sessionManager.joinSession(code, ''); // Empty name initially
                 console.log('✅ [JOIN] Joined session:', result);
                 
                 currentSession = result.sessionData;
                 currentPlayerId = result.playerId;
                 console.log('💾 [JOIN] Stored session:', currentSession.sessionCode, 'playerId:', currentPlayerId);
                 
-                enterLobby();
+                // Update URL with session code
+                const url = new URL(window.location);
+                url.searchParams.set('session', currentSession.sessionCode);
+                window.history.pushState({}, '', url);
+                
+                showEnterNameScreen();
             } catch (error) {
                 console.error('❌ [JOIN] Join session error:', error);
                 showStatus('Failed to join session. Check the code and try again.');
             }
         });
+
+        confirmNameBtn.addEventListener('click', async () => {
+            const playerName = playerNameInput.value.trim();
+            console.log('✅ [NAME] Confirm name clicked:', playerName);
+            
+            if (!playerName) {
+                showStatus('Please enter a name.');
+                return;
+            }
+            
+            try {
+                showStatus('Updating name...');
+                console.log('📡 [NAME] Calling sessionManager.updatePlayerName()...');
+                const updatedSession = await sessionManager.updatePlayerName(playerName);
+                console.log('✅ [NAME] Name updated:', updatedSession);
+                
+                currentSession = updatedSession;
+                enterLobby();
+            } catch (error) {
+                console.error('❌ [NAME] Update name error:', error);
+                showStatus('Failed to update name. Please try again.');
+            }
+        });
+
+        // Allow Enter key to confirm name
+        playerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmNameBtn.click();
+            }
+        });
+
+        function showEnterNameScreen() {
+            console.log('📝 [NAME] Showing enter name screen');
+            joinCreateSection.classList.add('hidden');
+            enterNameSection.classList.remove('hidden');
+            tempSessionCode.textContent = currentSession.sessionCode;
+            playerNameInput.value = '';
+            playerNameInput.focus();
+            showStatus('');
+        }
 
         rollPowerupsBtn.addEventListener('click', async () => {
             console.log('🎲 [POWERUPS] Roll powerups button clicked');
@@ -754,6 +834,7 @@
         function enterLobby() {
             console.log('🚪 [LOBBY] Entering lobby...');
             joinCreateSection.classList.add('hidden');
+            enterNameSection.classList.add('hidden');
             lobbySection.classList.remove('hidden');
             sessionInfo.classList.remove('hidden');
             sessionCodeDisplay.textContent = currentSession.sessionCode;

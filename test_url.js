@@ -1,7 +1,3 @@
-// ========================================
-// EDHREC URL GENERATION
-// ========================================
-
 function normalizeName(name) {
     // Remove commas
     name = name.replace(/,/g, '');
@@ -12,7 +8,7 @@ function normalizeName(name) {
     // Remove quotes
     name = name.replace(/"/g, '');
     
-    // Remove periods
+    // Remove periods (THIS IS MISSING!)
     name = name.replace(/\./g, '');
     
     // Normalize unicode characters
@@ -27,8 +23,7 @@ function normalizeName(name) {
     return name;
 }
 
-export function commanderNameToUrl(name) {
-    // Handle partner commanders (with //)
+function commanderNameToUrl(name) {
     if (name.includes('//')) {
         const parts = name.split('//');
         const convertedParts = parts.map(part => normalizeName(part.trim()));
@@ -39,3 +34,7 @@ export function commanderNameToUrl(name) {
         return `https://edhrec.com/commanders/${slug}`;
     }
 }
+
+console.log('Test: Mr. Orfeo, the Boulder');
+console.log('Result:', commanderNameToUrl('Mr. Orfeo, the Boulder'));
+console.log('Expected: https://edhrec.com/commanders/mr-orfeo-the-boulder');

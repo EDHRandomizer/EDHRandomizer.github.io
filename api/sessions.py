@@ -76,6 +76,8 @@ class handler(BaseHTTPRequestHandler):
             self.handle_create_session(data)
         elif path == '/join':
             self.handle_join_session(data)
+        elif path == '/update-name':
+            self.handle_update_name(data)
         elif path == '/roll-powerups':
             self.handle_roll_powerups(data)
         elif path == '/lock-commander':
@@ -202,6 +204,32 @@ class handler(BaseHTTPRequestHandler):
             'playerId': player_id,
             'sessionData': session
         })
+
+    def handle_update_name(self, data):
+        """Update player name in session"""
+        session_code = data.get('sessionCode', '').upper()
+        player_id = data.get('playerId', '')
+        player_name = data.get('playerName', '').strip()[:20]  # Max 20 chars
+        
+        if not session_code or session_code not in SESSIONS:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        session = SESSIONS[session_code]
+        
+        # Find player
+        player = next((p for p in session['players'] if p['id'] == player_id), None)
+        if not player:
+            self.send_error_response(404, 'Player not found')
+            return
+        
+        # Update player name
+        if player_name:
+            player['name'] = player_name
+        
+        session['updated_at'] = time.time()
+        
+        self.send_json_response(200, session)
 
     def handle_roll_powerups(self, data):
         """Roll powerups for all players (host only)"""

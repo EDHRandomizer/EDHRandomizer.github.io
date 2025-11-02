@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EDHRec URL Test</title>
+</head>
+<body>
+    <h1>Testing EDHRec URLs</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+        import { commanderNameToUrl } from './docs/js/api/edhrec.js';
+        
+        const testCases = [
+            "Mr. Orfeo, the Boulder",
+            "Atraxa, Praetors' Voice",
+            "The Gitrog Monster",
+            "Edgar Markov"
+        ];
+        
+        const results = document.getElementById('results');
+        
+        testCases.forEach(name => {
+            const url = commanderNameToUrl(name);
+            results.innerHTML += `<p><strong>${name}</strong><br>URL: <a href="${url}" target="_blank">${url}</a></p>`;
+        });
+    </script>
+</body>
+</html>
