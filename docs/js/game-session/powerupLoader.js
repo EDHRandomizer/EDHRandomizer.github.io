@@ -24,7 +24,19 @@ class PowerupLoader {
             }
 
             const data = await response.json();
-            this.powerups = data.powerups;
+            
+            // Handle v2.0 format with powerupTypes
+            if (data.powerupTypes) {
+                // Flatten all powerups from all types into single array
+                this.powerups = [];
+                for (const type of data.powerupTypes) {
+                    this.powerups.push(...type.powerups);
+                }
+            } else {
+                // Legacy format
+                this.powerups = data.powerups;
+            }
+            
             this.rarityWeights = data.rarityWeights;
 
             return this.powerups;
