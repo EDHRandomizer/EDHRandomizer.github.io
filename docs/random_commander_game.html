@@ -1045,9 +1045,17 @@
             // Get powerups (now an array)
             const powerups = player.powerups || (player.powerup ? [player.powerup] : []);
             
+            // Sort powerups by rarity (common -> uncommon -> rare -> mythic)
+            const raritySortOrder = { common: 1, uncommon: 2, rare: 3, mythic: 4 };
+            const sortedPowerups = [...powerups].sort((a, b) => {
+                const rarityA = raritySortOrder[a?.rarity || 'common'] || 1;
+                const rarityB = raritySortOrder[b?.rarity || 'common'] || 1;
+                return rarityA - rarityB;
+            });
+            
             // Calculate total commander quantity from all powerups
             const baseQuantity = 3;
-            const quantityModifier = powerups.reduce((sum, p) => sum + (p?.effects?.commanderQuantity || 0), 0);
+            const quantityModifier = sortedPowerups.reduce((sum, p) => sum + (p?.effects?.commanderQuantity || 0), 0);
             const totalQuantity = baseQuantity + quantityModifier;
             
             // Collect all powerup effects into a single object
@@ -1056,7 +1064,7 @@
             };
             
             // Collect all color filter effects
-            const colorEffects = powerups.map(p => p?.effects).filter(e => e?.colorFilterMode);
+            const colorEffects = sortedPowerups.map(p => p?.effects).filter(e => e?.colorFilterMode);
             const primaryColorEffect = colorEffects[0] || {};
             
             // Merge color filter into allEffects if present
@@ -1066,9 +1074,9 @@
             }
             
             // Render powerups in compact stacked format
-            const powerupsHTML = powerups.length > 0 ? `
+            const powerupsHTML = sortedPowerups.length > 0 ? `
                 <div class="powerups-container">
-                    ${powerups.map(powerup => `
+                    ${sortedPowerups.map(powerup => `
                         <div class="powerup-display ${powerup.rarity || 'common'}">
                             <span class="powerup-name">⚡ ${powerup.name || 'Unknown'}</span>
                             <span class="powerup-rarity">${powerup.rarity || 'common'}</span>
@@ -1540,8 +1548,17 @@
                 
                 // Get powerup data (now an array)
                 const powerups = player.powerups || (player.powerup ? [player.powerup] : []);
-                const powerupsHTML = powerups.length > 0 ? 
-                    powerups.map(p => `<span class="powerup-badge ${p.rarity || 'common'}">⚡ ${p.name || 'Unknown'}</span>`).join(' ') :
+                
+                // Sort powerups by rarity (common -> uncommon -> rare -> mythic)
+                const raritySortOrder = { common: 1, uncommon: 2, rare: 3, mythic: 4 };
+                const sortedPowerups = [...powerups].sort((a, b) => {
+                    const rarityA = raritySortOrder[a?.rarity || 'common'] || 1;
+                    const rarityB = raritySortOrder[b?.rarity || 'common'] || 1;
+                    return rarityA - rarityB;
+                });
+                
+                const powerupsHTML = sortedPowerups.length > 0 ? 
+                    sortedPowerups.map(p => `<span class="powerup-badge ${p.rarity || 'common'}">⚡ ${p.name || 'Unknown'}</span>`).join(' ') :
                     '<span class="powerup-badge">No Powerups</span>';
                 
                 const div = document.createElement('div');
