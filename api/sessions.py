@@ -33,7 +33,8 @@ try:
             # Test connection
             kv_client.ping()
             KV_ENABLED = True
-            print(f"✅ Vercel KV enabled using {REDIS_URL[:20]}...")
+            print(f"✅ Redis/Vercel KV connected successfully!")
+            print(f"   Using: {REDIS_URL[:30]}...")
         except Exception as e:
             print(f"❌ Failed to connect to Redis: {e}")
             kv_client = None
