@@ -326,6 +326,34 @@
             box-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
         }
 
+        /* Locked commander styling - enhanced selected state */
+        .commander-item-small.locked {
+            position: relative;
+        }
+
+        .commander-item-small.locked::before {
+            content: '🔒';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 24px;
+            z-index: 10;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(255, 215, 0, 0.6);
+            filter: drop-shadow(0 0 2px gold);
+        }
+
+        .commander-item-small.locked .commander-img-small {
+            border: 3px solid gold;
+            border-bottom: none;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+        }
+
+        .commander-item-small.locked .commander-checkbox-label {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: gold;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
         /* Locked Commander Display Styles */
         .locked-commander-display {
             grid-column: 1 / -1; /* Span all grid columns */
@@ -1106,42 +1134,44 @@
                 commanders = gameModeController.playerCommanderData[player.number];
             }
 
-            // If player is locked, show their selected commander in large format
-            if (player.commanderLocked && commanders) {
+            if (!commanders || commanders.length === 0) {
+                return '<em>Waiting for commanders...</em>';
+            }
+            
+            // If player is locked, show ONLY their selected commander
+            if (player.commanderLocked) {
                 // Get selected commander index from session or local state
                 let selectedIndex = player.selectedCommanderIndex;
-                console.log(`🔍 [DEBUG-P${player.number}] SessionIndex: ${selectedIndex}, Type: ${typeof selectedIndex}`);
                 if (selectedIndex === undefined) {
                     selectedIndex = gameModeController.playerSelectedCommander[player.number];
-                    console.log(`🔍 [DEBUG-P${player.number}] LocalIndex: ${selectedIndex}, Type: ${typeof selectedIndex}`);
                 }
-                console.log(`🔍 [DEBUG-P${player.number}] FinalIndex: ${selectedIndex}, ValidCommander: ${commanders[selectedIndex] ? 'YES' : 'NO'}`);
                 
                 if (selectedIndex !== undefined && commanders[selectedIndex]) {
                     const selectedCommander = commanders[selectedIndex];
+                    // Return ONLY the locked commander in the same grid layout
                     return `
-                        <div class="locked-commander-display">
-                            <h3>🔒 Locked Commander</h3>
-                            <div class="commander-item-large">
-                                <img src="${selectedCommander.image_url || 'images/card-back.png'}" 
-                                     alt="${selectedCommander.name}" 
-                                     class="commander-img-large"
-                                     data-edhrec-url="${selectedCommander.edhrec_url || ''}"
-                                     onclick="openCommanderLink('${selectedCommander.edhrec_url || ''}')"
-                                     title="Click to view on EDHRec">
-                                <div class="commander-details">
-                                    <h4>${selectedCommander.name}</h4>
-                                    <p>Rank: ${selectedCommander.rank}</p>
-                                    <a href="${selectedCommander.edhrec_url || '#'}" target="_blank" class="edhrec-link">View on EDHRec</a>
-                                </div>
+                        <div class="commander-item-small selected locked" id="commander-${player.number}-${selectedIndex}">
+                            <img src="${selectedCommander.image_url || 'images/card-back.png'}" 
+                                 alt="${selectedCommander.name}" 
+                                 class="commander-img-small"
+                                 data-edhrec-url="${selectedCommander.edhrec_url || ''}"
+                                 onclick="openCommanderLink('${selectedCommander.edhrec_url || ''}')"
+                                 title="${selectedCommander.name} (Rank: ${selectedCommander.rank}) - LOCKED">
+                            <div class="commander-checkbox-container">
+                                <label class="commander-checkbox-label">
+                                    <input type="checkbox" 
+                                           class="commander-checkbox" 
+                                           checked 
+                                           disabled>
+                                    <span class="commander-name-label" title="${selectedCommander.name}">🔒 ${selectedCommander.name}</span>
+                                </label>
                             </div>
                         </div>
                     `;
                 }
-            }            if (!commanders || commanders.length === 0) {
-                return '<em>Waiting for commanders...</em>';
             }
             
+            // Not locked - show all commanders
             let html = '';
             commanders.forEach((commander, index) => {
                 const isSelected = gameModeController.playerSelectedCommander[player.number] === index;

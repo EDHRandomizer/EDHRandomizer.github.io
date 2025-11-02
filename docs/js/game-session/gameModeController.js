@@ -38,6 +38,9 @@ export class GameModeController {
         const quantityModifier = powerupEffects.commanderQuantity || 0;
         const quantity = baseQuantity + quantityModifier;
         
+        console.log(`🎲 [COMMANDER-GEN] Player ${playerNumber} - Base: ${baseQuantity}, Modifier: ${quantityModifier}, Total: ${quantity}`);
+        console.log(`🎲 [COMMANDER-GEN] Powerup effects:`, powerupEffects);
+        
         // Handle color filter from powerup
         let colors = null;
         let colorMode = 'exactly';
@@ -84,6 +87,8 @@ export class GameModeController {
             }
             
             const commanders = result.commanders || [];
+            console.log(`✅ [COMMANDER-GEN] Player ${playerNumber} - Generated ${commanders.length} commanders (requested ${quantity})`);
+            console.log(`✅ [COMMANDER-GEN] Result:`, result);
             
             // Fetch images and URLs
             for (const commander of commanders) {
