@@ -9,37 +9,37 @@
   },
   "powerupTypes": [
     {
-      "type": "commander_quantity",
-      "name": "Commander Options",
+      "type": "commander_popularity",
+      "name": "Commander Popularity",
       "mutuallyExclusive": true,
       "powerups": [
         {
-          "id": "commander_options_1",
-          "name": "+1 Commander Choice",
+          "id": "popular_slight",
+          "name": "More Popular Pool",
           "rarity": "common",
-          "description": "Pick from 1 additional commander",
-          "effects": { "commanderQuantity": 1 }
+          "description": "Slightly more popular commanders",
+          "effects": { "distributionShift": -100 }
         },
         {
-          "id": "commander_options_2",
-          "name": "+2 Commander Choices",
+          "id": "popular_considerable",
+          "name": "Considerably Popular Pool",
           "rarity": "uncommon",
-          "description": "Pick from 2 additional commanders",
-          "effects": { "commanderQuantity": 2 }
+          "description": "Considerably more popular commanders",
+          "effects": { "distributionShift": -200 }
         },
         {
-          "id": "commander_options_3",
-          "name": "+3 Commander Choices",
+          "id": "popular_much",
+          "name": "Much More Popular Pool",
           "rarity": "rare",
-          "description": "Pick from 3 additional commanders",
-          "effects": { "commanderQuantity": 3 }
+          "description": "Much more popular commanders",
+          "effects": { "distributionShift": -300 }
         },
         {
-          "id": "commander_options_4",
-          "name": "+4 Commander Choices",
+          "id": "popular_elite",
+          "name": "Elite Commander Pool",
           "rarity": "mythic",
-          "description": "Pick from 4 additional commanders",
-          "effects": { "commanderQuantity": 4 }
+          "description": "Elite tier commanders",
+          "effects": { "distributionShift": -500 }
         }
       ]
     },
@@ -90,44 +90,84 @@
       ]
     },
     {
+      "type": "commander_choices",
+      "name": "Extra Commander Choices",
+      "mutuallyExclusive": true,
+      "powerups": [
+        {
+          "id": "extra_choice_1",
+          "name": "+1 Commander Choice",
+          "rarity": "common",
+          "description": "Pick from 1 additional commander",
+          "effects": { "commanderQuantity": 1 }
+        },
+        {
+          "id": "extra_choice_3",
+          "name": "+3 Commander Choices",
+          "rarity": "uncommon",
+          "description": "Pick from 3 additional commanders",
+          "effects": { "commanderQuantity": 3 }
+        },
+        {
+          "id": "extra_choice_5",
+          "name": "+5 Commander Choices",
+          "rarity": "rare",
+          "description": "Pick from 5 additional commanders",
+          "effects": { "commanderQuantity": 5 }
+        }
+      ]
+    },
+    {
       "type": "budget_upgrade",
       "name": "Budget Upgrades",
       "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "budget_upgrade_1pack",
-          "name": "Upgrade Budget - 1 Pack",
-          "rarity": "common",
-          "description": "Replace budget cards with any in 1 pack",
-          "effects": { "budgetUpgradePacks": 1 }
+          "id": "budget_any_cost",
+          "name": "Any Cost Pack",
+          "rarity": "uncommon",
+          "description": "Replace 1 pack with an Any cost pack",
+          "effects": { 
+            "budgetUpgradePacks": 1,
+            "budgetUpgradeType": "any"
+          }
         },
         {
-          "id": "budget_upgrade_2pack",
-          "name": "Upgrade Budget - 2 Packs",
-          "rarity": "uncommon",
-          "description": "Replace budget cards with any in 2 packs",
-          "effects": { "budgetUpgradePacks": 2 }
+          "id": "budget_expensive",
+          "name": "Expensive Pack",
+          "rarity": "rare",
+          "description": "Replace 1 pack with an expensive pack",
+          "effects": { 
+            "budgetUpgradePacks": 1,
+            "budgetUpgradeType": "expensive"
+          }
         }
       ]
     },
     {
-      "type": "expensive_packs",
-      "name": "Expensive Packs",
+      "type": "bracket_upgrade",
+      "name": "Bracket Upgrades",
       "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "budget_full_expensive_1",
-          "name": "Full Expensive - 1 Pack",
-          "rarity": "rare",
-          "description": "1 pack becomes fully expensive cards",
-          "effects": { "fullExpensivePacks": 1 }
+          "id": "bracket_3",
+          "name": "Bracket 3 Pack",
+          "rarity": "uncommon",
+          "description": "Replace 1 pack with a bracket 3 pack",
+          "effects": {
+            "bracketUpgrade": 3,
+            "bracketUpgradePacks": 1
+          }
         },
         {
-          "id": "budget_full_expensive_2",
-          "name": "Full Expensive - 2 Packs",
-          "rarity": "mythic",
-          "description": "2 packs become fully expensive cards",
-          "effects": { "fullExpensivePacks": 2 }
+          "id": "bracket_4",
+          "name": "Bracket 4 Pack",
+          "rarity": "rare",
+          "description": "Replace 1 pack with a bracket 4 pack",
+          "effects": {
+            "bracketUpgrade": 4,
+            "bracketUpgradePacks": 1
+          }
         }
       ]
     },
@@ -137,64 +177,44 @@
       "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "extra_pack_rare",
+          "id": "extra_pack_1",
           "name": "+1 Pack",
-          "rarity": "rare",
-          "description": "Start with 1 additional pack",
+          "rarity": "common",
+          "description": "Get 1 extra regular pack",
           "effects": { "packQuantity": 1 }
-        }
-      ]
-    },
-    {
-      "type": "bracket_upgrade",
-      "name": "Bracket Upgrades",
-      "mutuallyExclusive": true,
-      "powerups": [
-        {
-          "id": "upgrade_bracket_3",
-          "name": "Upgrade Bracket - 3",
-          "rarity": "rare",
-          "description": "One pack gets upgraded to bracket 3",
-          "effects": {
-            "bracketUpgrade": 3,
-            "bracketUpgradePacks": 1
-          }
         },
         {
-          "id": "upgrade_bracket_4",
-          "name": "Upgrade Bracket - 4",
-          "rarity": "mythic",
-          "description": "One pack gets upgraded to bracket 4",
-          "effects": {
-            "bracketUpgrade": 4,
-            "bracketUpgradePacks": 1
-          }
+          "id": "extra_pack_2",
+          "name": "+2 Packs",
+          "rarity": "rare",
+          "description": "Get 2 extra regular packs",
+          "effects": { "packQuantity": 2 }
         }
       ]
     },
     {
       "type": "gamechanger_cards",
-      "name": "Game Changer Cards",
-      "mutuallyExclusive": true,
+      "name": "Game Changer Packs",
+      "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "gamechanger_pack",
+          "id": "gamechanger_1",
           "name": "Game Changer Pack",
           "rarity": "rare",
-          "description": "Get 3 random game changer cards",
+          "description": "Get a pack with 1 game changer",
           "effects": {
             "specialPack": "gamechanger",
-            "specialPackCount": 3
+            "specialPackCount": 1
           }
         },
         {
-          "id": "gamechanger_pack_mythic",
+          "id": "gamechanger_3",
           "name": "Game Changer Pack - Extended",
           "rarity": "mythic",
-          "description": "Get 5 random game changer cards",
+          "description": "Get a pack with 3 game changers",
           "effects": {
             "specialPack": "gamechanger",
-            "specialPackCount": 5
+            "specialPackCount": 3
           }
         }
       ]
@@ -202,26 +222,94 @@
     {
       "type": "conspiracy_cards",
       "name": "Conspiracy Cards",
-      "mutuallyExclusive": true,
+      "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "conspiracy_pack_rare",
-          "name": "Conspiracy Pack - 3 Cards",
+          "id": "conspiracy_1",
+          "name": "Conspiracy Card",
+          "rarity": "common",
+          "description": "Get 1 random conspiracy card",
+          "effects": {
+            "specialPack": "conspiracy",
+            "specialPackCount": 1
+          }
+        },
+        {
+          "id": "conspiracy_2",
+          "name": "Conspiracy Cards x2",
+          "rarity": "uncommon",
+          "description": "Get 2 random conspiracy cards",
+          "effects": {
+            "specialPack": "conspiracy",
+            "specialPackCount": 2
+          }
+        },
+        {
+          "id": "conspiracy_3",
+          "name": "Conspiracy Cards x3",
           "rarity": "rare",
           "description": "Get 3 random conspiracy cards",
           "effects": {
             "specialPack": "conspiracy",
             "specialPackCount": 3
           }
+        }
+      ]
+    },
+    {
+      "type": "test_cards",
+      "name": "Test Cards",
+      "mutuallyExclusive": false,
+      "powerups": [
+        {
+          "id": "test_card_1",
+          "name": "Test Card",
+          "rarity": "common",
+          "description": "Get 1 random test card",
+          "effects": {
+            "specialPack": "test_cards",
+            "specialPackCount": 1,
+            "moxfieldDeck": "dMTwgMp7UEuI33ACXNjOBg"
+          }
         },
         {
-          "id": "conspiracy_pack_mythic",
-          "name": "Conspiracy Pack - 10 Cards",
-          "rarity": "mythic",
-          "description": "Get 10 conspiracy cards, can use 2",
+          "id": "test_card_3",
+          "name": "Test Cards x3",
+          "rarity": "uncommon",
+          "description": "Get 3 random test cards",
           "effects": {
-            "specialPack": "conspiracy",
-            "specialPackCount": 10
+            "specialPack": "test_cards",
+            "specialPackCount": 3,
+            "moxfieldDeck": "dMTwgMp7UEuI33ACXNjOBg"
+          }
+        }
+      ]
+    },
+    {
+      "type": "silly_cards",
+      "name": "Silly Cards",
+      "mutuallyExclusive": false,
+      "powerups": [
+        {
+          "id": "silly_card_1",
+          "name": "Silly Card",
+          "rarity": "common",
+          "description": "Get 1 random silly card",
+          "effects": {
+            "specialPack": "silly_cards",
+            "specialPackCount": 1,
+            "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
+          }
+        },
+        {
+          "id": "silly_card_3",
+          "name": "Silly Cards x3",
+          "rarity": "uncommon",
+          "description": "Get 3 random silly cards",
+          "effects": {
+            "specialPack": "silly_cards",
+            "specialPackCount": 3,
+            "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         }
       ]
@@ -232,13 +320,14 @@
       "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "banned_pack",
-          "name": "Banned Pack",
-          "rarity": "rare",
+          "id": "banned_cards_3",
+          "name": "Banned Cards",
+          "rarity": "mythic",
           "description": "Get 3 random banned cards",
           "effects": {
             "specialPack": "banned",
-            "specialPackCount": 3
+            "specialPackCount": 3,
+            "moxfieldDeck": "5OpLbDPxxkG6yAmxTT7YjA"
           }
         }
       ]
@@ -249,13 +338,57 @@
       "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "manabase_upgrade",
-          "name": "Manabase Upgrade",
+          "id": "manabase_any_cost",
+          "name": "Any Cost Lands Pack",
+          "rarity": "common",
+          "description": "Get an additional pack that is 15 any cost lands",
+          "effects": {
+            "specialPack": "any_cost_lands",
+            "specialPackCount": 15
+          }
+        },
+        {
+          "id": "manabase_expensive",
+          "name": "Expensive Lands Pack",
           "rarity": "uncommon",
-          "description": "Get expensive land pack",
+          "description": "Get an additional pack that is 15 expensive lands",
           "effects": {
             "specialPack": "expensive_lands",
-            "specialPackCount": 3
+            "specialPackCount": 15
+          }
+        }
+      ]
+    },
+    {
+      "type": "manual_powerups",
+      "name": "Manual Powerups",
+      "mutuallyExclusive": false,
+      "powerups": [
+        {
+          "id": "signature_spell",
+          "name": "Signature Spell",
+          "rarity": "mythic",
+          "description": "MANUAL: Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)",
+          "effects": {
+            "manual": true
+          }
+        },
+        {
+          "id": "partner_commander",
+          "name": "Partner Commander",
+          "rarity": "mythic",
+          "description": "MANUAL: Pick any creature from your deck, you may add it as a partner commander, within color identity of your main commander",
+          "effects": {
+            "manual": true
+          }
+        },
+        {
+          "id": "sharpie",
+          "name": "Sharpie",
+          "rarity": "mythic",
+          "description": "MANUAL: Sharpie text off of your commander, must be a contiguous line going only from adjacent words",
+          "effects": {
+            "manual": true
           }
         }
       ]

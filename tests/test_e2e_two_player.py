@@ -31,7 +31,7 @@ async def test_two_player_complete_flow():
     """
     
     print("\n" + "="*70)
-    print("🎮 E2E TEST: 2-Player Complete Flow to Pack Codes")
+    print("E2E TEST: 2-Player Complete Flow to Pack Codes")
     print("="*70)
     
     async with async_playwright() as p:
@@ -48,6 +48,26 @@ async def test_two_player_complete_flow():
         # Enable console logging for debugging
         host_page.on("console", lambda msg: print(f"[HOST] {msg.text}"))
         p2_page.on("console", lambda msg: print(f"[P2] {msg.text}"))
+        
+        # Track network requests to debug API calls
+        async def log_request(request):
+            if 'sessions' in request.url:
+                print(f"[NET] {request.method} {request.url}")
+        
+        async def log_response(response):
+            if 'sessions' in response.url:
+                print(f"[NET] {response.status} {response.url}")
+                if response.status >= 400:
+                    try:
+                        body = await response.text()
+                        print(f"[NET] Response body: {body[:200]}")
+                    except:
+                        pass
+        
+        host_page.on("request", log_request)
+        host_page.on("response", log_response)
+        p2_page.on("request", log_request)
+        p2_page.on("response", log_response)
         
         try:
             # ==========================================
@@ -109,19 +129,20 @@ async def test_two_player_complete_flow():
             # Wait for polling to update (session polls every 2 seconds)
             await host_page.wait_for_timeout(3000)
             
-            # Wait for player items to appear
+            # Wait for lobby-player elements to appear (correct selector)
             try:
-                await expect(host_page.locator('.player-item').first).to_be_visible(timeout=10000)
-                await expect(p2_page.locator('.player-item').first).to_be_visible(timeout=10000)
+                await expect(host_page.locator('.lobby-player').first).to_be_visible(timeout=10000)
+                await expect(p2_page.locator('.lobby-player').first).to_be_visible(timeout=10000)
             except Exception as e:
-                print(f"⚠️ Warning: Player items not visible yet: {e}")
-                await host_page.screenshot(path="debug_lobby_items.png")
+                print(f"⚠️ Warning: Lobby players not visible yet: {e}")
+                await host_page.screenshot(path="debug_lobby_players.png")
             
-            host_player_count = await host_page.locator('.player-item').count()
-            p2_player_count = await p2_page.locator('.player-item').count()
+            # Count active lobby players (.lobby-player.active)
+            host_player_count = await host_page.locator('.lobby-player.active').count()
+            p2_player_count = await p2_page.locator('.lobby-player.active').count()
             
-            print(f"   Host sees: {host_player_count} players")
-            print(f"   Player 2 sees: {p2_player_count} players")
+            print(f"   Host sees: {host_player_count} active players")
+            print(f"   Player 2 sees: {p2_player_count} active players")
             
             assert host_player_count == 2, f"Host sees {host_player_count} players, expected 2"
             assert p2_player_count == 2, f"Player 2 sees {p2_player_count} players, expected 2"

@@ -28,9 +28,9 @@ export class GameModeController {
      */
     async generateCommandersForPlayer(playerNumber, powerupEffects, colorSelections = null) {
         // Base configuration
-        const timePeriod = 'Monthly'; // Default
+        const timePeriod = 'Monthly'; // Monthly time period
         const minRank = 1;
-        const maxRank = 1000;
+        const maxRank = 1400;
         const excludePartners = true;
         
         // Calculate quantity from powerup
@@ -38,7 +38,22 @@ export class GameModeController {
         const quantityModifier = powerupEffects.commanderQuantity || 0;
         const quantity = baseQuantity + quantityModifier;
         
+        // Create normal distribution function centered at 1100 (adjustable by powerups)
+        // Lower distributionCenter = stronger commanders (lower rank numbers)
+        // Higher distributionCenter = weaker commanders (higher rank numbers)
+        const baseDistributionCenter = 1100;
+        const distributionShift = powerupEffects.distributionShift || 0; // Negative = stronger, Positive = weaker
+        const distributionCenter = baseDistributionCenter + distributionShift;
+        const distributionWidth = 300; // Standard deviation
+        
+        // Normal distribution: exp(-((rank - mean)^2) / (2 * sigma^2))
+        const distributionFunc = (rank, min, max) => {
+            const exponent = -Math.pow(rank - distributionCenter, 2) / (2 * Math.pow(distributionWidth, 2));
+            return Math.exp(exponent);
+        };
+        
         console.log(`🎲 [COMMANDER-GEN] Player ${playerNumber} - Base: ${baseQuantity}, Modifier: ${quantityModifier}, Total: ${quantity}`);
+        console.log(`🎲 [COMMANDER-GEN] Distribution: Center=${distributionCenter} (base=${baseDistributionCenter}, shift=${distributionShift}), Width=${distributionWidth}`);
         console.log(`🎲 [COMMANDER-GEN] Powerup effects:`, powerupEffects);
         
         // Handle color filter from powerup
@@ -79,7 +94,7 @@ export class GameModeController {
                 null, // min_cmc
                 null, // max_cmc
                 null, // salt_mode
-                null  // distributionFunc
+                distributionFunc  // Use normal distribution centered at distributionCenter
             );
             
             if (!result.success) {
