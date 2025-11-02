@@ -383,12 +383,12 @@ class handler(BaseHTTPRequestHandler):
         for session in SESSIONS.values():
             for player in session['players']:
                 if player.get('packCode') == pack_code:
-                    pack_config = {
-                        'commanderUrl': player['commanderUrl'],
-                        'packQuantity': player['packConfig']['packQuantity'],
-                        'config': player['packConfig']['config']
+                    # Return the pack config with commander URL
+                    response = {
+                        'commanderUrl': player.get('commanderUrl', ''),
+                        'config': player.get('packConfig', {})
                     }
-                    self.send_json_response(200, pack_config)
+                    self.send_json_response(200, response)
                     return
         
         self.send_error_response(404, 'Pack code not found')
