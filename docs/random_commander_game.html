@@ -193,6 +193,10 @@
             margin-bottom: 0.6rem;
         }
 
+        .player-settings:empty {
+            display: none;
+        }
+
         .setting-row {
             display: flex;
             align-items: center;
@@ -1151,10 +1155,10 @@
             
             // Collect all color filter effects
             const colorEffects = sortedPowerups.map(p => p?.effects).filter(e => e?.colorFilterMode);
-            const primaryColorEffect = colorEffects[0] || {};
+            const primaryColorEffect = colorEffects[0] || null;
             
             // Merge color filter into allEffects if present
-            if (primaryColorEffect.colorFilterMode) {
+            if (primaryColorEffect?.colorFilterMode) {
                 allEffects.colorFilterMode = primaryColorEffect.colorFilterMode;
                 allEffects.colorFilterCount = primaryColorEffect.colorFilterCount;
             }
