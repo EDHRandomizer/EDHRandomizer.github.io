@@ -72,6 +72,26 @@ If you see warnings instead:
 - ⚠️ `Vercel KV not configured` - Environment variables missing
 - ⚠️ `redis package not installed` - Check `requirements-api.txt`
 
+### 6. (Optional) Configure Eviction Policy
+
+By default, Vercel KV uses `allkeys-lru` eviction:
+- When memory is full, Redis automatically removes **least recently used** pack codes
+- This means oldest/unused pack codes are deleted first
+- Active pack codes stay in memory
+
+**No action needed** - this is already optimal for pack codes!
+
+To verify eviction policy (optional):
+1. Go to **Storage** → Your KV database
+2. Click **Settings** → Check eviction policy
+3. Should show: `allkeys-lru` (recommended)
+
+Alternative eviction policies:
+- `volatile-lru` - Only evict keys with TTL set (also good)
+- `allkeys-random` - Random eviction (not recommended)
+
+For this use case, stick with `allkeys-lru` ✅
+
 ## How It Works
 
 ### Pack Code Storage
@@ -94,9 +114,10 @@ pack_data = get_pack_code(code)
 ```
 
 ### Automatic Expiration
-- Pack codes auto-expire after 2 hours (configurable in `PACK_CODE_TTL`)
+- Pack codes auto-expire after **24 hours** (configurable in `PACK_CODE_TTL`)
+- If memory gets full, Redis uses **LRU eviction** (removes least recently used first)
 - No manual cleanup needed
-- Redis handles it automatically
+- Redis handles everything automatically
 
 ## Fallback Behavior
 
@@ -133,14 +154,22 @@ export KV_REST_API_TOKEN="your-token"
 ## Cost Estimate
 
 **Free Tier Limits:**
-- 256 MB storage (≈ 250,000 pack codes)
+- 256 MB storage (≈ 250,000+ pack codes)
 - 10,000 commands/day (≈ 5,000 pack code retrievals/day)
 - 100 MB bandwidth/month
 
 **Your Usage:**
-- ~10-50 pack codes/day
+- ~10-50 pack codes/day (≈ 2 KB each)
 - ~100-500 retrievals/day
 - **Well within free tier** ✅
+
+**Memory Management:**
+- Each pack code ≈ 2 KB (commander URL + config + powerups)
+- 256 MB = ~128,000 pack codes
+- At 50 codes/day = **7+ years of storage** before full
+- If full: LRU eviction removes oldest unused codes automatically
+
+**Bottom line:** You'll never hit the limit, and if you somehow do, Redis automatically handles it! 🎉
 
 ## Next Steps
 

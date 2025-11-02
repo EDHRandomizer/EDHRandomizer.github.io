@@ -44,8 +44,9 @@ PACK_CODES: Dict[str, dict] = {}
 # Session expiration time (2 hours of inactivity)
 SESSION_TTL = 2 * 60 * 60
 
-# Pack code expiration time (2 hours - stored in Vercel KV with TTL)
-PACK_CODE_TTL = 2 * 60 * 60
+# Pack code expiration time (24 hours - auto-removed when memory full via LRU eviction)
+# Redis will automatically remove oldest pack codes if memory limit reached
+PACK_CODE_TTL = 24 * 60 * 60  # 24 hours
 
 def generate_session_code() -> str:
     """Generate a random 5-character session code"""
