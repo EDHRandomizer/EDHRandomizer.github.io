@@ -130,6 +130,91 @@ def get_pack_code(pack_code: str) -> Optional[dict]:
                 return entry['data']
         return None
 
+def store_session(session_code: str, session_data: dict) -> bool:
+    """
+    Store session data with TTL
+    Uses Vercel KV if available, falls back to in-memory
+    """
+    try:
+        if KV_ENABLED and kv_client:
+            # Store in Vercel KV with SESSION_TTL
+            key = f"session:{session_code}"
+            kv_client.setex(key, SESSION_TTL, json.dumps(session_data))
+            print(f"✅ Stored session {session_code} in Vercel KV (TTL: {SESSION_TTL}s)")
+            return True
+        else:
+            # Fallback to in-memory storage
+            SESSIONS[session_code] = session_data
+            print(f"⚠️ Stored session {session_code} in memory (will be lost on function restart)")
+            return True
+    except Exception as e:
+        print(f"❌ Error storing session {session_code}: {e}")
+        # Fallback to in-memory
+        SESSIONS[session_code] = session_data
+        return False
+
+def get_session(session_code: str) -> Optional[dict]:
+    """
+    Retrieve session data
+    Checks Vercel KV first, then in-memory fallback
+    """
+    try:
+        if KV_ENABLED and kv_client:
+            # Try Vercel KV first
+            key = f"session:{session_code}"
+            data_str = kv_client.get(key)
+            if data_str:
+                session_data = json.loads(data_str)
+                print(f"✅ Retrieved session {session_code} from Vercel KV")
+                # Also cache in memory for this request
+                SESSIONS[session_code] = session_data
+                return session_data
+            else:
+                print(f"⚠️ Session {session_code} not found in Vercel KV")
+                return None
+        else:
+            # Use in-memory fallback
+            if session_code in SESSIONS:
+                print(f"✅ Retrieved session {session_code} from memory")
+                return SESSIONS[session_code]
+            else:
+                print(f"⚠️ Session {session_code} not found in memory")
+                return None
+    except Exception as e:
+        print(f"❌ Error retrieving session {session_code}: {e}")
+        # Try in-memory fallback
+        if session_code in SESSIONS:
+            return SESSIONS[session_code]
+        return None
+
+def update_session(session_code: str, session_data: dict) -> bool:
+    """
+    Update existing session (updates both KV and memory)
+    """
+    # Update in memory
+    SESSIONS[session_code] = session_data
+    # Update in KV
+    return store_session(session_code, session_data)
+
+def delete_session(session_code: str) -> bool:
+    """
+    Delete a session from both KV and memory
+    """
+    try:
+        if KV_ENABLED and kv_client:
+            key = f"session:{session_code}"
+            kv_client.delete(key)
+            print(f"✅ Deleted session {session_code} from Vercel KV")
+        
+        if session_code in SESSIONS:
+            del SESSIONS[session_code]
+            print(f"✅ Deleted session {session_code} from memory")
+        
+        return True
+    except Exception as e:
+        print(f"❌ Error deleting session {session_code}: {e}")
+        return False
+
 def cleanup_expired_sessions():
     """Remove expired sessions based on lastActivity"""
     current_time = time.time()
@@ -147,9 +232,11 @@ def cleanup_expired_sessions():
 
 def touch_session(session_code: str):
     """Update session's last activity timestamp"""
-    if session_code in SESSIONS:
-        SESSIONS[session_code]['lastActivity'] = time.time()
-        SESSIONS[session_code]['updated_at'] = time.time()
+    session = get_session(session_code)
+    if session:
+        session['lastActivity'] = time.time()
+        session['updated_at'] = time.time()
+        update_session(session_code, session)
 
 def cors_headers():
     """Return CORS headers for all responses"""
@@ -272,7 +359,7 @@ class handler(BaseHTTPRequestHandler):
             'lastActivity': time.time()
         }
         
-        SESSIONS[session_code] = session
+        store_session(session_code, session)
         
         self.send_json_response(200, {
             'sessionCode': session_code,
@@ -285,12 +372,12 @@ class handler(BaseHTTPRequestHandler):
         session_code = data.get('sessionCode', '').upper()
         player_name = data.get('playerName', '').strip()[:20]  # Max 20 chars
         
-        if not session_code or session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session_code or not session:
             self.send_error_response(404, 'Session not found')
             return
         
         touch_session(session_code)
-        session = SESSIONS[session_code]
         
         # Check if session is full (max 4 players)
         if len(session['players']) >= 4:
@@ -325,6 +412,7 @@ class handler(BaseHTTPRequestHandler):
         })
         
         session['updated_at'] = time.time()
+        update_session(session_code, session)
         
         self.send_json_response(200, {
             'playerId': player_id,
@@ -337,12 +425,12 @@ class handler(BaseHTTPRequestHandler):
         player_id = data.get('playerId', '')
         player_name = data.get('playerName', '').strip()[:20]  # Max 20 chars
         
-        if not session_code or session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session_code or not session:
             self.send_error_response(404, 'Session not found')
             return
         
         touch_session(session_code)
-        session = SESSIONS[session_code]
         
         # Find the player
         player = next((p for p in session['players'] if p['id'] == player_id), None)
@@ -355,6 +443,7 @@ class handler(BaseHTTPRequestHandler):
             player['name'] = player_name
         
         session['updated_at'] = time.time()
+        update_session(session_code, session)
         
         self.send_json_response(200, session)
 
@@ -363,12 +452,12 @@ class handler(BaseHTTPRequestHandler):
         session_code = data.get('sessionCode', '').upper()
         player_id = data.get('playerId', '')
         
-        if not session_code or session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session_code or not session:
             self.send_error_response(404, 'Session not found')
             return
         
         touch_session(session_code)
-        session = SESSIONS[session_code]
         
         # Verify host
         if session['hostId'] != player_id:
@@ -425,6 +514,7 @@ class handler(BaseHTTPRequestHandler):
         
         session['state'] = 'selecting'
         session['updated_at'] = time.time()
+        update_session(session_code, session)
         
         self.send_json_response(200, session)
 
@@ -435,11 +525,10 @@ class handler(BaseHTTPRequestHandler):
         commander_url = data.get('commanderUrl', '')
         commander_data = data.get('commanderData', {})
         
-        if not session_code or session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session_code or not session:
             self.send_error_response(404, 'Session not found')
             return
-        
-        session = SESSIONS[session_code]
         
         # Find player
         player = next((p for p in session['players'] if p['id'] == player_id), None)
@@ -464,6 +553,7 @@ class handler(BaseHTTPRequestHandler):
             session['state'] = 'complete'
         
         session['updated_at'] = time.time()
+        update_session(session_code, session)
         
         self.send_json_response(200, session)
 
@@ -473,12 +563,12 @@ class handler(BaseHTTPRequestHandler):
         player_id = data.get('playerId', '')
         commanders = data.get('commanders', [])
         
-        if not session_code or session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session_code or not session:
             self.send_error_response(404, 'Session not found')
             return
         
         touch_session(session_code)
-        session = SESSIONS[session_code]
         
         # Find player
         player = next((p for p in session['players'] if p['id'] == player_id), None)
@@ -492,6 +582,7 @@ class handler(BaseHTTPRequestHandler):
         player['commanders'] = commanders[:10]  # Limit to 10 commanders max
         
         session['updated_at'] = time.time()
+        update_session(session_code, session)
         
         self.send_json_response(200, session)
 
@@ -499,12 +590,12 @@ class handler(BaseHTTPRequestHandler):
         """Generate pack codes for all players (when all locked in)"""
         session_code = data.get('sessionCode', '').upper()
         
-        if not session_code or session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session_code or not session:
             self.send_error_response(404, 'Session not found')
             return
         
         touch_session(session_code)
-        session = SESSIONS[session_code]
         
         # Check if all players have locked
         all_locked = all(p['commanderLocked'] for p in session['players'])
@@ -516,17 +607,19 @@ class handler(BaseHTTPRequestHandler):
         self.generate_pack_codes_internal(session)
         session['state'] = 'complete'
         session['updated_at'] = time.time()
+        update_session(session_code, session)
         
         self.send_json_response(200, session)
 
     def handle_get_session(self, session_code):
         """Get current session data"""
-        if session_code not in SESSIONS:
+        session = get_session(session_code)
+        if not session:
             self.send_error_response(404, 'Session not found')
             return
         
         touch_session(session_code)
-        self.send_json_response(200, SESSIONS[session_code])
+        self.send_json_response(200, session)
 
     def handle_get_pack(self, pack_code):
         """Get pack configuration by pack code"""

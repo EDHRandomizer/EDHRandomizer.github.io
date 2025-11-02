@@ -96,13 +96,18 @@ async def test_full_multiplayer_session(browser_contexts):
     print("\n📍 PHASE 1: Host Creates Session")
     await host.goto_game()
     
-    # Fill in host name and powerups count
-    await host.page.fill('#host-name-input', 'Host Player')
-    await host.page.fill('#powerups-count-input', '3')
+    # Set powerups count
+    await host.page.fill('#create-powerups-count', '3')
     
     # Create session
     await host.page.click('#create-session-btn')
     await host.page.wait_for_timeout(2000)  # Wait for session creation
+    
+    # Enter host name
+    await expect(host.page.locator('#enter-name-section')).to_be_visible(timeout=TIMEOUT)
+    await host.page.fill('#player-name-input', 'Host Player')
+    await host.page.click('#confirm-name-btn')
+    await host.page.wait_for_timeout(2000)
     
     # Get session code from URL
     session_code = await host.get_session_code_from_url()
@@ -141,59 +146,61 @@ async def test_full_multiplayer_session(browser_contexts):
         assert player_items == 4, f"❌ {player.name} sees {player_items} players, expected 4"
         print(f"✅ {player.name} sees all 4 players in lobby")
     
-    # PHASE 4: Host starts rolling powerups
+    # PHASE 4: Host starts rolling powerups (click "Start Game" button in lobby)
     print("\n📍 PHASE 4: Host Starts Rolling Powerups")
-    await host.page.click('#start-rolling-btn')
+    await host.page.click('#roll-powerups-btn')
     await host.page.wait_for_timeout(2000)
     
-    # Wait for all players to see rolling section
+    # Wait for player grid to appear
     for player in players:
-        await expect(player.page.locator('#rolling-section')).to_be_visible(timeout=TIMEOUT)
-        print(f"✅ {player.name} entered rolling phase")
+        await expect(player.page.locator('#player-grid-section')).to_be_visible(timeout=TIMEOUT)
+        print(f"✅ {player.name} sees player grid")
     
-    # PHASE 5: All players roll powerups
-    print("\n📍 PHASE 5: All Players Roll Powerups")
+    # PHASE 5: All players see their powerups (auto-rolled on backend)
+    print("\n📍 PHASE 5: Verify Powerups Displayed")
     for player in players:
-        # Wait for roll button to be visible
-        roll_btn = player.page.locator('#roll-powerups-btn')
-        await expect(roll_btn).to_be_visible(timeout=TIMEOUT)
+        # Wait for powerup items to appear in the player's section
+        powerup_items = player.page.locator('.powerup-item')
+        await expect(powerup_items.first).to_be_visible(timeout=TIMEOUT)
         
-        # Click roll button
-        await roll_btn.click()
-        await player.page.wait_for_timeout(3000)  # Wait for powerups to generate
-        
-        # Verify powerups are displayed
-        powerup_items = await player.page.locator('.powerup-item').count()
-        assert powerup_items == 3, f"❌ {player.name} got {powerup_items} powerups, expected 3"
-        print(f"✅ {player.name} rolled 3 powerups")
+        count = await powerup_items.count()
+        assert count == 3, f"❌ {player.name} got {count} powerups, expected 3"
+        print(f"✅ {player.name} has 3 powerups displayed")
     
     # PHASE 6: All players generate commanders
     print("\n📍 PHASE 6: All Players Generate Commanders")
-    for player in players:
-        # Click generate commanders button
-        generate_btn = player.page.locator('#generate-commanders-btn')
+    for i, player in enumerate(players):
+        player_num = i + 1
+        # Click generate commanders button for this player
+        generate_btn = player.page.locator(f'#generate-btn-{player_num}')
         await expect(generate_btn).to_be_visible(timeout=TIMEOUT)
         await generate_btn.click()
         
         # Wait for commanders to load (this might take a while due to Scryfall API)
-        await player.page.wait_for_timeout(5000)
+        print(f"⏳ {player.name} waiting for commanders to load...")
+        await player.page.wait_for_timeout(8000)  # Longer timeout for Scryfall
         
-        # Verify commanders are displayed
-        commander_cards = await player.page.locator('.commander-card').count()
-        assert commander_cards > 0, f"❌ {player.name} has no commanders"
-        print(f"✅ {player.name} generated {commander_cards} commanders")
+        # Verify commanders are displayed (look for commander items)
+        commander_items = player.page.locator('.commander-item-small')
+        count = await commander_items.count()
+        assert count > 0, f"❌ {player.name} has no commanders"
+        print(f"✅ {player.name} generated {count} commanders")
     
     # PHASE 7: All players select and lock commanders
     print("\n📍 PHASE 7: All Players Lock Commanders")
     for i, player in enumerate(players):
-        # Select first commander
-        first_commander = player.page.locator('.commander-card').first
+        player_num = i + 1
+        
+        # Select first commander (click the commander card)
+        first_commander = player.page.locator('.commander-item-small').first
         await first_commander.click()
         await player.page.wait_for_timeout(500)
         
         # Click lock commander button
-        lock_btn = player.page.locator('#lock-commander-btn')
-        await expect(lock_btn).to_be_visible(timeout=TIMEOUT)
+        lock_btn = player.page.locator(f'#lock-btn-{player_num}')
+        
+        # Wait for lock button to be enabled (happens when commander is selected)
+        await player.page.wait_for_timeout(500)
         await lock_btn.click()
         await player.page.wait_for_timeout(2000)
         
@@ -259,19 +266,24 @@ async def test_late_join_during_rolling(browser_contexts):
     
     # Host creates session
     await host.goto_game()
-    await host.page.fill('#host-name-input', 'Host Player')
-    await host.page.fill('#powerups-count-input', '2')
+    await host.page.fill('#create-powerups-count', '2')
     await host.page.click('#create-session-btn')
+    await host.page.wait_for_timeout(2000)
+    
+    # Enter host name
+    await expect(host.page.locator('#enter-name-section')).to_be_visible(timeout=TIMEOUT)
+    await host.page.fill('#player-name-input', 'Host Player')
+    await host.page.click('#confirm-name-btn')
     await host.page.wait_for_timeout(2000)
     
     session_code = await host.get_session_code_from_url()
     print(f"✅ Host created session: {session_code}")
     
     # Host starts rolling
-    await host.page.click('#start-rolling-btn')
+    await host.page.click('#roll-powerups-btn')
     await host.page.wait_for_timeout(2000)
-    await expect(host.page.locator('#rolling-section')).to_be_visible(timeout=TIMEOUT)
-    print(f"✅ Host started rolling phase")
+    await expect(host.page.locator('#player-grid-section')).to_be_visible(timeout=TIMEOUT)
+    print(f"✅ Host started rolling phase (player grid visible)")
     
     # Late joiner tries to join during rolling
     await late_joiner.goto_game()
@@ -287,7 +299,8 @@ async def test_late_join_during_rolling(browser_contexts):
     await late_joiner.page.wait_for_timeout(1000)
     
     # Should enter rolling section (not lobby, since rolling already started)
-    await expect(late_joiner.page.locator('#rolling-section')).to_be_visible(timeout=TIMEOUT)
+    # Look for player grid instead
+    await expect(late_joiner.page.locator('#player-grid-section')).to_be_visible(timeout=TIMEOUT)
     print(f"✅ Late joiner successfully joined during rolling phase")
 
 
@@ -304,22 +317,24 @@ async def test_cannot_join_after_selecting(browser_contexts):
     
     # Host creates and progresses to selecting phase
     await host.goto_game()
-    await host.page.fill('#host-name-input', 'Host Player')
+    await host.page.fill('#create-powerups-count', '2')
     await host.page.click('#create-session-btn')
+    await host.page.wait_for_timeout(2000)
+    
+    # Enter name
+    await expect(host.page.locator('#enter-name-section')).to_be_visible(timeout=TIMEOUT)
+    await host.page.fill('#player-name-input', 'Host Player')
+    await host.page.click('#confirm-name-btn')
     await host.page.wait_for_timeout(2000)
     
     session_code = await host.get_session_code_from_url()
     
     # Start rolling
-    await host.page.click('#start-rolling-btn')
+    await host.page.click('#roll-powerups-btn')
     await host.page.wait_for_timeout(2000)
     
-    # Roll powerups
-    await host.page.click('#roll-powerups-btn')
-    await host.page.wait_for_timeout(3000)
-    
-    # Generate commanders
-    await host.page.click('#generate-commanders-btn')
+    # Generate commanders (enters selecting phase)
+    await host.page.click('#generate-btn-1')
     await host.page.wait_for_timeout(5000)
     
     print(f"✅ Host progressed to commander selection")
@@ -350,8 +365,14 @@ async def test_url_session_restore(browser_contexts):
     
     # Host creates session
     await host.goto_game()
-    await host.page.fill('#host-name-input', 'Host Player')
+    await host.page.fill('#create-powerups-count', '2')
     await host.page.click('#create-session-btn')
+    await host.page.wait_for_timeout(2000)
+    
+    # Enter name
+    await expect(host.page.locator('#enter-name-section')).to_be_visible(timeout=TIMEOUT)
+    await host.page.fill('#player-name-input', 'Host Player')
+    await host.page.click('#confirm-name-btn')
     await host.page.wait_for_timeout(2000)
     
     session_code = await host.get_session_code_from_url()
