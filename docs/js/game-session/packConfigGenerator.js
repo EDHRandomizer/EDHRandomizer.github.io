@@ -32,7 +32,7 @@ export class PackConfigGenerator {
         // Special pack templates
         this.specialPackTemplates = {
             gamechanger: {
-                name: "Game Changer",
+                name: "Game Changer Pack",
                 count: 1,
                 slots: [
                     {
@@ -44,7 +44,7 @@ export class PackConfigGenerator {
                 ]
             },
             conspiracy: {
-                name: "Conspiracy",
+                name: "Conspiracy Pack",
                 source: "scryfall",
                 count: 1,
                 useCommanderColorIdentity: true,
@@ -56,7 +56,7 @@ export class PackConfigGenerator {
                 ]
             },
             banned: {
-                name: "Banned Card",
+                name: "Banned Cards Pack",
                 source: "scryfall",
                 count: 1,
                 useCommanderColorIdentity: true,
@@ -68,13 +68,47 @@ export class PackConfigGenerator {
                 ]
             },
             expensive_lands: {
-                name: "Expensive Lands",
+                name: "Expensive Lands Pack",
                 source: "scryfall",
                 count: 1,
                 useCommanderColorIdentity: true,
                 slots: [
                     {
                         query: "https://scryfall.com/search?q=t%3Aland+%28o%3A%22add+%7B%22+OR+o%3A%22mana+of+any%22%29+usd%3E10&unique=cards&as=grid&order=usd",
+                        count: 1
+                    }
+                ]
+            },
+            any_cost_lands: {
+                name: "Any Cost Lands Pack",
+                source: "scryfall",
+                count: 1,
+                useCommanderColorIdentity: true,
+                slots: [
+                    {
+                        query: "https://scryfall.com/search?q=t%3Aland+%28o%3A%22add+%7B%22+OR+o%3A%22mana+of+any%22%29&unique=cards&as=grid&order=usd",
+                        count: 1
+                    }
+                ]
+            },
+            test_cards: {
+                name: "Test Cards Pack",
+                source: "moxfield",
+                count: 1,
+                slots: [
+                    {
+                        moxfieldDeck: "",
+                        count: 1
+                    }
+                ]
+            },
+            silly_cards: {
+                name: "Silly Cards Pack",
+                source: "moxfield",
+                count: 1,
+                slots: [
+                    {
+                        moxfieldDeck: "",
                         count: 1
                     }
                 ]
@@ -118,7 +152,8 @@ export class PackConfigGenerator {
         if (effects.specialPack && effects.specialPackCount) {
             const specialPack = this.generateSpecialPack(
                 effects.specialPack,
-                effects.specialPackCount
+                effects.specialPackCount,
+                effects.moxfieldDeck  // Pass Moxfield deck ID
             );
             if (specialPack) {
                 bundleConfig.packTypes.push(specialPack);
@@ -163,8 +198,11 @@ export class PackConfigGenerator {
 
         // Add budget upgraded packs (budget cards become 'any')
         if (modifiedPacks.budgetUpgrade > 0) {
+            const budgetType = effects.budgetUpgradeType || 'any';
+            const packName = budgetType === 'any' ? 'Any Cost Pack' : 'Full Expensive Pack';
+            
             packs.push({
-                name: "Budget Upgraded",
+                name: packName,
                 count: modifiedPacks.budgetUpgrade,
                 slots: [
                     {
@@ -175,7 +213,7 @@ export class PackConfigGenerator {
                     },
                     {
                         cardType: "weighted",
-                        budget: "any",  // Changed from 'budget'
+                        budget: budgetType === 'any' ? "any" : "expensive",  // Changed from 'budget'
                         bracket: "any",
                         count: 11
                     },
@@ -214,7 +252,7 @@ export class PackConfigGenerator {
         // Add bracket upgraded packs
         if (modifiedPacks.bracketUpgrade > 0 && bracketUpgrade) {
             packs.push({
-                name: `Bracket ${bracketUpgrade}`,
+                name: `Bracket ${bracketUpgrade} Pack`,
                 count: modifiedPacks.bracketUpgrade,
                 slots: [
                     {
@@ -246,9 +284,10 @@ export class PackConfigGenerator {
      * Generate special pack (gamechanger, conspiracy, banned, etc.)
      * @param {string} packType - Type of special pack
      * @param {number} count - Number of cards in the pack
+     * @param {string} moxfieldDeck - Moxfield deck ID (optional)
      * @returns {Object|null} Pack configuration or null
      */
-    generateSpecialPack(packType, count) {
+    generateSpecialPack(packType, count, moxfieldDeck = null) {
         const template = this.specialPackTemplates[packType];
         if (!template) {
             console.warn(`Unknown special pack type: ${packType}`);
@@ -261,6 +300,11 @@ export class PackConfigGenerator {
         // Update count in the slot
         if (pack.slots && pack.slots[0]) {
             pack.slots[0].count = count;
+        }
+        
+        // Add Moxfield deck ID if provided
+        if (moxfieldDeck && pack.slots && pack.slots[0]) {
+            pack.slots[0].moxfieldDeck = moxfieldDeck;
         }
 
         return pack;
