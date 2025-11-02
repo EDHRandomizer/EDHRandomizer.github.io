@@ -18,6 +18,7 @@
           "name": "More Popular Pool",
           "rarity": "common",
           "description": "Slightly more popular commanders",
+          "perkPhase": "commander_selection",
           "effects": { "distributionShift": -100 }
         },
         {
@@ -25,6 +26,7 @@
           "name": "Considerably Popular Pool",
           "rarity": "uncommon",
           "description": "Considerably more popular commanders",
+          "perkPhase": "commander_selection",
           "effects": { "distributionShift": -200 }
         },
         {
@@ -32,6 +34,7 @@
           "name": "Much More Popular Pool",
           "rarity": "rare",
           "description": "Much more popular commanders",
+          "perkPhase": "commander_selection",
           "effects": { "distributionShift": -300 }
         },
         {
@@ -39,6 +42,7 @@
           "name": "Elite Commander Pool",
           "rarity": "mythic",
           "description": "Elite tier commanders",
+          "perkPhase": "commander_selection",
           "effects": { "distributionShift": -500 }
         }
       ]
@@ -53,6 +57,7 @@
           "name": "Salty Commander",
           "rarity": "rare",
           "description": "All commander options from the salty pool (salt score > 0.8)",
+          "perkPhase": "commander_selection",
           "effects": { "saltMode": "salty" }
         }
       ]
@@ -67,6 +72,7 @@
           "name": "Restrict 1 Color",
           "rarity": "common",
           "description": "Exclude one color from commander pool",
+          "perkPhase": "commander_selection",
           "effects": {
             "colorFilterMode": "exclude",
             "colorFilterCount": 1
@@ -77,6 +83,7 @@
           "name": "Include 1 Color",
           "rarity": "common",
           "description": "Pick 1 color to include in commander",
+          "perkPhase": "commander_selection",
           "effects": {
             "colorFilterMode": "include",
             "colorFilterCount": 1
@@ -87,6 +94,7 @@
           "name": "Exact Color Selection",
           "rarity": "rare",
           "description": "Pick exactly which colors in commander",
+          "perkPhase": "commander_selection",
           "effects": {
             "colorFilterMode": "exact"
           }
@@ -103,6 +111,7 @@
           "name": "+1 Commander Choice",
           "rarity": "common",
           "description": "Pick from 1 additional commander",
+          "perkPhase": "commander_selection",
           "effects": { "commanderQuantity": 1 }
         },
         {
@@ -110,6 +119,7 @@
           "name": "+3 Commander Choices",
           "rarity": "uncommon",
           "description": "Pick from 3 additional commanders",
+          "perkPhase": "commander_selection",
           "effects": { "commanderQuantity": 3 }
         },
         {
@@ -117,6 +127,7 @@
           "name": "+5 Commander Choices",
           "rarity": "rare",
           "description": "Pick from 5 additional commanders",
+          "perkPhase": "commander_selection",
           "effects": { "commanderQuantity": 5 }
         }
       ]
@@ -131,6 +142,7 @@
           "name": "Any Cost Pack",
           "rarity": "uncommon",
           "description": "Get an extra pack with any budget",
+          "perkPhase": "drafting",
           "effects": { 
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "any"
@@ -141,6 +153,7 @@
           "name": "Expensive Pack",
           "rarity": "rare",
           "description": "Get an additional expensive pack",
+          "perkPhase": "drafting",
           "effects": { 
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "expensive"
@@ -158,6 +171,7 @@
           "name": "Bracket 3 Pack",
           "rarity": "uncommon",
           "description": "Get an additional bracket 3 pack",
+          "perkPhase": "drafting",
           "effects": {
             "bracketUpgrade": 3,
             "bracketUpgradePacks": 1
@@ -168,6 +182,7 @@
           "name": "Bracket 4 Pack",
           "rarity": "rare",
           "description": "Get an additional bracket 4 pack",
+          "perkPhase": "drafting",
           "effects": {
             "bracketUpgrade": 4,
             "bracketUpgradePacks": 1
@@ -185,6 +200,7 @@
           "name": "+1 Pack",
           "rarity": "common",
           "description": "Get 1 extra regular pack",
+          "perkPhase": "drafting",
           "effects": { "packQuantity": 1 }
         }
       ]
@@ -199,6 +215,7 @@
           "name": "Game Changer Pack",
           "rarity": "rare",
           "description": "Get a pack with 1 game changer",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "gamechanger",
             "specialPackCount": 1
@@ -209,6 +226,7 @@
           "name": "Game Changer Pack - Extended",
           "rarity": "mythic",
           "description": "Get a pack with 3 game changers",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "gamechanger",
             "specialPackCount": 3
@@ -226,6 +244,7 @@
           "name": "Conspiracy Card",
           "rarity": "common",
           "description": "Get 1 random conspiracy card",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "conspiracy",
             "specialPackCount": 1
@@ -236,6 +255,7 @@
           "name": "Conspiracy Cards x2",
           "rarity": "uncommon",
           "description": "Get 2 random conspiracy cards",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "conspiracy",
             "specialPackCount": 2
@@ -246,6 +266,7 @@
           "name": "Conspiracy Cards x3",
           "rarity": "rare",
           "description": "Get 3 random conspiracy cards",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "conspiracy",
             "specialPackCount": 3
@@ -263,6 +284,7 @@
           "name": "Test Card",
           "rarity": "common",
           "description": "Get 1 random test card",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "test_cards",
             "specialPackCount": 1,
@@ -274,6 +296,7 @@
           "name": "Test Cards x3",
           "rarity": "uncommon",
           "description": "Get 3 random test cards",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "test_cards",
             "specialPackCount": 3,
@@ -292,6 +315,7 @@
           "name": "Silly Cards x3",
           "rarity": "common",
           "description": "Get 3 random silly cards",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "silly_cards",
             "specialPackCount": 3,
@@ -303,6 +327,7 @@
           "name": "Silly Cards x6",
           "rarity": "uncommon",
           "description": "Get 6 random silly cards",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "silly_cards",
             "specialPackCount": 6,
@@ -321,6 +346,7 @@
           "name": "Banned Cards",
           "rarity": "mythic",
           "description": "Get 3 random banned cards",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "banned",
             "specialPackCount": 3,
@@ -339,6 +365,7 @@
           "name": "Any Cost Lands Pack",
           "rarity": "common",
           "description": "Get an additional pack that is 15 any cost lands",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "any_cost_lands",
             "specialPackCount": 15
@@ -349,6 +376,7 @@
           "name": "Expensive Lands Pack",
           "rarity": "uncommon",
           "description": "Get an additional pack that is 15 expensive lands",
+          "perkPhase": "drafting",
           "effects": {
             "specialPack": "expensive_lands",
             "specialPackCount": 15
@@ -366,6 +394,7 @@
           "name": "Signature Spell",
           "rarity": "mythic",
           "description": "MANUAL: Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)",
+          "perkPhase": "drafting",
           "effects": {
             "manual": true
           }
@@ -375,6 +404,7 @@
           "name": "Partner Commander",
           "rarity": "mythic",
           "description": "MANUAL: Pick any creature from your deck, you may add it as a partner commander, within color identity of your main commander",
+          "perkPhase": "drafting",
           "effects": {
             "manual": true
           }
@@ -384,6 +414,7 @@
           "name": "Sharpie",
           "rarity": "mythic",
           "description": "MANUAL: Sharpie text off of your commander, must be a contiguous line going only from adjacent words",
+          "perkPhase": "drafting",
           "effects": {
             "manual": true
           }

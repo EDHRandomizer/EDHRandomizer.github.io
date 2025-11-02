@@ -1145,12 +1145,15 @@
             // Render powerups in compact stacked format
             const powerupsHTML = sortedPowerups.length > 0 ? `
                 <div class="powerups-container">
-                    ${sortedPowerups.map(powerup => `
-                        <div class="powerup-display ${powerup.rarity || 'common'}" title="${powerup.description || ''}">
+                    ${sortedPowerups.map(powerup => {
+                        const phaseLabel = powerup.perkPhase === 'commander_selection' ? 'Commander Selection' : 'Drafting';
+                        const tooltipText = `${phaseLabel} Perk: ${powerup.description || ''}`;
+                        return `
+                        <div class="powerup-display ${powerup.rarity || 'common'}" title="${tooltipText}">
                             <span class="powerup-name">⚡ ${powerup.name || 'Unknown'}</span>
                             <span class="powerup-rarity">${powerup.rarity || 'common'}</span>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             ` : '';
             
@@ -1629,11 +1632,14 @@
                 });
                 
                 const powerupsListHTML = sortedPowerups.length > 0 ? 
-                    sortedPowerups.map(p => `
-                        <div class="pack-powerup-item ${p.rarity || 'common'}">
+                    sortedPowerups.map(p => {
+                        const phaseLabel = p.perkPhase === 'commander_selection' ? 'Commander Selection' : 'Drafting';
+                        const tooltipText = `${phaseLabel} Perk: ${p.description || ''}`;
+                        return `
+                        <div class="pack-powerup-item ${p.rarity || 'common'}" title="${tooltipText}" style="cursor: help;">
                             ⚡ ${p.name || 'Unknown'}
                         </div>
-                    `).join('') :
+                    `}).join('') :
                     '<div class="pack-powerup-item common">No Powerups</div>';
                 
                 const div = document.createElement('div');

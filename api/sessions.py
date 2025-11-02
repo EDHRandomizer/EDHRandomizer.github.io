@@ -593,6 +593,8 @@ class handler(BaseHTTPRequestHandler):
                         'id': powerup['id'],
                         'name': powerup['name'],
                         'rarity': powerup['rarity'],
+                        'description': powerup.get('description', ''),
+                        'perkPhase': powerup.get('perkPhase', 'drafting'),
                         'effects': powerup.get('effects', {})
                     })
                     used_types.add(powerup_type)
@@ -766,17 +768,19 @@ class handler(BaseHTTPRequestHandler):
             
             # Get all powerup objects with full effects
             player_powerups = []
-            powerup_display_list = []  # For TTS chat display
+            powerup_display_list = []  # For TTS chat display (drafting perks only)
             for powerup_ref in player.get('powerups', []):
                 powerup_full = next((p for p in all_powerups if p['id'] == powerup_ref['id']), None)
                 if powerup_full:
                     player_powerups.append(powerup_full)
-                    # Store name, description, and rarity for display
-                    powerup_display_list.append({
-                        'name': powerup_full.get('name', 'Unknown Powerup'),
-                        'description': powerup_full.get('description', ''),
-                        'rarity': powerup_full.get('rarity', 'common')
-                    })
+                    # Only add drafting perks to TTS display list
+                    if powerup_full.get('perkPhase') == 'drafting':
+                        powerup_display_list.append({
+                            'name': powerup_full.get('name', 'Unknown Powerup'),
+                            'description': powerup_full.get('description', ''),
+                            'rarity': powerup_full.get('rarity', 'common'),
+                            'perkPhase': 'drafting'
+                        })
             
             # Generate pack config by combining all powerup effects
             pack_config = self.apply_powerups_to_config(player_powerups, player['commanderUrl'])

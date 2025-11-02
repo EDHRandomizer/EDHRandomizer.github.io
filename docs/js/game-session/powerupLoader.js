@@ -18,7 +18,7 @@ class PowerupLoader {
         }
 
         try {
-            const response = await fetch('/data/powerups.json');
+            const response = await fetch('../data/powerups.json');
             if (!response.ok) {
                 throw new Error(`Failed to load powerups: ${response.statusText}`);
             }
