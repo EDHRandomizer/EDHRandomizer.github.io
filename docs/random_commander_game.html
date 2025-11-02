@@ -707,11 +707,11 @@
         <!-- Enter Name Section (after joining/creating) -->
         <section id="enter-name-section" class="lobby-section hidden">
             <h2>Choose Your Name</h2>
-            <p style="text-align: center; opacity: 0.8;">Enter your display name for this session</p>
+            <p style="text-align: center; opacity: 0.8;">Enter a display name or skip to use a default name</p>
             <div style="max-width: 500px; margin: 1.5rem auto;">
-                <input type="text" id="player-name-input" class="form-control" placeholder="Enter your name" maxlength="20" style="margin-bottom: 1rem; font-size: 1.1rem;">
+                <input type="text" id="player-name-input" class="form-control" placeholder="Enter your name (optional)" maxlength="20" style="margin-bottom: 1rem; font-size: 1.1rem;">
                 
-                <button class="btn btn-primary" id="confirm-name-btn" style="width: 100%;">Confirm Name</button>
+                <button class="btn btn-primary" id="confirm-name-btn" style="width: 100%;">Continue</button>
             </div>
             <p style="text-align: center; opacity: 0.6; font-size: 0.85rem; margin-top: 1rem;">
                 Session Code: <strong id="temp-session-code">-----</strong>
@@ -912,10 +912,7 @@
             const playerName = playerNameInput.value.trim();
             console.log('✅ [NAME] Confirm name clicked:', playerName);
             
-            if (!playerName) {
-                showStatus('Please enter a name.');
-                return;
-            }
+            // Allow empty name - API will generate default "Player N"
             
             try {
                 showStatus('Updating name...');
