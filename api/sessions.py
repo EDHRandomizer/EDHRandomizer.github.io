@@ -816,7 +816,7 @@ class handler(BaseHTTPRequestHandler):
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'moxfieldDeck': None,  # Will be filled from powerup effect
+                    'deckUrl': None,  # Will be filled from powerup effect
                     'count': 1
                 }]
             },
@@ -826,7 +826,7 @@ class handler(BaseHTTPRequestHandler):
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'moxfieldDeck': None,  # Will be filled from powerup effect
+                    'deckUrl': None,  # Will be filled from powerup effect
                     'count': 1
                 }]
             },
@@ -924,9 +924,10 @@ class handler(BaseHTTPRequestHandler):
                 # Set the count for the slot
                 pack['slots'][0]['count'] = special_pack_count
                 
-                # If this pack needs a moxfieldDeck, set it
-                if moxfield_deck and 'moxfieldDeck' in pack['slots'][0]:
-                    pack['slots'][0]['moxfieldDeck'] = moxfield_deck
+                # If this pack needs a Moxfield deck URL, set it
+                if moxfield_deck and 'deckUrl' in pack['slots'][0]:
+                    # Convert deck ID to full URL
+                    pack['slots'][0]['deckUrl'] = f"https://moxfield.com/decks/{moxfield_deck}"
                 
                 bundle_config['packTypes'].append(pack)
         
