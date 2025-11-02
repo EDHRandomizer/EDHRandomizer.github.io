@@ -1143,8 +1143,10 @@
             const powerupsHTML = sortedPowerups.length > 0 ? `
                 <div class="powerups-container">
                     ${sortedPowerups.map(powerup => {
+                        console.log('🔍 [DEBUG] Perk data:', powerup);
                         const phaseLabel = powerup.perkPhase === 'commander_selection' ? 'Commander Selection' : 'Drafting';
                         const tooltipText = `${phaseLabel} Perk: ${powerup.description || ''}`;
+                        console.log('🔍 [DEBUG] Tooltip text:', tooltipText);
                         return `
                         <div class="perk-display ${powerup.rarity || 'common'}" title="${tooltipText}">
                             <span class="perk-name">⚡ ${powerup.name || 'Unknown'}</span>
@@ -1630,8 +1632,10 @@
                 
                 const powerupsListHTML = sortedPowerups.length > 0 ? 
                     sortedPowerups.map(p => {
+                        console.log('🔍 [DEBUG PACK] Perk data:', p);
                         const phaseLabel = p.perkPhase === 'commander_selection' ? 'Commander Selection' : 'Drafting';
                         const tooltipText = `${phaseLabel} Perk: ${p.description || ''}`;
+                        console.log('🔍 [DEBUG PACK] Tooltip text:', tooltipText);
                         return `
                         <div class="pack-perk-item ${p.rarity || 'common'}" title="${tooltipText}" style="cursor: help;">
                             ⚡ ${p.name || 'Unknown'}
