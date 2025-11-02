@@ -9,8 +9,90 @@ class SessionManager {
         this.currentSession = null;
         this.currentPlayerId = null;
         this.pollingInterval = null;
-        this.pollingRate = 2000; // Poll every 2 seconds for real-time feel
+        this.pollingRate = 5000; // Reduced from 2s to 5s to reduce server load
         this.updateCallbacks = [];
+        this.consecutiveErrors = 0;
+        this.maxConsecutiveErrors = 5;
+        this.lastSessionState = null;
+    }
+
+    /**
+     * Fetch with timeout and retry logic
+     * @param {string} url - URL to fetch
+     * @param {Object} options - Fetch options
+     * @param {number} timeout - Timeout in milliseconds
+     * @param {number} maxRetries - Maximum retry attempts
+     * @returns {Promise<Response>}
+     */
+    async fetchWithRetry(url, options = {}, timeout = 10000, maxRetries = 3) {
+        const startTime = Date.now();
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                
+                console.log(`🌐 [FETCH] ${options.method || 'GET'} ${url} (attempt ${attempt + 1}/${maxRetries})`);
+                
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const duration = Date.now() - startTime;
+                
+                // Success - return response
+                if (response.ok) {
+                    console.log(`✅ [FETCH] ${response.status} ${url} (${duration}ms)`);
+                    return response;
+                }
+                
+                // Handle rate limiting
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('Retry-After');
+                    const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.min(1000 * Math.pow(2, attempt), 10000);
+                    console.warn(`⏳ [FETCH] 429 Rate Limited - waiting ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                
+                // Don't retry 4xx errors (except 429)
+                if (response.status >= 400 && response.status < 500) {
+                    console.error(`❌ [FETCH] ${response.status} ${url} - Client error, not retrying (${duration}ms)`);
+                    return response; // Let caller handle the error
+                }
+                
+                // Retry 5xx errors with exponential backoff
+                if (attempt < maxRetries - 1) {
+                    const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+                    console.warn(`⚠️ [FETCH] ${response.status} ${url} - Server error, retrying in ${delay}ms (${duration}ms elapsed)`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+                
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                
+                // Check if it was a timeout
+                if (error.name === 'AbortError') {
+                    console.error(`⏱️ [FETCH] Timeout after ${duration}ms - ${url} (attempt ${attempt + 1}/${maxRetries})`);
+                } else {
+                    console.error(`💥 [FETCH] Network error - ${error.message} (attempt ${attempt + 1}/${maxRetries}, ${duration}ms)`);
+                }
+                
+                // Timeout or network error
+                if (attempt < maxRetries - 1) {
+                    const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+                    console.warn(`🔄 [FETCH] Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    throw error;
+                }
+            }
+        }
+        
+        throw new Error(`Failed after ${maxRetries} attempts`);
     }
 
     /**
@@ -21,7 +103,7 @@ class SessionManager {
      */
     async createSession(playerName = '', powerupsCount = 3) {
         try {
-            const response = await fetch(`${this.apiBase}/create`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -58,7 +140,7 @@ class SessionManager {
      */
     async joinSession(sessionCode, playerName = '') {
         try {
-            const response = await fetch(`${this.apiBase}/join`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/join`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -99,7 +181,7 @@ class SessionManager {
         }
 
         try {
-            const response = await fetch(`${this.apiBase}/update-name`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/update-name`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -133,7 +215,7 @@ class SessionManager {
         }
 
         try {
-            const response = await fetch(`${this.apiBase}/${this.currentSession}`);
+            const response = await this.fetchWithRetry(`${this.apiBase}/${this.currentSession}`);
 
             if (!response.ok) {
                 throw new Error(`Failed to get session: ${response.statusText}`);
@@ -156,7 +238,7 @@ class SessionManager {
         }
 
         try {
-            const response = await fetch(`${this.apiBase}/roll-powerups`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/roll-powerups`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -191,7 +273,7 @@ class SessionManager {
         }
 
         try {
-            const response = await fetch(`${this.apiBase}/lock-commander`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/lock-commander`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -227,7 +309,7 @@ class SessionManager {
         }
 
         try {
-            const response = await fetch(`${this.apiBase}/update-commanders`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/update-commanders`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -261,7 +343,7 @@ class SessionManager {
         }
 
         try {
-            const response = await fetch(`${this.apiBase}/generate-pack-codes`, {
+            const response = await this.fetchWithRetry(`${this.apiBase}/generate-pack-codes`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -291,7 +373,7 @@ class SessionManager {
      */
     async getPackByCode(packCode) {
         try {
-            const response = await fetch(`${this.apiBase}/pack/${packCode}`);
+            const response = await this.fetchWithRetry(`${this.apiBase}/pack/${packCode}`);
 
             if (!response.ok) {
                 throw new Error(`Failed to get pack: ${response.statusText}`);
@@ -305,21 +387,60 @@ class SessionManager {
     }
 
     /**
-     * Start polling for session updates
+     * Start polling for session updates with circuit breaker
      */
     startPolling() {
         if (this.pollingInterval) {
             clearInterval(this.pollingInterval);
         }
 
+        this.consecutiveErrors = 0;
+        const pollStartTime = Date.now();
+        let pollCount = 0;
+
         this.pollingInterval = setInterval(async () => {
+            pollCount++;
+            const pollId = `poll-${pollCount}`;
+            
             try {
+                console.log(`📡 [${pollId}] Polling session ${this.currentSession} (rate: ${this.pollingRate}ms, errors: ${this.consecutiveErrors})`);
+                
                 const sessionData = await this.getSession();
+                this.consecutiveErrors = 0; // Reset on success
+                
+                console.log(`✅ [${pollId}] Session retrieved - state: ${sessionData.state}, players: ${sessionData.players.length}`);
+                
+                // Adaptive polling: faster when state is changing
+                if (sessionData.state === 'selecting' && this.pollingRate > 3000) {
+                    console.log('🔄 [POLLING] Speeding up polling (selecting commanders) - 3s interval');
+                    this.pollingRate = 3000;
+                    this.startPolling(); // Restart with new rate
+                } else if (sessionData.state !== 'selecting' && this.pollingRate < 8000) {
+                    console.log('🔄 [POLLING] Slowing down polling (stable state) - 8s interval');
+                    this.pollingRate = 8000;
+                    this.startPolling(); // Restart with new rate
+                }
+                
                 this.notifyUpdateCallbacks(sessionData);
             } catch (error) {
-                console.error('Polling error:', error);
+                this.consecutiveErrors++;
+                const uptime = ((Date.now() - pollStartTime) / 1000).toFixed(1);
+                console.error(`❌ [${pollId}] Polling error ${this.consecutiveErrors}/${this.maxConsecutiveErrors} (uptime: ${uptime}s):`, error);
+                
+                // Circuit breaker: stop polling after too many failures
+                if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
+                    console.error(`🔴 [POLLING] Circuit breaker triggered - ${this.maxConsecutiveErrors} consecutive failures. Stopping polling.`);
+                    console.error(`📊 [POLLING] Session stats - Total polls: ${pollCount}, Uptime: ${uptime}s, Success rate: ${((pollCount - this.maxConsecutiveErrors) / pollCount * 100).toFixed(1)}%`);
+                    this.stopPolling();
+                    this.notifyUpdateCallbacks({ 
+                        error: 'connection_lost',
+                        message: 'Lost connection to server. Please refresh the page.'
+                    });
+                }
             }
         }, this.pollingRate);
+        
+        console.log(`✅ [POLLING] Started - session: ${this.currentSession}, rate: ${this.pollingRate}ms, max errors: ${this.maxConsecutiveErrors}`);
     }
 
     /**

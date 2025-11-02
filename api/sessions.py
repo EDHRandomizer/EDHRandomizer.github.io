@@ -149,22 +149,30 @@ def store_session(session_code: str, session_data: dict) -> bool:
     Store session data with TTL
     Uses Vercel KV if available, falls back to in-memory
     """
+    print(f"💾 [STORE_SESSION] Storing session {session_code}, state: {session_data.get('state')}, players: {len(session_data.get('players', []))}")
+    start_time = time.time()
+    
     try:
         if KV_ENABLED and kv_client:
             # Store in Vercel KV with SESSION_TTL
             key = f"session:{session_code}"
             kv_client.setex(key, SESSION_TTL, json.dumps(session_data))
-            print(f"✅ Stored session {session_code} in Vercel KV (TTL: {SESSION_TTL}s)")
+            elapsed = (time.time() - start_time) * 1000
+            print(f"✅ [STORE_SESSION] Stored session {session_code} in Vercel KV (TTL: {SESSION_TTL}s, {elapsed:.1f}ms)")
             return True
         else:
             # Fallback to in-memory storage
             SESSIONS[session_code] = session_data
-            print(f"⚠️ Stored session {session_code} in memory (will be lost on function restart)")
+            print(f"⚠️ [STORE_SESSION] Stored session {session_code} in memory (will be lost on function restart)")
             return True
     except Exception as e:
-        print(f"❌ Error storing session {session_code}: {e}")
+        elapsed = (time.time() - start_time) * 1000
+        print(f"❌ [STORE_SESSION] Error storing session {session_code} ({elapsed:.1f}ms): {e}")
+        import traceback
+        traceback.print_exc()
         # Fallback to in-memory
         SESSIONS[session_code] = session_data
+        print(f"⚠️ [STORE_SESSION] Fell back to in-memory storage")
         return False
 
 def get_session(session_code: str) -> Optional[dict]:
@@ -173,32 +181,51 @@ def get_session(session_code: str) -> Optional[dict]:
     Checks Vercel KV first, then in-memory fallback
     """
     print(f"🔍 [GET_SESSION] Looking for session: {session_code}, KV_ENABLED={KV_ENABLED}")
+    start_time = time.time()
+    
     try:
         if KV_ENABLED and kv_client:
             # Try Vercel KV first
             key = f"session:{session_code}"
+            print(f"📡 [GET_SESSION] Querying KV for key: {key}")
+            
             data_str = kv_client.get(key)
+            elapsed = (time.time() - start_time) * 1000
+            
             if data_str:
                 session_data = json.loads(data_str)
-                print(f"✅ Retrieved session {session_code} from Vercel KV")
+                print(f"✅ [GET_SESSION] Retrieved session {session_code} from Vercel KV ({elapsed:.1f}ms)")
+                print(f"📊 [GET_SESSION] Session state: {session_data.get('state')}, players: {len(session_data.get('players', []))}")
                 # Also cache in memory for this function instance
                 SESSIONS[session_code] = session_data
                 return session_data
             else:
-                print(f"⚠️ Session {session_code} not found in Vercel KV")
+                print(f"⚠️ [GET_SESSION] Session {session_code} not found in Vercel KV ({elapsed:.1f}ms)")
+                print(f"🔍 [GET_SESSION] Checking in-memory fallback (have {len(SESSIONS)} cached sessions)")
+                
+                # Check in-memory as fallback
+                if session_code in SESSIONS:
+                    print(f"✅ [GET_SESSION] Found {session_code} in memory cache!")
+                    return SESSIONS[session_code]
+                    
                 return None
         else:
             # Use in-memory fallback
             if session_code in SESSIONS:
-                print(f"✅ Retrieved session {session_code} from memory (have {len(SESSIONS)} sessions)")
+                print(f"✅ [GET_SESSION] Retrieved session {session_code} from memory (have {len(SESSIONS)} sessions)")
                 return SESSIONS[session_code]
             else:
-                print(f"⚠️ Session {session_code} not found in memory (have {len(SESSIONS)} sessions: {list(SESSIONS.keys())})")
+                print(f"⚠️ [GET_SESSION] Session {session_code} not found in memory")
+                print(f"📝 [GET_SESSION] Available sessions: {list(SESSIONS.keys())}")
                 return None
     except Exception as e:
-        print(f"❌ Error retrieving session {session_code}: {e}")
+        elapsed = (time.time() - start_time) * 1000
+        print(f"❌ [GET_SESSION] Error retrieving session {session_code} ({elapsed:.1f}ms): {e}")
+        import traceback
+        traceback.print_exc()
         # Try in-memory fallback
         if session_code in SESSIONS:
+            print(f"✅ [GET_SESSION] Fallback to memory cache successful")
             return SESSIONS[session_code]
         return None
 
@@ -273,19 +300,28 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         for key, value in cors_headers().items():
             self.send_header(key, value)
+        # Cache preflight response for 24 hours to reduce OPTIONS requests
+        self.send_header('Access-Control-Max-Age', '86400')
         self.end_headers()
 
     def do_POST(self):
         """Handle POST requests for session operations"""
+        request_start = time.time()
+        request_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
         cleanup_expired_sessions()
         
         # Parse request body
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else '{}'
         
+        print(f"📥 [REQ-{request_id}] POST {self.path} (body: {len(body)} bytes)")
+        
         try:
             data = json.loads(body) if body else {}
+            print(f"📋 [REQ-{request_id}] Parsed data keys: {list(data.keys())}")
         except json.JSONDecodeError:
+            print(f"❌ [REQ-{request_id}] Invalid JSON in request body")
             self.send_error_response(400, 'Invalid JSON')
             return
 
@@ -296,28 +332,53 @@ class handler(BaseHTTPRequestHandler):
         if path.startswith('/api/sessions'):
             path = path[13:]  # Remove '/api/sessions'
         
+        print(f"🛤️ [REQ-{request_id}] Routing to: {path}")
+        
         if path == '/create' or path == '':
+            print(f"🎮 [REQ-{request_id}] Creating new session")
             self.handle_create_session(data)
         elif path == '/join':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"👥 [REQ-{request_id}] Joining session: {session_code}")
             self.handle_join_session(data)
         elif path == '/update-name':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"✏️ [REQ-{request_id}] Updating name in session: {session_code}")
             self.handle_update_name(data)
         elif path == '/roll-powerups':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"🎲 [REQ-{request_id}] Rolling powerups for session: {session_code}")
             self.handle_roll_powerups(data)
         elif path == '/lock-commander':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"🔒 [REQ-{request_id}] Locking commander in session: {session_code}")
             self.handle_lock_commander(data)
         elif path == '/update-commanders':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"⚔️ [REQ-{request_id}] Updating commanders in session: {session_code}")
             self.handle_update_commanders(data)
         elif path == '/generate-pack-codes':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"📦 [REQ-{request_id}] Generating pack codes for session: {session_code}")
             self.handle_generate_pack_codes(data)
         else:
+            print(f"❌ [REQ-{request_id}] Invalid endpoint: {self.path}")
             self.send_error_response(404, f'Endpoint not found: {self.path}')
+            return
+        
+        elapsed = (time.time() - request_start) * 1000
+        print(f"✅ [REQ-{request_id}] Completed in {elapsed:.1f}ms")
 
     def do_GET(self):
         """Handle GET requests"""
+        request_start = time.time()
+        request_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
         cleanup_expired_sessions()
         
         path = self.path.split('?')[0]
+        
+        print(f"📥 [REQ-{request_id}] GET {path}")
         
         # Strip /api/sessions prefix if present
         if path.startswith('/api/sessions'):
@@ -327,13 +388,19 @@ class handler(BaseHTTPRequestHandler):
         if path.startswith('/pack/'):
             # Get pack by code: /pack/{code}
             pack_code = path.split('/')[-1].upper()
+            print(f"📦 [REQ-{request_id}] Getting pack code: {pack_code}")
             self.handle_get_pack(pack_code)
         elif path and path != '/' and not '/' in path[1:]:
             # Single path segment = session code
             session_code = path.strip('/').upper()
+            print(f"🎮 [REQ-{request_id}] Getting session: {session_code}")
             self.handle_get_session(session_code)
         else:
+            print(f"❌ [REQ-{request_id}] Invalid endpoint: {self.path}")
             self.send_error_response(404, f'Endpoint not found: {self.path}')
+            
+        elapsed = (time.time() - request_start) * 1000
+        print(f"✅ [REQ-{request_id}] Completed in {elapsed:.1f}ms")
 
     def handle_create_session(self, data=None):
         """Create a new game session"""
