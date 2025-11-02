@@ -726,6 +726,7 @@ class handler(BaseHTTPRequestHandler):
             'budgetUpgradePacks': 0,  # Additive
             'fullExpensivePacks': 0,  # Additive
             'bracketUpgrade': None,  # Take highest
+            'bracketUpgradePacks': 0,  # Additive
             'specialPacks': [],  # Concatenate - list of {type, count, moxfieldDeck}
             'commanderQuantity': 0,  # Additive (affects commander selection, not pack config)
             'distributionShift': 0,  # Additive (affects commander selection, not pack config)
@@ -743,6 +744,7 @@ class handler(BaseHTTPRequestHandler):
             combined_effects['packQuantity'] += effects.get('packQuantity', 0)
             combined_effects['budgetUpgradePacks'] += effects.get('budgetUpgradePacks', 0)
             combined_effects['fullExpensivePacks'] += effects.get('fullExpensivePacks', 0)
+            combined_effects['bracketUpgradePacks'] += effects.get('bracketUpgradePacks', 0)
             combined_effects['commanderQuantity'] += effects.get('commanderQuantity', 0)
             combined_effects['distributionShift'] += effects.get('distributionShift', 0)
             

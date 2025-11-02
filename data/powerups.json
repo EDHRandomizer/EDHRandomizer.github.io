@@ -126,7 +126,7 @@
           "id": "budget_any_cost",
           "name": "Any Cost Pack",
           "rarity": "uncommon",
-          "description": "Replace 1 pack with an Any cost pack",
+          "description": "Get an extra pack with any budget",
           "effects": { 
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "any"
@@ -136,7 +136,7 @@
           "id": "budget_expensive",
           "name": "Expensive Pack",
           "rarity": "rare",
-          "description": "Replace 1 pack with an expensive pack",
+          "description": "Get an additional expensive pack",
           "effects": { 
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "expensive"
@@ -153,7 +153,7 @@
           "id": "bracket_3",
           "name": "Bracket 3 Pack",
           "rarity": "uncommon",
-          "description": "Replace 1 pack with a bracket 3 pack",
+          "description": "Get an additional bracket 3 pack",
           "effects": {
             "bracketUpgrade": 3,
             "bracketUpgradePacks": 1
@@ -163,7 +163,7 @@
           "id": "bracket_4",
           "name": "Bracket 4 Pack",
           "rarity": "rare",
-          "description": "Replace 1 pack with a bracket 4 pack",
+          "description": "Get an additional bracket 4 pack",
           "effects": {
             "bracketUpgrade": 4,
             "bracketUpgradePacks": 1
