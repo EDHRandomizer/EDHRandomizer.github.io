@@ -252,7 +252,7 @@
           "id": "manabase_upgrade",
           "name": "Manabase Upgrade",
           "rarity": "uncommon",
-          "description": "Get expensive land pack with true duals",
+          "description": "Get expensive land pack",
           "effects": {
             "specialPack": "expensive_lands",
             "specialPackCount": 3
