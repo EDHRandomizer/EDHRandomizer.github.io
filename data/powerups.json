@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "description": "Powerup system with type-based deduplication",
   "rarityWeights": {
-    "common": 55,
+    "common": 45,
     "uncommon": 30,
-    "rare": 12,
-    "mythic": 3
+    "rare": 18,
+    "mythic": 7
   },
   "powerupTypes": [
     {

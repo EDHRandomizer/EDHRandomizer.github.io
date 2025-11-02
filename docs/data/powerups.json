@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "description": "Powerup system with type-based deduplication",
   "rarityWeights": {
-    "common": 55,
+    "common": 45,
     "uncommon": 30,
-    "rare": 12,
-    "mythic": 3
+    "rare": 18,
+    "mythic": 7
   },
   "powerupTypes": [
     {
@@ -44,6 +44,20 @@
       ]
     },
     {
+      "type": "salty_commander",
+      "name": "Salty Commander",
+      "mutuallyExclusive": true,
+      "powerups": [
+        {
+          "id": "salty_pool",
+          "name": "Salty Commander",
+          "rarity": "rare",
+          "description": "All commander options from the salty pool (salt score > 0.8)",
+          "effects": { "saltMode": "salty" }
+        }
+      ]
+    },
+    {
       "type": "color_filter",
       "name": "Color Filtering",
       "mutuallyExclusive": true,
@@ -61,7 +75,7 @@
         {
           "id": "color_include_1",
           "name": "Include 1 Color",
-          "rarity": "uncommon",
+          "rarity": "common",
           "description": "Pick 1 color to include in commander",
           "effects": {
             "colorFilterMode": "include",
@@ -69,19 +83,9 @@
           }
         },
         {
-          "id": "color_include_2",
-          "name": "Include 2 Colors",
-          "rarity": "rare",
-          "description": "Pick 2 colors to include in commander",
-          "effects": {
-            "colorFilterMode": "include",
-            "colorFilterCount": 2
-          }
-        },
-        {
           "id": "color_exact",
           "name": "Exact Color Selection",
-          "rarity": "mythic",
+          "rarity": "rare",
           "description": "Pick exactly which colors in commander",
           "effects": {
             "colorFilterMode": "exact"
@@ -182,13 +186,6 @@
           "rarity": "common",
           "description": "Get 1 extra regular pack",
           "effects": { "packQuantity": 1 }
-        },
-        {
-          "id": "extra_pack_2",
-          "name": "+2 Packs",
-          "rarity": "rare",
-          "description": "Get 2 extra regular packs",
-          "effects": { "packQuantity": 2 }
         }
       ]
     },
@@ -291,24 +288,24 @@
       "mutuallyExclusive": false,
       "powerups": [
         {
-          "id": "silly_card_1",
-          "name": "Silly Card",
-          "rarity": "common",
-          "description": "Get 1 random silly card",
-          "effects": {
-            "specialPack": "silly_cards",
-            "specialPackCount": 1,
-            "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
-          }
-        },
-        {
           "id": "silly_card_3",
           "name": "Silly Cards x3",
-          "rarity": "uncommon",
+          "rarity": "common",
           "description": "Get 3 random silly cards",
           "effects": {
             "specialPack": "silly_cards",
             "specialPackCount": 3,
+            "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
+          }
+        },
+        {
+          "id": "silly_card_6",
+          "name": "Silly Cards x6",
+          "rarity": "uncommon",
+          "description": "Get 6 random silly cards",
+          "effects": {
+            "specialPack": "silly_cards",
+            "specialPackCount": 6,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         }

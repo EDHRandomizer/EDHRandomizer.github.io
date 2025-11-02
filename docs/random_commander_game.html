@@ -689,7 +689,7 @@
                     <!-- Host Settings -->
                     <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 6px; margin: 1rem 0;">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Powerups Per Player:</label>
-                        <input type="number" id="create-powerups-count" class="form-control" value="3" min="1" max="10" style="width: 100px;">
+                        <input type="number" id="create-powerups-count" class="form-control" value="5" min="1" max="10" style="width: 100px;">
                         <p style="opacity: 0.7; font-size: 0.85rem; margin: 0.5rem 0 0 0;">Players will each get this many random powerups</p>
                     </div>
                     
@@ -852,9 +852,9 @@
             try {
                 showStatus('Creating session...');
                 
-                // Get powerups count from input (default 3)
+                // Get powerups count from input (default 5)
                 const powerupsCountInput = document.getElementById('create-powerups-count');
-                const powerupsCount = powerupsCountInput ? parseInt(powerupsCountInput.value) || 3 : 3;
+                const powerupsCount = powerupsCountInput ? parseInt(powerupsCountInput.value) || 5 : 5;
                 
                 console.log('📡 [CREATE] Calling sessionManager.createSession()...');
                 const result = await sessionManager.createSession('', powerupsCount); // Empty name initially, pass powerups count
