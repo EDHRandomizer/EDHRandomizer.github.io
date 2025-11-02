@@ -1245,10 +1245,10 @@ class handler(BaseHTTPRequestHandler):
     def send_json_response(self, status_code: int, data: Dict[str, Any]):
         """Send JSON response"""
         self.send_response(status_code)
-        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
+        self.wfile.write(json.dumps(data, ensure_ascii=False).encode('utf-8'))
     
     def send_error_response(self, status_code: int, message: str):
         """Send error response"""
