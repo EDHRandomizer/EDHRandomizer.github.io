@@ -205,7 +205,7 @@ export class GameModeController {
 
     /**
      * Parse color filter selections from perk effects and UI state
-     * @param {HTMLElement} colorFilterContainer - Container with color symbols
+     * @param {HTMLElement} colorFilterContainer - Container with color checkboxes
      * @returns {Object|null} {selected: ['W', 'U'], mode: 'include'} or null
      */
     getColorSelectionsFromUI(colorFilterContainer) {
@@ -215,9 +215,9 @@ export class GameModeController {
         if (!mode) return null;
         
         const selectedColors = [];
-        const colorSymbols = colorFilterContainer.querySelectorAll('.color-symbol.selected');
-        colorSymbols.forEach(symbol => {
-            selectedColors.push(symbol.dataset.color);
+        const checkedInputs = colorFilterContainer.querySelectorAll('.color-input:checked');
+        checkedInputs.forEach(input => {
+            selectedColors.push(input.value);
         });
         
         if (selectedColors.length === 0 && mode !== 'exact') {

@@ -218,6 +218,26 @@
             font-size: 0.9rem;
         }
 
+        .color-filter-checkboxes {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .color-filter-checkboxes .color-checkbox {
+            width: 45px;
+            height: 45px;
+        }
+
+        .color-filter-instruction {
+            display: block;
+        }
+
+        .color-filter-warning {
+            display: block;
+            margin-top: 0.25rem;
+        }
+
         .color-filter-inline {
             display: flex;
             gap: 0.4rem;
@@ -1166,7 +1186,7 @@
                 
                 ${primaryColorEffect?.colorFilterMode ? `
                     <div class="player-settings">
-                        ${renderColorFilter(primaryColorEffect)}
+                        ${renderColorFilter(primaryColorEffect, player.number, isCurrentPlayer)}
                     </div>
                 ` : ''}
                 
@@ -1190,27 +1210,41 @@
             return section;
         }
 
-        function renderColorFilter(effects) {
+        function renderColorFilter(effects, playerNumber, isCurrentPlayer) {
             if (!effects.colorFilterMode) return '';
             
             const mode = effects.colorFilterMode;
             const count = effects.colorFilterCount || 0;
-            const colors = ['W', 'U', 'B', 'R', 'G'];
+            const colors = [
+                { code: 'W', name: 'white', label: 'W' },
+                { code: 'U', name: 'blue', label: 'U' },
+                { code: 'B', name: 'black', label: 'B' },
+                { code: 'R', name: 'red', label: 'R' },
+                { code: 'G', name: 'green', label: 'G' }
+            ];
             
             let instruction = '';
-            if (mode === 'exclude') instruction = `Click to exclude ${count} color${count > 1 ? 's' : ''}`;
-            else if (mode === 'include') instruction = `Click to include ${count} color${count > 1 ? 's' : ''}`;
-            else if (mode === 'exact') instruction = 'Click to select exact colors';
+            if (mode === 'exclude') instruction = `Select ${count} color${count > 1 ? 's' : ''} to exclude`;
+            else if (mode === 'include') instruction = `Select ${count} color${count > 1 ? 's' : ''} to include`;
+            else if (mode === 'exact') instruction = 'Select exact colors for your commander';
+            
+            const colorCheckboxes = colors.map(c => `
+                <label class="color-checkbox ${c.name}" ${!isCurrentPlayer ? 'style="pointer-events: none; opacity: 0.7;"' : ''}>
+                    <input type="checkbox" value="${c.code}" class="color-input" ${!isCurrentPlayer ? 'disabled' : ''}>
+                    <span>${c.label}</span>
+                </label>
+            `).join('');
             
             return `
                 <div class="setting-row">
                     <span class="setting-label">Colors:</span>
-                    <div class="color-filter-inline" data-mode="${mode}" data-count="${count}">
-                        ${colors.map(c => `<div class="color-symbol ${c}" data-color="${c}">${c}</div>`).join('')}
+                    <div class="color-filter-checkboxes" data-mode="${mode}" data-count="${count}" data-player="${playerNumber}">
+                        ${colorCheckboxes}
                     </div>
                 </div>
                 <div class="setting-row">
-                    <small style="opacity: 0.7;">${instruction}</small>
+                    <small class="color-filter-instruction" style="opacity: 0.7;">${instruction}</small>
+                    <small class="color-filter-warning" style="color: #f44336; opacity: 0; transition: opacity 0.3s;">Max ${count} color${count > 1 ? 's' : ''} selected!</small>
                 </div>
             `;
         }
@@ -1299,7 +1333,7 @@
             
             const playerSection = document.getElementById(`player-${playerNumber}`);
             const commandersGrid = document.getElementById(`commanders-${playerNumber}`);
-            const colorFilterContainer = playerSection.querySelector('.color-filter-inline');
+            const colorFilterContainer = playerSection.querySelector('.color-filter-checkboxes');
             
             showStatus(`Generating ${quantity} commanders for Player ${playerNumber}...`);
             
@@ -1521,31 +1555,38 @@
         };
 
         function attachColorFilterListeners() {
-            document.querySelectorAll('.color-filter-inline').forEach(container => {
+            document.querySelectorAll('.color-filter-checkboxes').forEach(container => {
                 const mode = container.dataset.mode;
                 const maxCount = parseInt(container.dataset.count) || 0;
+                const playerNumber = parseInt(container.dataset.player);
                 
-                container.querySelectorAll('.color-symbol').forEach(symbol => {
-                    symbol.addEventListener('click', () => {
-                        const isSelected = symbol.classList.contains('selected');
+                // Only attach listeners if this is the current player's filter
+                const isCurrentPlayer = currentSession?.players?.find(p => p.number === playerNumber)?.id === currentPlayerId;
+                if (!isCurrentPlayer) return;
+                
+                const checkboxes = container.querySelectorAll('.color-input');
+                const warningElement = container.closest('.player-settings')?.querySelector('.color-filter-warning');
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const selectedCount = container.querySelectorAll('.color-input:checked').length;
                         
                         if (mode === 'exclude' || mode === 'include') {
-                            // Count currently selected
-                            const selectedCount = container.querySelectorAll('.color-symbol.selected').length;
-                            
-                            if (isSelected) {
-                                // Deselect
-                                symbol.classList.remove('selected');
-                            } else {
-                                // Select if under limit
-                                if (selectedCount < maxCount) {
-                                    symbol.classList.add('selected');
+                            // Limited selection mode
+                            if (selectedCount > maxCount) {
+                                // Prevent selecting more than allowed
+                                e.target.checked = false;
+                                
+                                // Show warning message
+                                if (warningElement) {
+                                    warningElement.style.opacity = '1';
+                                    setTimeout(() => {
+                                        warningElement.style.opacity = '0';
+                                    }, 2000);
                                 }
                             }
-                        } else if (mode === 'exact') {
-                            // Exact mode: toggle freely
-                            symbol.classList.toggle('selected');
                         }
+                        // For 'exact' mode, allow any number of selections
                     });
                 });
             });
