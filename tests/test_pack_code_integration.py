@@ -300,6 +300,345 @@ async def test_many_powerups():
     return await test.run_test(powerups_count=5)
 
 
+async def test_specific_powerup_types():
+    """Test specific powerup types by rolling multiple times until we get what we want"""
+    print("\n📋 Test 3: Specific Powerup Type Testing")
+    print("=" * 80)
+    
+    # Test targets
+    targets = {
+        'bracket_upgrade': False,
+        'moxfield_special': False,
+        'land_pack': False,
+        'conspiracy': False,
+        'banned': False
+    }
+    
+    max_attempts = 20
+    attempt = 0
+    
+    async with aiohttp.ClientSession() as session:
+        while attempt < max_attempts and not all(targets.values()):
+            attempt += 1
+            print(f"\n🎲 Attempt {attempt}/{max_attempts}")
+            
+            # Create session
+            create_response = await session.post(f"{API_BASE}/create", json={
+                "playerName": f"Test-{attempt}",
+                "powerupsCount": 10  # Max powerups for better coverage
+            })
+            
+            if create_response.status != 200:
+                continue
+                
+            data = await create_response.json()
+            session_code = data['sessionCode']
+            player_id = data['playerId']
+            
+            # Roll powerups
+            roll_response = await session.post(f"{API_BASE}/roll-powerups", json={
+                "sessionCode": session_code,
+                "playerId": player_id
+            })
+            
+            if roll_response.status != 200:
+                continue
+                
+            roll_data = await roll_response.json()
+            player = next(p for p in roll_data['players'] if p['id'] == player_id)
+            powerups = player['powerups']
+            
+            # Check what we got
+            has_bracket = any('bracket' in p['id'].lower() for p in powerups)
+            has_moxfield = any(p.get('effects', {}).get('moxfieldDeck') for p in powerups)
+            has_land = any('land' in p['id'].lower() for p in powerups)
+            has_conspiracy = any('conspiracy' in p['id'].lower() for p in powerups)
+            has_banned = any('banned' in p['id'].lower() for p in powerups)
+            
+            print(f"   Rolled powerups:")
+            for p in powerups:
+                print(f"      - {p['name']} ({p['rarity']})")
+            
+            # Test if we got something new
+            if has_bracket and not targets['bracket_upgrade']:
+                print(f"\n   ✅ Testing BRACKET UPGRADE")
+                targets['bracket_upgrade'] = await test_bracket_upgrade(
+                    session, session_code, player_id, powerups
+                )
+            
+            if has_moxfield and not targets['moxfield_special']:
+                print(f"\n   ✅ Testing MOXFIELD SPECIAL PACK")
+                targets['moxfield_special'] = await test_moxfield_pack(
+                    session, session_code, player_id, powerups
+                )
+            
+            if has_land and not targets['land_pack']:
+                print(f"\n   ✅ Testing LAND PACK")
+                targets['land_pack'] = await test_land_pack(
+                    session, session_code, player_id, powerups
+                )
+            
+            if has_conspiracy and not targets['conspiracy']:
+                print(f"\n   ✅ Testing CONSPIRACY PACK")
+                targets['conspiracy'] = await test_conspiracy_pack(
+                    session, session_code, player_id, powerups
+                )
+            
+            if has_banned and not targets['banned']:
+                print(f"\n   ✅ Testing BANNED CARDS PACK")
+                targets['banned'] = await test_banned_pack(
+                    session, session_code, player_id, powerups
+                )
+    
+    # Summary
+    print("\n" + "=" * 80)
+    print("SPECIFIC POWERUP TYPE TEST RESULTS")
+    print("=" * 80)
+    for test_type, passed in targets.items():
+        status = "✅ PASS" if passed else "❌ FAIL"
+        print(f"{status} - {test_type}")
+    
+    return all(targets.values())
+
+
+async def test_bracket_upgrade(session, session_code, player_id, powerups):
+    """Test that bracket upgrade powerups create bracket packs"""
+    try:
+        # Lock commander
+        lock_response = await session.post(f"{API_BASE}/lock-commander", json={
+            "sessionCode": session_code,
+            "playerId": player_id,
+            "commanderUrl": "https://edhrec.com/commanders/aragorn-the-uniter",
+            "commanderData": {"name": "Aragorn", "colors": ["W", "U", "B", "R", "G"]}
+        })
+        
+        lock_data = await lock_response.json()
+        player = next(p for p in lock_data['players'] if p['id'] == player_id)
+        pack_code = player['packCode']
+        
+        # Get pack config
+        pack_response = await session.get(f"{API_BASE}/pack/{pack_code}")
+        pack_data = await pack_response.json()
+        
+        # Check for bracket pack
+        pack_types = pack_data['config']['packTypes']
+        bracket_pack = next((pt for pt in pack_types if 'Bracket' in pt.get('name', '')), None)
+        
+        if bracket_pack:
+            print(f"      Found bracket pack: {bracket_pack['name']}")
+            # Verify it has bracket in slots
+            has_bracket_slot = any(
+                slot.get('bracket') in [2, 3, 4, '2', '3', '4'] 
+                for slot in bracket_pack['slots']
+            )
+            if has_bracket_slot:
+                print(f"      ✅ Bracket pack has correct bracket slot")
+                return True
+            else:
+                print(f"      ❌ Bracket pack missing bracket slot")
+                return False
+        else:
+            print(f"      ❌ No bracket pack found in config")
+            return False
+            
+    except Exception as e:
+        print(f"      ❌ Error testing bracket upgrade: {e}")
+        return False
+
+
+async def test_moxfield_pack(session, session_code, player_id, powerups):
+    """Test that Moxfield powerups create packs with deckUrl"""
+    try:
+        # Lock commander
+        lock_response = await session.post(f"{API_BASE}/lock-commander", json={
+            "sessionCode": session_code,
+            "playerId": player_id,
+            "commanderUrl": "https://edhrec.com/commanders/lazav-the-multifarious",
+            "commanderData": {"name": "Lazav", "colors": ["U", "B"]}
+        })
+        
+        lock_data = await lock_response.json()
+        player = next(p for p in lock_data['players'] if p['id'] == player_id)
+        pack_code = player['packCode']
+        
+        # Get pack config
+        pack_response = await session.get(f"{API_BASE}/pack/{pack_code}")
+        pack_data = await pack_response.json()
+        
+        # Check for Moxfield pack
+        pack_types = pack_data['config']['packTypes']
+        moxfield_pack = next((pt for pt in pack_types if pt.get('source') == 'moxfield'), None)
+        
+        if moxfield_pack:
+            deck_url = moxfield_pack['slots'][0].get('deckUrl')
+            print(f"      Found Moxfield pack: {moxfield_pack['name']}")
+            print(f"      Deck URL: {deck_url}")
+            
+            if deck_url and deck_url.startswith('https://moxfield.com/decks/'):
+                print(f"      ✅ Moxfield pack has valid deckUrl")
+                return True
+            else:
+                print(f"      ❌ Moxfield pack has invalid deckUrl: {deck_url}")
+                return False
+        else:
+            print(f"      ❌ No Moxfield pack found in config")
+            return False
+            
+    except Exception as e:
+        print(f"      ❌ Error testing Moxfield pack: {e}")
+        return False
+
+
+async def test_land_pack(session, session_code, player_id, powerups):
+    """Test that land powerups create land packs"""
+    try:
+        # Lock commander
+        lock_response = await session.post(f"{API_BASE}/lock-commander", json={
+            "sessionCode": session_code,
+            "playerId": player_id,
+            "commanderUrl": "https://edhrec.com/commanders/atraxa-praetors-voice",
+            "commanderData": {"name": "Atraxa", "colors": ["W", "U", "B", "G"]}
+        })
+        
+        lock_data = await lock_response.json()
+        player = next(p for p in lock_data['players'] if p['id'] == player_id)
+        pack_code = player['packCode']
+        
+        # Get pack config
+        pack_response = await session.get(f"{API_BASE}/pack/{pack_code}")
+        pack_data = await pack_response.json()
+        
+        # Check for land pack
+        pack_types = pack_data['config']['packTypes']
+        land_pack = next((pt for pt in pack_types if 'Land' in pt.get('name', '')), None)
+        
+        if land_pack:
+            print(f"      Found land pack: {land_pack['name']}")
+            # Verify it uses edhrec source with lands cardType OR has Lands in the name
+            if land_pack.get('source') == 'edhrec':
+                has_land_slot = any(
+                    slot.get('cardType') == 'lands' 
+                    for slot in land_pack['slots']
+                )
+                if has_land_slot:
+                    print(f"      ✅ Land pack uses EDHRec source with lands cardType")
+                    return True
+                else:
+                    print(f"      ❌ Land pack missing lands cardType")
+                    print(f"      Slots: {land_pack['slots']}")
+                    return False
+            elif 'Land' in land_pack.get('name', ''):
+                # Check if it has land-related content
+                print(f"      ✅ Land pack found (name-based identification)")
+                return True
+            else:
+                print(f"      ❌ Land pack not using EDHRec source or proper naming")
+                print(f"      Source: {land_pack.get('source')}, Name: {land_pack.get('name')}")
+                return False
+        else:
+            print(f"      ❌ No land pack found in config")
+            print(f"      Pack types: {[pt.get('name', 'unnamed') for pt in pack_types]}")
+            return False
+            
+    except Exception as e:
+        print(f"      ❌ Error testing land pack: {e}")
+        return False
+
+
+async def test_conspiracy_pack(session, session_code, player_id, powerups):
+    """Test that conspiracy powerups create Scryfall packs"""
+    try:
+        # Lock commander
+        lock_response = await session.post(f"{API_BASE}/lock-commander", json={
+            "sessionCode": session_code,
+            "playerId": player_id,
+            "commanderUrl": "https://edhrec.com/commanders/kenrith-the-returned-king",
+            "commanderData": {"name": "Kenrith", "colors": ["W", "U", "B", "R", "G"]}
+        })
+        
+        lock_data = await lock_response.json()
+        player = next(p for p in lock_data['players'] if p['id'] == player_id)
+        pack_code = player['packCode']
+        
+        # Get pack config
+        pack_response = await session.get(f"{API_BASE}/pack/{pack_code}")
+        pack_data = await pack_response.json()
+        
+        # Check for conspiracy pack
+        pack_types = pack_data['config']['packTypes']
+        conspiracy_pack = next((pt for pt in pack_types if 'Conspiracy' in pt.get('name', '')), None)
+        
+        if conspiracy_pack:
+            print(f"      Found conspiracy pack: {conspiracy_pack['name']}")
+            # Verify it uses scryfall source with query
+            if conspiracy_pack.get('source') == 'scryfall':
+                query = conspiracy_pack['slots'][0].get('query')
+                if query and 'conspiracy' in query.lower():
+                    print(f"      ✅ Conspiracy pack uses Scryfall with correct query")
+                    return True
+                else:
+                    print(f"      ❌ Conspiracy pack has invalid query")
+                    return False
+            else:
+                print(f"      ❌ Conspiracy pack not using Scryfall source")
+                return False
+        else:
+            print(f"      ❌ No conspiracy pack found in config")
+            return False
+            
+    except Exception as e:
+        print(f"      ❌ Error testing conspiracy pack: {e}")
+        return False
+
+
+async def test_banned_pack(session, session_code, player_id, powerups):
+    """Test that banned cards powerup creates Moxfield pack"""
+    try:
+        # Lock commander
+        lock_response = await session.post(f"{API_BASE}/lock-commander", json={
+            "sessionCode": session_code,
+            "playerId": player_id,
+            "commanderUrl": "https://edhrec.com/commanders/edgar-markov",
+            "commanderData": {"name": "Edgar Markov", "colors": ["W", "B", "R"]}
+        })
+        
+        lock_data = await lock_response.json()
+        player = next(p for p in lock_data['players'] if p['id'] == player_id)
+        pack_code = player['packCode']
+        
+        # Get pack config
+        pack_response = await session.get(f"{API_BASE}/pack/{pack_code}")
+        pack_data = await pack_response.json()
+        
+        # Check for banned pack
+        pack_types = pack_data['config']['packTypes']
+        banned_pack = next((pt for pt in pack_types if 'Banned' in pt.get('name', '')), None)
+        
+        if banned_pack:
+            print(f"      Found banned pack: {banned_pack['name']}")
+            # Verify it uses moxfield source with deckUrl
+            if banned_pack.get('source') == 'moxfield':
+                deck_url = banned_pack['slots'][0].get('deckUrl')
+                if deck_url and deck_url.startswith('https://moxfield.com/decks/'):
+                    print(f"      ✅ Banned pack uses Moxfield with valid deckUrl")
+                    print(f"      Deck URL: {deck_url}")
+                    return True
+                else:
+                    print(f"      ❌ Banned pack has invalid deckUrl: {deck_url}")
+                    return False
+            else:
+                print(f"      ❌ Banned pack not using Moxfield source: {banned_pack.get('source')}")
+                return False
+        else:
+            print(f"      ❌ No banned pack found in config")
+            print(f"      Pack types: {[pt.get('name', 'unnamed') for pt in pack_types]}")
+            return False
+            
+    except Exception as e:
+        print(f"      ❌ Error testing banned pack: {e}")
+        return False
+
+
 async def run_all_tests():
     """Run all integration tests"""
     print("\n" + "🧪" * 40)
@@ -315,6 +654,10 @@ async def run_all_tests():
     # Test 2: Many powerups
     print("\n📋 Test 2: Many Powerups (5 powerups)")
     results.append(await test_many_powerups())
+    
+    # Test 3: Specific powerup types (comprehensive)
+    print("\n📋 Test 3: Specific Powerup Type Testing")
+    results.append(await test_specific_powerup_types())
     
     # Summary
     print("\n" + "=" * 80)

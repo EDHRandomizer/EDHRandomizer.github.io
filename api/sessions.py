@@ -804,11 +804,11 @@ class handler(BaseHTTPRequestHandler):
             },
             'banned': {
                 'name': 'Banned Card',
-                'source': 'scryfall',
+                'source': 'moxfield',
                 'count': 1,
                 'useCommanderColorIdentity': True,
                 'slots': [{
-                    'query': 'https://scryfall.com/search?q=banned%3Acommander+-f%3Aduel&unique=cards&as=grid&order=name',
+                    'deckUrl': None,  # Will be filled from powerup effect
                     'count': 1
                 }]
             },
