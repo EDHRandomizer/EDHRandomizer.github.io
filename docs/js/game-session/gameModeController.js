@@ -80,6 +80,9 @@ export class GameModeController {
             }
         }
         
+        // Handle salt mode from powerup
+        const saltMode = powerupEffects.saltMode || null;
+        
         try {
             const result = await randomizeCommanders(
                 timePeriod,
@@ -93,7 +96,7 @@ export class GameModeController {
                 excludePartners,
                 null, // min_cmc
                 null, // max_cmc
-                null, // salt_mode
+                saltMode, // salt_mode (from powerup)
                 distributionFunc  // Use normal distribution centered at distributionCenter
             );
             
