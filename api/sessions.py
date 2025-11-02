@@ -297,9 +297,10 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(400, 'Session is full')
             return
         
-        # Check if session has already started rolling
-        if session['state'] != 'waiting':
-            self.send_error_response(400, 'Session has already started')
+        # Check if session has already progressed beyond rolling
+        # Allow joining during 'waiting' and 'rolling' phases
+        if session['state'] not in ['waiting', 'rolling']:
+            self.send_error_response(400, 'Session has already started commander selection')
             return
         
         # Add new player
