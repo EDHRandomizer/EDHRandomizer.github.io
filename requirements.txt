@@ -1,5 +1,8 @@
 # EDHREC Commander Randomizer Requirements
 
+# Redis/Vercel KV for session storage
+redis>=5.0.0
+
 # Image processing for card images
 Pillow>=10.0.0
 
