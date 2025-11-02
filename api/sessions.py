@@ -29,11 +29,13 @@ try:
     else:
         kv_client = None
         KV_ENABLED = False
-        print("⚠️ Vercel KV not configured - pack codes will use in-memory storage")
+        print("⚠️ Vercel KV not configured - using in-memory storage")
+        print(f"   KV_REST_API_URL: {'SET' if REDIS_URL else 'NOT SET'}")
+        print(f"   KV_REST_API_TOKEN: {'SET' if REDIS_TOKEN else 'NOT SET'}")
 except ImportError:
     kv_client = None
     KV_ENABLED = False
-    print("⚠️ redis package not installed - pack codes will use in-memory storage")
+    print("⚠️ redis package not installed - using in-memory storage")
 
 # In-memory session storage (sessions are temporary, pack codes use KV)
 SESSIONS: Dict[str, dict] = {}
@@ -158,6 +160,7 @@ def get_session(session_code: str) -> Optional[dict]:
     Retrieve session data
     Checks Vercel KV first, then in-memory fallback
     """
+    print(f"🔍 [GET_SESSION] Looking for session: {session_code}, KV_ENABLED={KV_ENABLED}")
     try:
         if KV_ENABLED and kv_client:
             # Try Vercel KV first
@@ -175,10 +178,10 @@ def get_session(session_code: str) -> Optional[dict]:
         else:
             # Use in-memory fallback
             if session_code in SESSIONS:
-                print(f"✅ Retrieved session {session_code} from memory")
+                print(f"✅ Retrieved session {session_code} from memory (have {len(SESSIONS)} sessions)")
                 return SESSIONS[session_code]
             else:
-                print(f"⚠️ Session {session_code} not found in memory")
+                print(f"⚠️ Session {session_code} not found in memory (have {len(SESSIONS)} sessions: {list(SESSIONS.keys())})")
                 return None
     except Exception as e:
         print(f"❌ Error retrieving session {session_code}: {e}")
