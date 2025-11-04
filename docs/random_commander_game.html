@@ -1018,7 +1018,9 @@
         leaveSessionBtn.addEventListener('click', () => {
             console.log('🚪 [LEAVE] Leave session clicked');
             if (confirm('Are you sure you want to leave the session?')) {
-                console.log('✅ [LEAVE] User confirmed, reloading page');
+                console.log('✅ [LEAVE] User confirmed, clearing URL and reloading');
+                // Remove session parameter from URL
+                window.history.pushState({}, document.title, window.location.pathname);
                 location.reload();
             } else {
                 console.log('❌ [LEAVE] User cancelled');
