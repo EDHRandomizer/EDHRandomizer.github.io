@@ -1395,10 +1395,13 @@
                 console.log(`🎨 [GEN-P${playerNumber}] Color selections:`, colorSelections);
                 
                 // Get Avatar Mode setting from session (if host set it during creation)
+                console.log(`🔍 [GEN-P${playerNumber}] Current session:`, currentSession);
+                console.log(`🔍 [GEN-P${playerNumber}] Session.settings:`, currentSession?.settings);
                 const gameModeOptions = {
-                    avatarMode: currentSession?.avatarMode || false
+                    avatarMode: currentSession?.settings?.avatarMode || currentSession?.avatarMode || false
                 };
                 console.log(`🎮 [GEN-P${playerNumber}] Game mode options:`, gameModeOptions);
+                console.log(`🎮 [GEN-P${playerNumber}] Avatar Mode: ${gameModeOptions.avatarMode ? 'ENABLED ✅' : 'DISABLED ❌'}`);
                 
                 // Generate commanders
                 console.log(`📡 [GEN-P${playerNumber}] Calling generateCommandersForPlayer...`);

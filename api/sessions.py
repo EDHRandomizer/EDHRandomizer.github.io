@@ -416,6 +416,9 @@ class handler(BaseHTTPRequestHandler):
         perks_count = data.get('perksCount', 3)
         perks_count = max(1, min(10, int(perks_count)))  # Clamp between 1-10
         
+        # Get Avatar Mode setting (default False)
+        avatar_mode = data.get('avatarMode', False)
+        
         session_code = generate_session_code()
         while session_code in SESSIONS:
             session_code = generate_session_code()
@@ -427,7 +430,8 @@ class handler(BaseHTTPRequestHandler):
             'hostId': player_id,
             'state': 'waiting',  # waiting, rolling, selecting, complete
             'settings': {
-                'perksCount': perks_count
+                'perksCount': perks_count,
+                'avatarMode': avatar_mode
             },
             'players': [
                 {
@@ -903,26 +907,6 @@ class handler(BaseHTTPRequestHandler):
             },
             'silly_cards': {
                 'name': 'Silly Cards',
-                'source': 'moxfield',
-                'count': 1,
-                'useCommanderColorIdentity': True,
-                'slots': [{
-                    'deckUrl': None,  # Will be filled from perk effect
-                    'count': 1
-                }]
-            },
-            'scangtech': {
-                'name': 'ScangTech Cards',
-                'source': 'moxfield',
-                'count': 1,
-                'useCommanderColorIdentity': True,
-                'slots': [{
-                    'deckUrl': None,  # Will be filled from perk effect
-                    'count': 1
-                }]
-            },
-            'jptech': {
-                'name': 'JpTech Cards',
                 'source': 'moxfield',
                 'count': 1,
                 'useCommanderColorIdentity': True,
