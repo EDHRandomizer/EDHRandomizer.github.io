@@ -915,6 +915,26 @@ class handler(BaseHTTPRequestHandler):
                     'count': 1
                 }]
             },
+            'scangtech': {
+                'name': 'ScangTech Cards',
+                'source': 'moxfield',
+                'count': 1,
+                'useCommanderColorIdentity': True,
+                'slots': [{
+                    'deckUrl': None,  # Will be filled from perk effect
+                    'count': 1
+                }]
+            },
+            'jptech': {
+                'name': 'JpTech Cards',
+                'source': 'moxfield',
+                'count': 1,
+                'useCommanderColorIdentity': True,
+                'slots': [{
+                    'deckUrl': None,  # Will be filled from perk effect
+                    'count': 1
+                }]
+            },
             'any_cost_lands': {
                 'name': 'Any Cost Lands',
                 'source': 'edhrec',
