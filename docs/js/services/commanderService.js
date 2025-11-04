@@ -13,7 +13,7 @@ import { getColorFilterSettings, getAdditionalFilterSettings } from '../ui/event
 import { saveLastResults } from '../storage.js';
 import { getDistributionFunction } from '../advancedRandomizer.js';
 
-export async function randomizeCommanders(timePeriod, minRank, maxRank, quantity, colors, colorMode, numColors, selectedColorCounts, excludePartners, minCmc, maxCmc, saltMode, includeSets, excludeSets, distributionFunc = null) {
+export async function randomizeCommanders(timePeriod, minRank, maxRank, quantity, colors, colorMode, numColors, selectedColorCounts, excludePartners, minCmc, maxCmc, saltMode, distributionFunc = null, includeSets = null, excludeSets = null) {
     try {
         const csvFile = CSV_FILES[timePeriod];
         if (!csvFile) {
@@ -75,11 +75,11 @@ export async function randomizeCommanders(timePeriod, minRank, maxRank, quantity
         }
         
         // Add set filter to description
-        if (includeSets && includeSets.length > 0) {
-            filterDesc += `, Include sets: ${includeSets.join(', ')}`;
+        if (includeSets !== null && includeSets.length > 0) {
+            filterDesc += `, Sets: ${includeSets.join(', ')}`;
         }
-        if (excludeSets && excludeSets.length > 0) {
-            filterDesc += `, Exclude sets: ${excludeSets.join(', ')}`;
+        if (excludeSets !== null && excludeSets.length > 0) {
+            filterDesc += `, Excluding sets: ${excludeSets.join(', ')}`;
         }
         
         // Add distribution mode to description
@@ -90,7 +90,7 @@ export async function randomizeCommanders(timePeriod, minRank, maxRank, quantity
         // Select random commanders using weighted or uniform distribution
         const selected = distributionFunc 
             ? selectRandomCommandersWeighted(
-                commanders, minRank, maxRank, quantity, colors, colorMode, numColors, selectedColorCounts, minCmc, maxCmc, saltMode, includeSets, excludeSets, distributionFunc
+                commanders, minRank, maxRank, quantity, colors, colorMode, numColors, selectedColorCounts, minCmc, maxCmc, saltMode, distributionFunc, includeSets, excludeSets
             )
             : selectRandomCommanders(
                 commanders, minRank, maxRank, quantity, colors, colorMode, numColors, selectedColorCounts, minCmc, maxCmc, saltMode, includeSets, excludeSets
@@ -127,7 +127,7 @@ export async function handleRandomize() {
     const { minRank, maxRank, quantity } = validation;
     const timePeriod = document.getElementById('time-period').value;
     const { colors, color_mode, num_colors, selected_color_counts } = getColorFilterSettings();
-    const { enable_cmc, min_cmc, max_cmc, enable_salt, salt_mode, enable_set, include_sets, exclude_sets } = getAdditionalFilterSettings();
+    const { enable_cmc, min_cmc, max_cmc, enable_salt, salt_mode } = getAdditionalFilterSettings();
     const excludePartners = document.getElementById('exclude-partners').checked;
     const useTextOutput = document.getElementById('text-output').checked;
     
@@ -137,7 +137,7 @@ export async function handleRandomize() {
     // Validate color configuration
     const colorValidation = validateColorConfiguration();
     
-    console.log('Request params:', { minRank, maxRank, quantity, timePeriod, colors, color_mode, num_colors, selected_color_counts, enable_cmc, min_cmc, max_cmc, enable_salt, salt_mode, enable_set, include_sets, exclude_sets });
+    console.log('Request params:', { minRank, maxRank, quantity, timePeriod, colors, color_mode, num_colors, selected_color_counts, enable_cmc, min_cmc, max_cmc, enable_salt, salt_mode });
     
     // Clear previous results but preserve sort state
     clearResults(true);
@@ -162,8 +162,6 @@ export async function handleRandomize() {
             min_cmc,
             max_cmc,
             salt_mode,
-            include_sets,
-            exclude_sets,
             distributionFunc
         );
         

@@ -101,7 +101,7 @@ class SessionManager {
      * @param {number} perksCount - Number of perks per player (default 3)
      * @returns {Promise<Object>} - { sessionCode, playerId, sessionData }
      */
-    async createSession(playerName = '', perksCount = 3) {
+    async createSession(playerName = '', perksCount = 3, avatarMode = false) {
         try {
             const response = await this.fetchWithRetry(`${this.apiBase}/create`, {
                 method: 'POST',
@@ -110,7 +110,8 @@ class SessionManager {
                 },
                 body: JSON.stringify({ 
                     playerName: playerName.trim(),
-                    perksCount: parseInt(perksCount) || 3
+                    perksCount: parseInt(perksCount) || 3,
+                    avatarMode: !!avatarMode  // Ensure boolean
                 })
             });
 

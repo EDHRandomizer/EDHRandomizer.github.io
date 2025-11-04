@@ -739,6 +739,17 @@
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Perks Per Player:</label>
                         <input type="number" id="create-perks-count" class="form-control" value="5" min="1" max="10" style="width: 100px;">
                         <p style="opacity: 0.7; font-size: 0.85rem; margin: 0.5rem 0 0 0;">Players will each get this many random perks</p>
+                        
+                        <!-- Avatar Mode Checkbox -->
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <label style="display: flex; align-items: center; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" id="create-avatar-mode" style="margin-right: 0.5rem; width: 18px; height: 18px; cursor: pointer;">
+                                <span>Avatar: The Last Airbender Mode</span>
+                            </label>
+                            <p style="opacity: 0.7; font-size: 0.85rem; margin: 0.5rem 0 0 0;">
+                                Weekly commanders from TLA and TLE sets only
+                            </p>
+                        </div>
                     </div>
                     
                     <button class="btn btn-primary" id="create-session-btn">Create Session</button>
@@ -909,8 +920,13 @@
                 const perksCountInput = document.getElementById('create-perks-count');
                 const perksCount = perksCountInput ? parseInt(perksCountInput.value) || 5 : 5;
                 
+                // Get Avatar Mode checkbox
+                const avatarModeCheckbox = document.getElementById('create-avatar-mode');
+                const avatarMode = avatarModeCheckbox ? avatarModeCheckbox.checked : false;
+                
                 console.log('📡 [CREATE] Calling sessionManager.createSession()...');
-                const result = await sessionManager.createSession('', perksCount); // Empty name initially, pass perks count
+                console.log('🎮 [CREATE] Perks count:', perksCount, '| Avatar Mode:', avatarMode);
+                const result = await sessionManager.createSession('', perksCount, avatarMode); // Empty name initially, pass perks count and avatar mode
                 console.log('✅ [CREATE] Session created:', result);
                 
                 currentSession = result.sessionData;
@@ -1378,12 +1394,19 @@
                 const colorSelections = gameModeController.getColorSelectionsFromUI(colorFilterContainer);
                 console.log(`🎨 [GEN-P${playerNumber}] Color selections:`, colorSelections);
                 
+                // Get Avatar Mode setting from session (if host set it during creation)
+                const gameModeOptions = {
+                    avatarMode: currentSession?.avatarMode || false
+                };
+                console.log(`🎮 [GEN-P${playerNumber}] Game mode options:`, gameModeOptions);
+                
                 // Generate commanders
                 console.log(`📡 [GEN-P${playerNumber}] Calling generateCommandersForPlayer...`);
                 const commanders = await gameModeController.generateCommandersForPlayer(
                     playerNumber,
                     effects,
-                    colorSelections
+                    colorSelections,
+                    gameModeOptions
                 );
                 console.log(`✅ [GEN-P${playerNumber}] Generated ${commanders.length} commanders:`, commanders);
                 

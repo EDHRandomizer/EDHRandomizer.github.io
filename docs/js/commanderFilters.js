@@ -19,46 +19,6 @@ function isSubset(set1, set2) {
     return true;
 }
 
-/**
- * Filter commanders by set codes
- * @param {Array} commanders - Array of commander objects
- * @param {Array} includeSets - Array of set codes to include (empty = no filter)
- * @param {Array} excludeSets - Array of set codes to exclude (empty = no filter)
- * @returns {Array} - Filtered commanders
- */
-export function filterBySet(commanders, includeSets = [], excludeSets = []) {
-    if (!includeSets || includeSets.length === 0) {
-        if (!excludeSets || excludeSets.length === 0) {
-            // No set filtering
-            return commanders;
-        }
-    }
-    
-    return commanders.filter(commander => {
-        const commanderSet = (commander.set_code || '').toUpperCase();
-        
-        // If commander has no set data, exclude it when set filters are active
-        if (!commanderSet) {
-            return false;
-        }
-        
-        // If exclude list specified, reject if commander is in it
-        if (excludeSets && excludeSets.length > 0) {
-            if (excludeSets.includes(commanderSet)) {
-                return false;
-            }
-        }
-        
-        // If include list specified, only accept if commander is in it
-        if (includeSets && includeSets.length > 0) {
-            return includeSets.includes(commanderSet);
-        }
-        
-        // No include list, not in exclude list, so accept
-        return true;
-    });
-}
-
 export function filterByColors(commanders, colors, mode, numColors = null, selectedColorCounts = null) {
     // Helper to get the actual color count from a commander
     const getColorCount = (commander) => {
@@ -142,6 +102,33 @@ export function filterByColors(commanders, colors, mode, numColors = null, selec
     return filtered;
 }
 
+// Filter commanders by set codes
+export function filterBySet(commanders, includeSets = [], excludeSets = []) {
+    let filtered = commanders;
+    
+    // Normalize set codes to uppercase
+    const includeUpper = includeSets.map(s => s.toUpperCase());
+    const excludeUpper = excludeSets.map(s => s.toUpperCase());
+    
+    // Apply exclude filter first (takes priority)
+    if (excludeUpper.length > 0) {
+        filtered = filtered.filter(commander => {
+            const commanderSet = (commander.set_code || '').toUpperCase();
+            return !excludeUpper.includes(commanderSet);
+        });
+    }
+    
+    // Then apply include filter
+    if (includeUpper.length > 0) {
+        filtered = filtered.filter(commander => {
+            const commanderSet = (commander.set_code || '').toUpperCase();
+            return includeUpper.includes(commanderSet);
+        });
+    }
+    
+    return filtered;
+}
+
 // Select random commanders
 export function selectRandomCommanders(
     commanders,
@@ -155,8 +142,8 @@ export function selectRandomCommanders(
     minCmc = null,
     maxCmc = null,
     saltMode = null,
-    includeSets = [],
-    excludeSets = []
+    includeSets = null,
+    excludeSets = null
 ) {
     // Filter commanders by rank range
     let filtered = commanders.filter(c => c.rank >= minRank && c.rank <= maxRank);
@@ -167,8 +154,8 @@ export function selectRandomCommanders(
     }
     
     // Apply set filter if specified
-    if ((includeSets && includeSets.length > 0) || (excludeSets && excludeSets.length > 0)) {
-        filtered = filterBySet(filtered, includeSets, excludeSets);
+    if (includeSets !== null || excludeSets !== null) {
+        filtered = filterBySet(filtered, includeSets || [], excludeSets || []);
     }
     
     // Apply CMC filter if specified
@@ -236,9 +223,9 @@ export function selectRandomCommanders(
  * @param {number|null} minCmc - Minimum CMC
  * @param {number|null} maxCmc - Maximum CMC
  * @param {string|null} saltMode - Salt filter mode
- * @param {Array} includeSets - Set codes to include
- * @param {Array} excludeSets - Set codes to exclude
  * @param {Function|null} distributionFunc - Probability distribution function (rank, min, max) => weight
+ * @param {Array|null} includeSets - Set codes to include
+ * @param {Array|null} excludeSets - Set codes to exclude
  * @returns {Array} - Array of selected commanders
  */
 export function selectRandomCommandersWeighted(
@@ -253,9 +240,9 @@ export function selectRandomCommandersWeighted(
     minCmc = null,
     maxCmc = null,
     saltMode = null,
-    includeSets = [],
-    excludeSets = [],
-    distributionFunc = null
+    distributionFunc = null,
+    includeSets = null,
+    excludeSets = null
 ) {
     // Filter commanders by rank range
     let filtered = commanders.filter(c => c.rank >= minRank && c.rank <= maxRank);
@@ -266,8 +253,8 @@ export function selectRandomCommandersWeighted(
     }
     
     // Apply set filter if specified
-    if ((includeSets && includeSets.length > 0) || (excludeSets && excludeSets.length > 0)) {
-        filtered = filterBySet(filtered, includeSets, excludeSets);
+    if (includeSets !== null || excludeSets !== null) {
+        filtered = filterBySet(filtered, includeSets || [], excludeSets || []);
     }
     
     // Apply CMC filter if specified
@@ -311,8 +298,7 @@ export function selectRandomCommandersWeighted(
     if (!distributionFunc) {
         return selectRandomCommanders(
             commanders, minRank, maxRank, quantity, colors, colorMode,
-            numColors, selectedColorCounts, minCmc, maxCmc, saltMode,
-            includeSets, excludeSets
+            numColors, selectedColorCounts, minCmc, maxCmc, saltMode
         );
     }
     
@@ -367,8 +353,7 @@ export function selectRandomCommandersWeighted(
         console.error('Total weight is 0, falling back to uniform distribution');
         return selectRandomCommanders(
             commanders, minRank, maxRank, quantity, colors, colorMode,
-            numColors, selectedColorCounts, minCmc, maxCmc, saltMode,
-            includeSets, excludeSets
+            numColors, selectedColorCounts, minCmc, maxCmc, saltMode
         );
     }
     

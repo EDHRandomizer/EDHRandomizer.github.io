@@ -24,14 +24,22 @@ export class GameModeController {
      * @param {number} playerNumber - Player number (1-4)
      * @param {Object} perkEffects - perk effects object
      * @param {Object} colorSelections - Color filter selections {selected: ['W', 'U'], mode: 'include'}
+     * @param {Object} gameModeOptions - Game mode settings {avatarMode: boolean}
      * @returns {Promise<Array>} Array of commander objects
      */
-    async generateCommandersForPlayer(playerNumber, perkEffects, colorSelections = null) {
+    async generateCommandersForPlayer(playerNumber, perkEffects, colorSelections = null, gameModeOptions = {}) {
+        // Check for Avatar Mode
+        const avatarMode = gameModeOptions.avatarMode || false;
+        
         // Base configuration
-        const timePeriod = 'Monthly'; // Monthly time period
+        const timePeriod = avatarMode ? 'Weekly' : 'Monthly'; // Avatar Mode uses Weekly
         const minRank = 1;
-        const maxRank = 1400;
+        const maxRank = avatarMode ? 9999 : 1400; // Avatar Mode removes rank limit
         const excludePartners = true;
+        
+        // Avatar Mode set filtering (TLA and TLE only)
+        const includeSets = avatarMode ? ['TLA', 'TLE'] : null;
+        const excludeSets = null;
         
         // Calculate quantity from perk
         const baseQuantity = 3;
@@ -83,6 +91,11 @@ export class GameModeController {
         // Handle salt mode from perk
         const saltMode = perkEffects.saltMode || null;
         
+        console.log(`🎮 [GAME-MODE] Avatar Mode: ${avatarMode ? 'ENABLED' : 'DISABLED'}`);
+        if (avatarMode) {
+            console.log(`🎮 [GAME-MODE] Using Weekly commanders, TLA/TLE sets only, no rank limit`);
+        }
+        
         try {
             const result = await randomizeCommanders(
                 timePeriod,
@@ -97,9 +110,9 @@ export class GameModeController {
                 null, // min_cmc
                 null, // max_cmc
                 saltMode, // salt_mode (from perk)
-                [], // include_sets
-                [], // exclude_sets
-                distributionFunc  // Use normal distribution centered at distributionCenter
+                distributionFunc,  // Use normal distribution centered at distributionCenter
+                includeSets,  // Avatar Mode: ['TLA', 'TLE'] or null
+                excludeSets   // null
             );
             
             if (!result.success) {
