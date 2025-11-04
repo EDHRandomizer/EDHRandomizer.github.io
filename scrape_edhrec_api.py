@@ -84,8 +84,55 @@ CSV_FILENAMES = {
 CSV_HEADERS = [
     "Rank", "Colors", "CMC", "Name", "Rarity", "Type",
     "Card Kingdom", "TCGPlayer", "Face to Face", "Cardmarket",
-    "Cardhoarder", "Salt", "Decks"
+    "Cardhoarder", "Salt", "Decks", "Set Code", "Set Name"
 ]
+
+
+def fetch_scryfall_set_info(card_name: str) -> tuple[str, str]:
+    """
+    Fetch set information from Scryfall API for a given card name.
+    Uses the /cards/named endpoint with fuzzy matching to get the default printing.
+    
+    Args:
+        card_name: The name of the commander card
+        
+    Returns:
+        Tuple of (set_code, set_name). Returns ("", "") if fetch fails.
+    """
+    try:
+        # Handle double-faced cards (e.g., "Frodo // Sam" -> "Frodo")
+        # Scryfall named search works with just the front face name
+        search_name = card_name.split(' // ')[0]
+        
+        # URL encode the card name
+        from urllib.parse import quote
+        encoded_name = quote(search_name)
+        
+        # Use fuzzy search to be more forgiving of name variations
+        url = f"https://api.scryfall.com/cards/named?fuzzy={encoded_name}"
+        
+        req = Request(url, headers={'User-Agent': 'EDHRecScraper/1.0'})
+        
+        # Scryfall recommends 50-100ms between requests
+        time.sleep(0.075)
+        
+        with urlopen(req, timeout=30) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            
+            set_code = data.get('set', '').upper()
+            set_name = data.get('set_name', '')
+            
+            return (set_code, set_name)
+            
+    except HTTPError as e:
+        if e.code == 404:
+            print(f"    Warning: Card '{card_name}' not found on Scryfall", file=sys.stderr)
+        else:
+            print(f"    HTTP Error {e.code} fetching Scryfall data for '{card_name}': {e.reason}", file=sys.stderr)
+        return ("", "")
+    except Exception as e:
+        print(f"    Error fetching Scryfall data for '{card_name}': {e}", file=sys.stderr)
+        return ("", "")
 
 
 def fetch_json_page(url: str) -> Optional[Dict[str, Any]]:
@@ -152,7 +199,9 @@ def extract_commander_data(card: Dict[str, Any], from_nextjs: bool = False) -> D
             "cardmarket": "",
             "cardhoarder": "",
             "salt": "",  # Not available in Next.js response
-            "num_decks": card.get("inclusion", "")  # Next.js uses "inclusion" instead of "num_decks"
+            "num_decks": card.get("inclusion", ""),  # Next.js uses "inclusion" instead of "num_decks"
+            "set_code": "",  # Will be fetched from Scryfall later
+            "set_name": ""   # Will be fetched from Scryfall later
         }
     
     # For paginated API responses, use full data
@@ -183,7 +232,9 @@ def extract_commander_data(card: Dict[str, Any], from_nextjs: bool = False) -> D
         "cardmarket": get_price("cardmarket"),
         "cardhoarder": get_price("cardhoarder"),
         "salt": round(card.get("salt", 0), 2),
-        "num_decks": card.get("num_decks", "")
+        "num_decks": card.get("num_decks", ""),
+        "set_code": "",  # Will be fetched from Scryfall later
+        "set_name": ""   # Will be fetched from Scryfall later
     }
 
 
@@ -309,6 +360,24 @@ def fetch_all_commanders(timeframe: str, max_pages: int = 100) -> List[Dict[str,
         page += 1
     
     print(f"Total commanders fetched: {len(all_commanders)}")
+    
+    # Fetch set information from Scryfall for all commanders
+    if all_commanders:
+        print(f"\nFetching set information from Scryfall...")
+        for i, commander in enumerate(all_commanders, 1):
+            card_name = commander.get("name", "")
+            if card_name:
+                print(f"  [{i}/{len(all_commanders)}] {card_name}...", end=" ", flush=True)
+                set_code, set_name = fetch_scryfall_set_info(card_name)
+                commander["set_code"] = set_code
+                commander["set_name"] = set_name
+                if set_code:
+                    print(f"{set_code} ({set_name})")
+                else:
+                    print("Not found")
+            else:
+                print(f"  [{i}/{len(all_commanders)}] Warning: Empty card name", file=sys.stderr)
+    
     return all_commanders
 
 
@@ -334,7 +403,9 @@ def write_csv(commanders: List[Dict[str, Any]], output_path: Path) -> None:
                 cmd["cardmarket"],
                 cmd["cardhoarder"],
                 cmd["salt"],
-                cmd["num_decks"]
+                cmd["num_decks"],
+                cmd["set_code"],
+                cmd["set_name"]
             ])
     
     print(f"✅ Wrote {len(commanders)} commanders to {output_path}")
