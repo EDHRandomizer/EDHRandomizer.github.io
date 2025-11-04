@@ -151,6 +151,13 @@ export function setupEventListeners(handleRandomizeCallback, resetToDefaultSetti
     // Salt filter enable toggle
     document.getElementById('enable-salt-filter').addEventListener('change', saveSettings);
     
+    // Set filter enable toggle
+    document.getElementById('enable-set-filter').addEventListener('change', saveSettings);
+    
+    // Set filter inputs
+    document.getElementById('include-sets').addEventListener('input', saveSettings);
+    document.getElementById('exclude-sets').addEventListener('input', saveSettings);
+    
     // Salt toggle button
     document.getElementById('salt-toggle').addEventListener('click', () => {
         const btn = document.getElementById('salt-toggle');
@@ -267,7 +274,10 @@ export function getAdditionalFilterSettings() {
             min_cmc: null, 
             max_cmc: null, 
             enable_salt: false,
-            salt_mode: null 
+            salt_mode: null,
+            enable_set: false,
+            include_sets: [],
+            exclude_sets: []
         };
     }
     
@@ -279,12 +289,27 @@ export function getAdditionalFilterSettings() {
     const saltBtn = document.getElementById('salt-toggle');
     const saltMode = saltBtn.classList.contains('salty') ? 'salty' : 'chill';
     
+    const enableSet = document.getElementById('enable-set-filter').checked;
+    const includeSetInput = document.getElementById('include-sets').value.trim();
+    const excludeSetInput = document.getElementById('exclude-sets').value.trim();
+    
+    // Parse set codes - split by comma, trim, uppercase, remove empties
+    const includeSets = includeSetInput
+        ? includeSetInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0)
+        : [];
+    const excludeSets = excludeSetInput
+        ? excludeSetInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0)
+        : [];
+    
     return { 
         enable_cmc: enableCmc,
         min_cmc: enableCmc ? minCmc : null, 
         max_cmc: enableCmc ? maxCmc : null,
         enable_salt: enableSalt,
-        salt_mode: enableSalt ? saltMode : null
+        salt_mode: enableSalt ? saltMode : null,
+        enable_set: enableSet,
+        include_sets: enableSet ? includeSets : [],
+        exclude_sets: enableSet ? excludeSets : []
     };
 }
 
@@ -346,6 +371,9 @@ export function resetToDefaultSettings() {
     document.getElementById('min-cmc').value = DEFAULT_SETTINGS.minCmc;
     document.getElementById('max-cmc').value = DEFAULT_SETTINGS.maxCmc;
     document.getElementById('enable-salt-filter').checked = DEFAULT_SETTINGS.enableSaltFilter;
+    document.getElementById('enable-set-filter').checked = DEFAULT_SETTINGS.enableSetFilter;
+    document.getElementById('include-sets').value = DEFAULT_SETTINGS.includeSets;
+    document.getElementById('exclude-sets').value = DEFAULT_SETTINGS.excludeSets;
     
     // Reset salt toggle button
     const saltBtn = document.getElementById('salt-toggle');

@@ -237,6 +237,26 @@
                         <span class="salt-label">Salty</span>
                     </button>
                 </div>
+
+                <!-- Set Filter -->
+                <div class="filter-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="enable-set-filter" class="checkbox">
+                        <span>Set Filter:</span>
+                    </label>
+                    <div class="set-filter-controls">
+                        <div class="set-input-group">
+                            <label class="set-label">Include Sets:</label>
+                            <input type="text" id="include-sets" class="form-control set-input" placeholder="e.g., CMM, FDN, LTR">
+                            <small class="help-text">Comma-separated set codes</small>
+                        </div>
+                        <div class="set-input-group">
+                            <label class="set-label">Exclude Sets:</label>
+                            <input type="text" id="exclude-sets" class="form-control set-input" placeholder="e.g., SLD, 40K">
+                            <small class="help-text">Comma-separated set codes</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

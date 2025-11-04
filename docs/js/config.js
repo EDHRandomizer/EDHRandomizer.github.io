@@ -19,6 +19,9 @@ export const DEFAULT_SETTINGS = {
     maxCmc: 13,
     enableSaltFilter: false,
     saltMode: 'salty', // 'salty' or 'chill'
+    enableSetFilter: false,
+    includeSets: '',
+    excludeSets: '',
     enableAdvancedRandomizer: false,
     distributionEquation: '1'
 };

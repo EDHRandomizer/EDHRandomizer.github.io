@@ -246,6 +246,47 @@ section h3 {
     color: white;
 }
 
+.set-filter-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.set-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.set-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.set-input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+}
+
+.set-input::placeholder {
+    text-transform: none;
+    font-family: inherit;
+    font-style: italic;
+    color: #999;
+}
+
+.set-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+}
+
 .color-checkboxes {
     display: flex;
     gap: 8px;
