@@ -7,6 +7,7 @@ Replaces complex Playwright-based scraping with simple HTTP requests
 import argparse
 import csv
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -15,26 +16,62 @@ from urllib.request import urlopen, Request
 from urllib.error import HTTPError, URLError
 
 
-# Next.js build ID (may change on deployment)
-NEXTJS_BUILD_ID = "q6CiTV9g1s-s_apLD7pxR"
+# Next.js build ID will be fetched dynamically
+NEXTJS_BUILD_ID = None
+
+
+def get_nextjs_build_id() -> str:
+    """
+    Fetch the current Next.js build ID from EDHREC's HTML.
+    The build ID is embedded in the HTML as buildId in a JSON script tag.
+    """
+    global NEXTJS_BUILD_ID
+    
+    if NEXTJS_BUILD_ID is not None:
+        return NEXTJS_BUILD_ID
+    
+    try:
+        print("Fetching current Next.js build ID from EDHREC...", flush=True)
+        req = Request("https://edhrec.com/commanders", headers={'User-Agent': 'EDHRecScraper/1.0'})
+        with urlopen(req, timeout=30) as response:
+            html = response.read().decode('utf-8')
+        
+        # Look for the buildId in the __NEXT_DATA__ script tag
+        # Pattern: <script id="__NEXT_DATA__" type="application/json">{"props":...,"buildId":"xxx",...}</script>
+        match = re.search(r'"buildId":"([^"]+)"', html)
+        
+        if match:
+            build_id = match.group(1)
+            NEXTJS_BUILD_ID = build_id
+            print(f"  Found build ID: {build_id}")
+            return build_id
+        else:
+            raise RuntimeError("Could not find Next.js build ID in HTML")
+    
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch Next.js build ID: {e}")
+
 
 # API URL patterns for different timeframes
 # First page (ranks 1-100): Next.js server-side data endpoints
 # Subsequent pages (ranks 101+): json.edhrec.com pagination API
-API_PATTERNS = {
-    "2year": {
-        "first": f"https://edhrec.com/_next/data/{NEXTJS_BUILD_ID}/commanders.json",
-        "paged": "https://json.edhrec.com/pages/commanders/year-past2years-{page}.json"
-    },
-    "month": {
-        "first": f"https://edhrec.com/_next/data/{NEXTJS_BUILD_ID}/commanders/month.json?slug=month",
-        "paged": "https://json.edhrec.com/pages/commanders/month-pastmonth-{page}.json"
-    },
-    "week": {
-        "first": f"https://edhrec.com/_next/data/{NEXTJS_BUILD_ID}/commanders/week.json?slug=week",
-        "paged": "https://json.edhrec.com/pages/commanders/week-pastweek-{page}.json"
+def get_api_patterns():
+    """Get API patterns with current build ID."""
+    build_id = get_nextjs_build_id()
+    return {
+        "2year": {
+            "first": f"https://edhrec.com/_next/data/{build_id}/commanders.json",
+            "paged": "https://json.edhrec.com/pages/commanders/year-past2years-{page}.json"
+        },
+        "month": {
+            "first": f"https://edhrec.com/_next/data/{build_id}/commanders/month.json?slug=month",
+            "paged": "https://json.edhrec.com/pages/commanders/month-pastmonth-{page}.json"
+        },
+        "week": {
+            "first": f"https://edhrec.com/_next/data/{build_id}/commanders/week.json?slug=week",
+            "paged": "https://json.edhrec.com/pages/commanders/week-pastweek-{page}.json"
+        }
     }
-}
 
 # Output CSV filenames
 CSV_FILENAMES = {
@@ -180,7 +217,7 @@ def fetch_all_commanders(timeframe: str, max_pages: int = 100) -> List[Dict[str,
     For the first 100 commanders, fetches individual detail pages to get complete metadata.
     For remaining commanders, uses pagination API which has full data.
     """
-    url_config = API_PATTERNS.get(timeframe)
+    url_config = get_api_patterns().get(timeframe)
     if not url_config:
         raise ValueError(f"Unknown timeframe: {timeframe}")
     
