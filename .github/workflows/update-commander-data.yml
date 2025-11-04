@@ -139,3 +139,10 @@ jobs:
         if: steps.git-check.outputs.changes != 'true'
         run: |
           echo "No changes detected in commander data"
+      
+      - name: Upload all CSV files as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: commander-data-csvs
+          path: docs/data/*.csv
+          retention-days: 90
