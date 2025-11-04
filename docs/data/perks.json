@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "2.0.0",
   "description": "Perk system with type-based deduplication",
   "rarityWeights": {
@@ -311,26 +311,26 @@
       "mutuallyExclusive": false,
       "perks": [
         {
-          "id": "silly_card_2",
-          "name": "Silly Cards x2",
+          "id": "silly_card_3",
+          "name": "Silly Cards x3",
           "rarity": "common",
-          "description": "Get 2 random silly cards",
+          "description": "Get 3 random silly cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silly_cards",
-            "specialPackCount": 2,
+            "specialPackCount": 3,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         },
         {
-          "id": "silly_card_4",
-          "name": "Silly Cards x4",
+          "id": "silly_card_6",
+          "name": "Silly Cards x6",
           "rarity": "uncommon",
-          "description": "Get 4 random silly cards",
+          "description": "Get 6 random silly cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silly_cards",
-            "specialPackCount": 4,
+            "specialPackCount": 6,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         }
