@@ -935,6 +935,16 @@ class handler(BaseHTTPRequestHandler):
                     'count': 1
                 }]
             },
+            'mdfc_lands': {
+                'name': 'MDFC Lands',
+                'source': 'scryfall',
+                'count': 1,
+                'useCommanderColorIdentity': True,
+                'slots': [{
+                    'query': 'https://scryfall.com/search?q=is%3Amdfc+type%3Aland&unique=cards&as=grid&order=name',
+                    'count': 1
+                }]
+            },
             'any_cost_lands': {
                 'name': 'Any Cost Lands',
                 'source': 'edhrec',

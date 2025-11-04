@@ -447,6 +447,24 @@
       ]
     },
     {
+      "type": "mdfc_lands",
+      "name": "MDFC Lands",
+      "mutuallyExclusive": false,
+      "perks": [
+        {
+          "id": "mdfc_pilled",
+          "name": "MDFC-Pilled",
+          "rarity": "common",
+          "description": "Get a pack of 15 MDFC lands",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "mdfc_lands",
+            "specialPackCount": 15
+          }
+        }
+      ]
+    },
+    {
       "type": "manual_powerups",
       "name": "Manual Powerups",
       "mutuallyExclusive": false,
