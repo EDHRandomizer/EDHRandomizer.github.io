@@ -97,6 +97,8 @@ export class GameModeController {
                 null, // min_cmc
                 null, // max_cmc
                 saltMode, // salt_mode (from perk)
+                [], // include_sets
+                [], // exclude_sets
                 distributionFunc  // Use normal distribution centered at distributionCenter
             );
             
