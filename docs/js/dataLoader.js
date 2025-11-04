@@ -64,7 +64,9 @@ function parseCSV(csvText) {
                 cmc: row['CMC'] || '',
                 rarity: row['Rarity'] || '',
                 type: row['Type'] || '',
-                salt: row['Salt'] || ''
+                salt: row['Salt'] || '',
+                set_code: row['Set Code'] || '',
+                set_name: row['Set Name'] || ''
             });
         } catch (e) {
             continue;
