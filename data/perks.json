@@ -311,26 +311,26 @@
       "mutuallyExclusive": false,
       "perks": [
         {
-          "id": "silly_card_3",
-          "name": "Silly Cards x3",
+          "id": "silly_card_2",
+          "name": "Silly Cards x2",
           "rarity": "common",
-          "description": "Get 3 random silly cards",
+          "description": "Get 2 random silly cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silly_cards",
-            "specialPackCount": 3,
+            "specialPackCount": 2,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         },
         {
-          "id": "silly_card_6",
-          "name": "Silly Cards x6",
+          "id": "silly_card_4",
+          "name": "Silly Cards x4",
           "rarity": "uncommon",
-          "description": "Get 6 random silly cards",
+          "description": "Get 4 random silly cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silly_cards",
-            "specialPackCount": 6,
+            "specialPackCount": 4,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         }
@@ -351,6 +351,68 @@
             "specialPack": "banned",
             "specialPackCount": 3,
             "moxfieldDeck": "5OpLbDPxxkG6yAmxTT7YjA"
+          }
+        }
+      ]
+    },
+    {
+      "type": "scangtech_cards",
+      "name": "ScangTech Cards",
+      "mutuallyExclusive": false,
+      "perks": [
+        {
+          "id": "scangtech_1",
+          "name": "ScangTech Card",
+          "rarity": "uncommon",
+          "description": "Get 1 random ScangTech card",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "scangtech",
+            "specialPackCount": 1,
+            "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
+          }
+        },
+        {
+          "id": "scangtech_3",
+          "name": "ScangTech Cards x3",
+          "rarity": "rare",
+          "description": "Get 3 random ScangTech cards",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "scangtech",
+            "specialPackCount": 3,
+            "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
+          }
+        }
+      ]
+    },
+    {
+      "type": "jptech_cards",
+      "name": "JpTech Cards",
+      "mutuallyExclusive": false,
+      "perks": [
+        {
+          "id": "jptech_1",
+          "name": "JpTech Card",
+          "rarity": "uncommon",
+          "description": "Get 1 random JpTech card",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "jptech",
+            "specialPackCount": 1,
+            "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
+          }
+        },
+        {
+          "id": "jptech_3",
+          "name": "JpTech Cards x3",
+          "rarity": "rare",
+          "description": "Get 3 random JpTech cards",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "jptech",
+            "specialPackCount": 3,
+            "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
           }
         }
       ]

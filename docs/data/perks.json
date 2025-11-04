@@ -356,6 +356,68 @@
       ]
     },
     {
+      "type": "scangtech_cards",
+      "name": "ScangTech Cards",
+      "mutuallyExclusive": false,
+      "perks": [
+        {
+          "id": "scangtech_1",
+          "name": "ScangTech Card",
+          "rarity": "uncommon",
+          "description": "Get 1 random ScangTech card",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "scangtech",
+            "specialPackCount": 1,
+            "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
+          }
+        },
+        {
+          "id": "scangtech_3",
+          "name": "ScangTech Cards x3",
+          "rarity": "rare",
+          "description": "Get 3 random ScangTech cards",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "scangtech",
+            "specialPackCount": 3,
+            "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
+          }
+        }
+      ]
+    },
+    {
+      "type": "jptech_cards",
+      "name": "JpTech Cards",
+      "mutuallyExclusive": false,
+      "perks": [
+        {
+          "id": "jptech_1",
+          "name": "JpTech Card",
+          "rarity": "uncommon",
+          "description": "Get 1 random JpTech card",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "jptech",
+            "specialPackCount": 1,
+            "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
+          }
+        },
+        {
+          "id": "jptech_3",
+          "name": "JpTech Cards x3",
+          "rarity": "rare",
+          "description": "Get 3 random JpTech cards",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "jptech",
+            "specialPackCount": 3,
+            "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
+          }
+        }
+      ]
+    },
+    {
       "type": "manabase",
       "name": "Manabase Upgrades",
       "mutuallyExclusive": false,
