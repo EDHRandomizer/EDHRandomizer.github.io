@@ -762,7 +762,10 @@
         <!-- Pack Codes (when all locked in) -->
         <section id="pack-codes-section" class="pack-codes-section hidden">
             <h2>🎉 All Players Locked In!</h2>
-            <p style="text-align: center; margin: 0;">Your pack codes are ready. Copy your code and paste it in Tabletop Simulator to receive your packs!</p>
+            <p style="text-align: center; margin: 0 0 0.5rem 0;">Your pack codes are ready! Click "Copy Code" to copy to clipboard.</p>
+            <p style="text-align: center; margin: 0; font-size: 0.9rem; color: #888;">
+                <strong>📝 TTS Instructions:</strong> In Tabletop Simulator chat, type: <code style="background: #2a2a2a; padding: 2px 6px; border-radius: 3px;">edhrandomizer [YOUR_CODE]</code>
+            </p>
             <div class="pack-code-list" id="pack-code-list">
                 <!-- Pack codes populated by JS -->
             </div>
@@ -1714,7 +1717,7 @@
                     <div class="pack-code-display">
                         <div class="pack-code-label">TTS Pack Code:</div>
                         <div class="pack-code">${player.packCode || 'Generating...'}</div>
-                        <button class="btn btn-small" onclick="copyPackCode('${player.packCode}')" style="margin-top: 0.5rem; width: 100%;">📋 Copy Code</button>
+                        <button class="btn btn-small" onclick="copyPackCode('${player.packCode}')" style="margin-top: 0.5rem; width: 100%;" title="Click to copy the TTS chat command">📋 Copy TTS Command</button>
                     </div>
                 `;
                 packCodeList.appendChild(div);
@@ -1726,9 +1729,10 @@
 
         window.copyPackCode = function(code) {
             console.log('📋 [COPY] Copying pack code:', code);
-            navigator.clipboard.writeText(code);
-            showStatus('Pack code copied!');
-            console.log('✅ [COPY] Pack code copied to clipboard');
+            const ttsCommand = `edhrandomizer ${code}`;
+            navigator.clipboard.writeText(ttsCommand);
+            showStatus(`✅ Copied to clipboard! Paste "${ttsCommand}" in TTS chat.`);
+            console.log('✅ [COPY] TTS command copied to clipboard:', ttsCommand);
         };
 
         function showStatus(message) {
