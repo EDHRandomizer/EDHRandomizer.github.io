@@ -132,6 +132,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add docs/data/*.csv
           git commit -m "🤖 Update commander data - $(date +'%Y-%m-%d %H:%M:%S UTC')"
+          git pull --rebase origin main
           git push
       
       - name: No changes detected
