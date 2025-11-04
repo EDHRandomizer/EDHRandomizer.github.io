@@ -762,14 +762,16 @@
         <!-- Pack Codes (when all locked in) -->
         <section id="pack-codes-section" class="pack-codes-section hidden">
             <h2>🎉 All Players Locked In!</h2>
-            <p style="text-align: center; margin: 0 0 0.5rem 0;">Your pack codes are ready! Click "Copy Code" to copy to clipboard.</p>
-            <p style="text-align: center; margin: 0; font-size: 0.9rem; color: #888;">
-                <strong>📝 TTS Instructions:</strong> In Tabletop Simulator chat, type: <code style="background: #2a2a2a; padding: 2px 6px; border-radius: 3px;">edhrandomizer [YOUR_CODE]</code>
-            </p>
+            <p style="text-align: center; margin: 0;">Your pack codes are ready! Click "Copy TTS Command" to copy to clipboard.</p>
             <div class="pack-code-list" id="pack-code-list">
                 <!-- Pack codes populated by JS -->
             </div>
         </section>
+
+        <!-- TTS Instructions (persistent, shown only when pack codes visible) -->
+        <div id="tts-instructions" class="hidden" style="text-align: center; margin: 1rem 0; font-size: 0.9rem; color: #888;">
+            <strong>📝 TTS Instructions:</strong> In Tabletop Simulator chat, type: <code style="background: #2a2a2a; padding: 2px 6px; border-radius: 3px;">edhrandomizer [YOUR_CODE]</code>
+        </div>
 
         <!-- Status Message -->
         <div id="status-message" style="text-align: center; margin: 1rem 0; min-height: 24px;">
@@ -1652,6 +1654,7 @@
             
             playerGridSection.classList.add('hidden');
             packCodesSection.classList.remove('hidden');
+            document.getElementById('tts-instructions').classList.remove('hidden');
             console.log('🔄 [PACK-CODES] View switched - grid hidden, codes shown');
             
             const packCodeList = document.getElementById('pack-code-list');
