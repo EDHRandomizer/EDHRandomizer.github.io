@@ -53,6 +53,14 @@
             margin-bottom: 2rem;
         }
 
+        /* Center join/create and name entry sections */
+        .lobby-section.centered {
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 2rem;
+        }
+
         .lobby-players {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -95,6 +103,11 @@
             
             .locked-commander-display h3 {
                 font-size: 1.1rem;
+            }
+
+            /* Stack join/create columns on mobile */
+            #join-create-section > div {
+                grid-template-columns: 1fr !important;
             }
         }
 
@@ -703,8 +716,8 @@
         </header>
 
         <!-- Join/Create Section -->
-        <section id="join-create-section" class="lobby-section">
-            <h2>Get Started</h2>
+        <section id="join-create-section" class="lobby-section centered">
+            <h2 style="text-align: center;">Get Started</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
                 <div>
                     <h3>Host New Game</h3>
@@ -729,8 +742,8 @@
         </section>
 
         <!-- Enter Name Section (after joining/creating) -->
-        <section id="enter-name-section" class="lobby-section hidden">
-            <h2>Choose Your Name</h2>
+        <section id="enter-name-section" class="lobby-section centered hidden">
+            <h2 style="text-align: center;">Choose Your Name</h2>
             <p style="text-align: center; opacity: 0.8;">Enter a display name or skip to use a default name</p>
             <div style="max-width: 500px; margin: 1.5rem auto;">
                 <input type="text" id="player-name-input" class="form-control" placeholder="Enter your name (optional)" maxlength="20" style="margin-bottom: 1rem; font-size: 1.1rem;">
