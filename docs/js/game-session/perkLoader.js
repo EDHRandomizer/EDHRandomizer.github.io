@@ -18,7 +18,7 @@ class PerkLoader {
         }
 
         try {
-            const response = await fetch('../data/perks.json');
+            const response = await fetch('/data/perks.json');
             if (!response.ok) {
                 throw new Error(`Failed to load perks: ${response.statusText}`);
             }

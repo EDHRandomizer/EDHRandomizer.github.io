@@ -40,13 +40,24 @@ def test_perks_no_bom():
     assert first_bytes != b'\xef\xbb\xbf', "perks.json has UTF-8 BOM - this will break JSON parsing!"
     print("✓ perks.json has no BOM")
 
-def test_no_duplicate_perks_file():
-    """Verify there's no duplicate perks.json in docs/data/"""
+def test_perks_files_in_sync():
+    """Verify both perks.json files are in sync"""
     repo_root = Path(__file__).parent
-    duplicate_path = repo_root / 'docs' / 'data' / 'perks.json'
+    source_path = repo_root / 'data' / 'perks.json'
+    docs_path = repo_root / 'docs' / 'data' / 'perks.json'
     
-    assert not duplicate_path.exists(), f"Duplicate perks.json found at {duplicate_path} - should only exist in data/"
-    print("✓ No duplicate perks.json file")
+    if not docs_path.exists():
+        print("⚠️  docs/data/perks.json doesn't exist - run sync_perks.py")
+        return
+    
+    with open(source_path, 'rb') as f:
+        source_content = f.read()
+    
+    with open(docs_path, 'rb') as f:
+        docs_content = f.read()
+    
+    assert source_content == docs_content, "perks.json files are out of sync! Run sync_perks.py"
+    print("✓ data/perks.json and docs/data/perks.json are in sync")
 
 def test_scangtech_jptech_exist():
     """Verify ScangTech and JpTech perks are present"""
@@ -119,7 +130,7 @@ if __name__ == '__main__':
     test_perks_json_exists()
     test_perks_json_valid()
     test_perks_no_bom()
-    test_no_duplicate_perks_file()
+    test_perks_files_in_sync()
     test_scangtech_jptech_exist()
     test_api_can_load_perks()
     test_frontend_can_load_perks()
