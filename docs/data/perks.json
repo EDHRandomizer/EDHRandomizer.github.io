@@ -112,6 +112,7 @@
           "id": "extra_choice_1",
           "name": "+1 Commander Choice",
           "rarity": "common",
+          "weightMultiplier": 1.2,
           "description": "Pick from 1 additional commander",
           "perkPhase": "commander_selection",
           "effects": { "commanderQuantity": 1 }
@@ -120,6 +121,7 @@
           "id": "extra_choice_3",
           "name": "+3 Commander Choices",
           "rarity": "uncommon",
+          "weightMultiplier": 1.2,
           "description": "Pick from 3 additional commanders",
           "perkPhase": "commander_selection",
           "effects": { "commanderQuantity": 3 }

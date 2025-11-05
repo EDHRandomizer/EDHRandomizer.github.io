@@ -657,6 +657,7 @@ class handler(BaseHTTPRequestHandler):
         session_code = data.get('sessionCode', '').upper()
         player_id = data.get('playerId', '')
         commanders = data.get('commanders', [])
+        color_selections = data.get('colorSelections')
         
         session = get_session(session_code)
         if not session_code or not session:
@@ -675,6 +676,10 @@ class handler(BaseHTTPRequestHandler):
         if 'commanders' not in player:
             player['commanders'] = []
         player['commanders'] = commanders[:10]  # Limit to 10 commanders max
+        
+        # Store color selections if provided
+        if color_selections is not None:
+            player['colorSelections'] = color_selections
         
         session['updated_at'] = time.time()
         update_session(session_code, session)

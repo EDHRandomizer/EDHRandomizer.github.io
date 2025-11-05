@@ -304,22 +304,29 @@ class SessionManager {
      * @param {Array} commanders - Array of commander objects
      * @returns {Promise<Object>} - Updated session data
      */
-    async updateCommanders(commanders) {
+    async updateCommanders(commanders, colorSelections = null) {
         if (!this.currentSession || !this.currentPlayerId) {
             throw new Error('No active session');
         }
 
         try {
+            const payload = {
+                sessionCode: this.currentSession,
+                playerId: this.currentPlayerId,
+                commanders: commanders
+            };
+            
+            // Include color selections if provided
+            if (colorSelections) {
+                payload.colorSelections = colorSelections;
+            }
+            
             const response = await this.fetchWithRetry(`${this.apiBase}/update-commanders`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    sessionCode: this.currentSession,
-                    playerId: this.currentPlayerId,
-                    commanders: commanders
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {

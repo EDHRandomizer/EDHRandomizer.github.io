@@ -165,6 +165,11 @@ Edit `data/perks.json` and add a new perk type:
 }
 ```
 
+**Color Filter Modes:**
+- `"exclude"`: Player selects colors to exclude (colorless commanders included)
+- `"include"`: Player selects colors that must be in commander (colorless commanders excluded)
+- `"exact"`: Player selects exact color identity (checkbox for colorless 'C' is available)
+
 **Drafting:**
 ```json
 {

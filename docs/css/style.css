@@ -503,6 +503,11 @@ section h3 {
     color: #000;
 }
 
+.color-checkbox.colorless {
+    background-color: #999999;
+    color: #fff;
+}
+
 /* Enhanced selected state */
 .color-checkbox input:checked + span {
     font-size: 1.4rem;
@@ -514,7 +519,8 @@ section h3 {
 .color-checkbox.blue input:checked ~ span::before,
 .color-checkbox.black input:checked ~ span::before,
 .color-checkbox.red input:checked ~ span::before,
-.color-checkbox.green input:checked ~ span::before {
+.color-checkbox.green input:checked ~ span::before,
+.color-checkbox.colorless input:checked ~ span::before {
     content: '';
     position: absolute;
     top: -3px;
@@ -549,6 +555,11 @@ section h3 {
 .color-checkbox.green input:checked ~ span::before {
     border: 3px solid #228B22;
     box-shadow: 0 0 10px #228B22, inset 0 0 10px rgba(34, 139, 34, 0.3);
+}
+
+.color-checkbox.colorless input:checked ~ span::before {
+    border: 3px solid #666;
+    box-shadow: 0 0 10px #888, inset 0 0 10px rgba(102, 102, 102, 0.3);
 }
 
 /* Checkmark indicator */

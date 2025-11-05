@@ -1274,17 +1274,28 @@
                 { code: 'G', name: 'green', label: 'G' }
             ];
             
+            // Add colorless option for exact mode
+            if (mode === 'exact') {
+                colors.push({ code: 'C', name: 'colorless', label: 'C' });
+            }
+            
+            // Get the player's color selections from session data
+            const player = currentSession?.players?.find(p => p.number === playerNumber);
+            const selectedColors = player?.colorSelections?.selected || [];
+            
             let instruction = '';
             if (mode === 'exclude') instruction = `Select ${count} color${count > 1 ? 's' : ''} to exclude`;
             else if (mode === 'include') instruction = `Select ${count} color${count > 1 ? 's' : ''} to include`;
-            else if (mode === 'exact') instruction = 'Select exact colors for your commander';
+            else if (mode === 'exact') instruction = 'Select exact colors for your commander (or C for colorless)';
             
-            const colorCheckboxes = colors.map(c => `
+            const colorCheckboxes = colors.map(c => {
+                const isChecked = selectedColors.includes(c.code);
+                return `
                 <label class="color-checkbox ${c.name}" ${!isCurrentPlayer ? 'style="pointer-events: none; opacity: 0.7;"' : ''}>
-                    <input type="checkbox" value="${c.code}" class="color-input" ${!isCurrentPlayer ? 'disabled' : ''}>
+                    <input type="checkbox" value="${c.code}" class="color-input" ${!isCurrentPlayer ? 'disabled' : ''} ${isChecked ? 'checked' : ''}>
                     <span>${c.label}</span>
                 </label>
-            `).join('');
+            `}).join('');
             
             return `
                 <div class="setting-row">
@@ -1386,6 +1397,32 @@
             const commandersGrid = document.getElementById(`commanders-${playerNumber}`);
             const colorFilterContainer = playerSection.querySelector('.color-filter-checkboxes');
             
+            // Check if color filter perk is active but no colors selected
+            if (colorFilterContainer) {
+                const mode = colorFilterContainer.dataset.mode;
+                const checkedInputs = colorFilterContainer.querySelectorAll('.color-input:checked');
+                
+                if (checkedInputs.length === 0) {
+                    const modeNames = {
+                        'exclude': 'Exclude Color',
+                        'include': 'Include Color',
+                        'exact': 'Exact Color Selection'
+                    };
+                    const modeName = modeNames[mode] || 'Color Filter';
+                    
+                    const confirmed = confirm(
+                        `⚠️ You have the "${modeName}" perk but haven't selected any colors.\n\n` +
+                        `This means you'll get a random commander from the entire pool.\n\n` +
+                        `Do you want to continue without using your color filter perk?`
+                    );
+                    
+                    if (!confirmed) {
+                        console.log(`❌ [GEN-P${playerNumber}] User cancelled - no colors selected for color filter perk`);
+                        return;
+                    }
+                }
+            }
+            
             showStatus(`Generating ${quantity} commanders for Player ${playerNumber}...`);
             
             try {
@@ -1471,7 +1508,7 @@
                 
                 // Send commanders to server in background (don't await - let it happen async)
                 console.log(`📡 [GEN-P${playerNumber}] Syncing commanders to server...`);
-                sessionManager.updateCommanders(commanders)
+                sessionManager.updateCommanders(commanders, colorSelections)
                     .then(() => {
                         console.log(`✅ [GEN-P${playerNumber}] Commanders synced to server`);
                     })
@@ -1654,51 +1691,45 @@
         }
 
         function startPolling() {
-            console.log('🔄 [POLLING] Starting session polling (2s interval)');
+            console.log('🔄 [POLLING] Starting session polling (500ms interval)');
             
             setInterval(async () => {
                 if (!currentSession) {
-                    console.log('⚠️ [POLLING] No current session - skipping poll');
-                    return;
+                    return; // Silent skip when no session
                 }
                 
                 try {
-                    console.log(`📡 [POLLING] Fetching session: ${currentSession.sessionCode}`);
                     const session = await sessionManager.getSession(currentSession.sessionCode);
-                    console.log('✅ [POLLING] Session updated:', session);
                     
                     currentSession = session;
                     gameModeController.currentSession = session;
                     
                     // Update lobby if in lobby state
                     if (session.state === 'waiting' && !lobbySection.classList.contains('hidden')) {
-                        console.log('👥 [POLLING] Updating lobby player list');
                         updateLobbyPlayers();
                     }
                     
                     // Update UI based on state
                     if (session.state === 'selecting' && playerGridSection.classList.contains('hidden')) {
-                        console.log('🎮 [POLLING] State is selecting - entering game mode');
+                        console.log('🎮 [POLLING] State changed to selecting - entering game mode');
                         enterGameMode();
                     }
                     
                     // Update player grid if in selecting state (but only update changed parts)
                     if (session.state === 'selecting' && !playerGridSection.classList.contains('hidden')) {
-                        console.log('🔄 [POLLING] Updating player statuses');
                         updatePlayerStatuses();
                     }
                     
                     // Check if all locked
                     const allLocked = gameModeController.allPlayersLocked();
-                    console.log(`🔍 [POLLING] All locked: ${allLocked}, State: ${session.state}`);
                     if (allLocked && session.state === 'complete') {
-                        console.log('🎉 [POLLING] All locked and complete - showing pack codes');
+                        console.log('🎉 [POLLING] All players locked - showing pack codes');
                         showPackCodes();
                     }
                 } catch (error) {
                     console.error('❌ [POLLING] Error:', error);
                 }
-            }, 2000);
+            }, 500);
         }
 
         function showPackCodes() {

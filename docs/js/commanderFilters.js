@@ -65,11 +65,20 @@ export function filterByColors(commanders, colors, mode, numColors = null, selec
         return commanders;
     }
     
-    // Parse the color set
-    const filterColors = new Set(colors.toUpperCase().replace(/,/g, '').replace(/ /g, '').split(''));
+    // Parse the color set - handle 'C' for colorless
+    let filterColors;
+    const colorStr = colors.toUpperCase().replace(/,/g, '').replace(/ /g, '');
+    
+    if (colorStr === 'C') {
+        // Special case: 'C' means colorless only
+        filterColors = new Set();
+    } else {
+        // Remove 'C' from the color string if it exists alongside other colors (shouldn't happen, but handle it)
+        filterColors = new Set(colorStr.replace(/C/g, '').split('').filter(c => c !== ''));
+    }
     
     // If no colors specified but numColors was used, we already filtered
-    if (filterColors.size === 0) {
+    if (filterColors.size === 0 && colorStr !== 'C') {
         return commanders;
     }
     
