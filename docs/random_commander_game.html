@@ -1371,7 +1371,7 @@
                         console.log('🔍 [DEBUG] Tooltip text:', tooltipText);
                         return `
                         <div class="perk-display ${powerup.rarity || 'common'}" title="${tooltipText}">
-                            <span class="perk-name">⚡ ${powerup.name || 'Unknown'}</span>
+                            <span class="perk-name">${powerup.emoji ? powerup.emoji + ' ' : ''}${powerup.name || 'Unknown'}</span>
                             <span class="perk-rarity">${powerup.rarity || 'common'}</span>
                         </div>
                     `}).join('')}
@@ -1945,7 +1945,7 @@
                         console.log('🔍 [DEBUG PACK] Tooltip text:', tooltipText);
                         return `
                         <div class="pack-perk-item ${p.rarity || 'common'}" title="${tooltipText}" style="cursor: help;">
-                            ⚡ ${p.name || 'Unknown'}
+                            ${p.emoji ? p.emoji + ' ' : ''}${p.name || 'Unknown'}
                         </div>
                     `}).join('') :
                     '<div class="pack-perk-item common">No Powerups</div>';
