@@ -207,11 +207,11 @@
 
 /* Perk Content */
 .perk-rarity-badge {
-    font-size: 0.65rem;
+    font-size: 1rem;
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 0.25rem 0.5rem;
+    letter-spacing: 1.5px;
+    padding: 0.4rem 0.8rem;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.4);
     color: #fff;
@@ -219,7 +219,7 @@
 }
 
 .perk-name {
-    font-size: 1.6rem;
+    font-size: 2.2rem;
     font-weight: bold;
     color: #fff;
     text-align: center;
@@ -230,9 +230,10 @@
 .perk-description {
     font-size: 1.05rem;
     color: rgba(255, 255, 255, 0.95);
-    text-align: center;
+    text-align: left;
     line-height: 1.6;
-    padding: 0 1rem;
+    padding: 0 2rem;
+    max-width: 100%;
 }
 
 /* Particle Effects */
