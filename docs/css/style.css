@@ -12,6 +12,36 @@
     --link-color: #4a90e2;
 }
 
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow-rare {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+}
+
+@keyframes glow-mythic {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(218, 112, 214, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(218, 112, 214, 1);
+    }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -702,7 +732,11 @@ section h3 {
     border-radius: 4px;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease, transform 0.3s ease;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
 }
 
 .btn-primary {

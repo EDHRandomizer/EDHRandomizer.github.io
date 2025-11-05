@@ -128,11 +128,31 @@
             border-radius: 8px;
             padding: 1rem;
             position: relative;
+            transition: all 0.3s ease;
         }
 
         .player-section.current-player {
             border-color: var(--accent-color, #58a6ff);
-            box-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
+            border-width: 3px;
+            background: linear-gradient(135deg, #1a2a3a 0%, #1a1a1a 100%);
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.5), 0 0 40px rgba(88, 166, 255, 0.2);
+        }
+
+        .player-section.current-player::before {
+            content: '👤 YOUR TURN';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 10;
         }
 
         .player-section.locked {
@@ -186,10 +206,23 @@
 
         .perk-display.rare {
             background: #7b1fa2;
+            transition: all 0.3s ease;
+        }
+
+        .perk-display.rare:hover {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+            transform: scale(1.02);
         }
 
         .perk-display.mythic {
             background: #ef6c00;
+            transition: all 0.3s ease;
+        }
+
+        .perk-display.mythic:hover {
+            box-shadow: 0 0 25px rgba(239, 108, 0, 0.8);
+            transform: scale(1.02);
+            animation: glow-mythic 2s ease-in-out infinite;
         }
 
         .perk-name {
@@ -313,7 +346,21 @@
             display: flex;
             flex-direction: column;
             gap: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
         }
+
+        /* Stagger animation for each commander */
+        .commander-item-small:nth-child(1) { animation-delay: 0.05s; }
+        .commander-item-small:nth-child(2) { animation-delay: 0.1s; }
+        .commander-item-small:nth-child(3) { animation-delay: 0.15s; }
+        .commander-item-small:nth-child(4) { animation-delay: 0.2s; }
+        .commander-item-small:nth-child(5) { animation-delay: 0.25s; }
+        .commander-item-small:nth-child(6) { animation-delay: 0.3s; }
+        .commander-item-small:nth-child(7) { animation-delay: 0.35s; }
+        .commander-item-small:nth-child(8) { animation-delay: 0.4s; }
+        .commander-item-small:nth-child(9) { animation-delay: 0.45s; }
+        .commander-item-small:nth-child(10) { animation-delay: 0.5s; }
 
         .commander-checkbox-container {
             width: 100%;
@@ -1142,6 +1189,22 @@
                     playerSection.classList.add('locked');
                 } else {
                     playerSection.classList.remove('locked');
+                }
+                
+                // Update color filter selections from session data
+                if (player.colorSelections && player.colorSelections.selected) {
+                    const colorFilterContainer = playerSection.querySelector('.color-filter-checkboxes');
+                    if (colorFilterContainer) {
+                        const selectedColors = player.colorSelections.selected;
+                        const checkboxes = colorFilterContainer.querySelectorAll('.color-input');
+                        
+                        checkboxes.forEach(checkbox => {
+                            const shouldBeChecked = selectedColors.includes(checkbox.value);
+                            if (checkbox.checked !== shouldBeChecked) {
+                                checkbox.checked = shouldBeChecked;
+                            }
+                        });
+                    }
                 }
                 
                 // Sync commanders from other players if they generated them
