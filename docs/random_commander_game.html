@@ -11,6 +11,7 @@
     
     <link rel="icon" type="image/png" href="images/randomizer-icon.png">
     <link rel="stylesheet" href="css/style.css?v=3.8">
+    <link rel="stylesheet" href="css/perk-reveal.css">
     
     <style>
         /* Game Mode Specific Styles */
@@ -833,6 +834,22 @@
             <p style="margin-top: 1rem; opacity: 0.8;">Waiting for host to start the game...</p>
         </section>
 
+        <!-- Perk Reveal Page -->
+        <div id="perk-reveal-page">
+            <div class="perk-reveal-header">
+                <h1 class="perk-reveal-title">✨ Your Perks ✨</h1>
+                <p class="perk-reveal-subtitle">Prepare for your commander selection...</p>
+            </div>
+            
+            <div id="perk-cards-container"></div>
+            
+            <div class="perk-reveal-controls">
+                <button id="perk-reveal-skip" class="perk-reveal-btn">Skip Animation</button>
+                <button id="perk-reveal-replay" class="perk-reveal-btn">Replay</button>
+                <button id="perk-reveal-continue" class="perk-reveal-btn" disabled>Continue</button>
+            </div>
+        </div>
+
         <!-- Player Grid (after perks rolled) -->
         <section id="player-grid-section" class="hidden">
             <div class="player-grid" id="player-grid">
@@ -866,6 +883,7 @@
         import { PerkLoader } from './js/game-session/perkLoader.js';
         import { PackConfigGenerator } from './js/game-session/packConfigGenerator.js';
         import { GameModeController } from './js/game-session/gameModeController.js';
+        import { PerkRevealController } from './js/game-session/perkRevealController.js';
         import { getCsvInfo } from './js/dataLoader.js';
 
         // Initialize
@@ -873,6 +891,7 @@
         let perkLoader;
         let packConfigGenerator;
         let gameModeController;
+        let perkRevealController;
         let currentSession = null;
         let currentPlayerId = null;
         let perksData = null;
@@ -931,6 +950,27 @@
                     packConfigGenerator
                 );
                 console.log('✅ [INIT] GameModeController created');
+                
+                // Initialize perk reveal controller
+                console.log('✨ [INIT] Creating PerkRevealController...');
+                perkRevealController = new PerkRevealController();
+                console.log('✅ [INIT] PerkRevealController created');
+                
+                // Wire up perk reveal control buttons
+                console.log('🔘 [INIT] Setting up perk reveal controls...');
+                document.getElementById('perk-reveal-skip').addEventListener('click', () => {
+                    console.log('⏩ [REVEAL] Skip button clicked');
+                    perkRevealController.skip();
+                });
+                document.getElementById('perk-reveal-replay').addEventListener('click', () => {
+                    console.log('🔄 [REVEAL] Replay button clicked');
+                    perkRevealController.replay();
+                });
+                document.getElementById('perk-reveal-continue').addEventListener('click', () => {
+                    console.log('➡️ [REVEAL] Continue button clicked');
+                    perkRevealController.continue();
+                });
+                console.log('✅ [INIT] Perk reveal controls ready');
                 
                 console.log('✅ [INIT] Initialization complete!');
                 showStatus('Ready! Create or join a session.');
@@ -1075,7 +1115,8 @@
                 currentSession = session;
                 console.log('💾 [PERKS] Updated session state');
                 
-                enterGameMode();
+                // Show perk reveal animation instead of going directly to game mode
+                showPerkReveal(session);
             } catch (error) {
                 console.error('❌ [PERKS] Roll perks error:', error);
                 showStatus('Failed to roll perks. Please try again.');
@@ -1150,6 +1191,44 @@
                 
                 lobbyPlayers.appendChild(div);
             }
+        }
+
+        function hideAllPages() {
+            console.log('🙈 [PAGES] Hiding all pages');
+            document.getElementById('landing-page')?.classList.remove('active');
+            document.getElementById('lobby-section')?.classList.add('hidden');
+            document.getElementById('perk-reveal-page')?.classList.remove('active');
+            document.getElementById('player-grid-section')?.classList.add('hidden');
+            document.getElementById('pack-codes-section')?.classList.add('hidden');
+        }
+
+        function showPerkReveal(session) {
+            console.log('✨ [REVEAL] Showing perk reveal page');
+            const currentPlayer = session.players.find(p => p.id === currentPlayerId);
+            
+            if (!currentPlayer || !currentPlayer.perks) {
+                console.log('⚠️ [REVEAL] No perks found, proceeding to commander selection');
+                proceedToCommanderSelection(session);
+                return;
+            }
+            
+            console.log('🎴 [REVEAL] Starting reveal for', currentPlayer.perks.length, 'perks');
+            hideAllPages();
+            document.getElementById('perk-reveal-page').classList.add('active');
+            
+            perkRevealController.startReveal(currentPlayer.perks, () => {
+                console.log('✅ [REVEAL] Reveal complete, proceeding to commander selection');
+                proceedToCommanderSelection(session);
+            });
+        }
+
+        function proceedToCommanderSelection(session) {
+            console.log('➡️ [PROCEED] Proceeding to commander selection');
+            document.getElementById('perk-reveal-page').classList.remove('active');
+            currentSession = session;
+            gameModeController.currentSession = session;
+            gameModeController.currentPlayerId = currentPlayerId;
+            enterGameMode();
         }
 
         function enterGameMode() {
