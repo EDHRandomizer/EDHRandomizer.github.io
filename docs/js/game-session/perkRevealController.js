@@ -57,10 +57,10 @@ export class PerkRevealController {
                     <div class="card-back-pattern"></div>
                 </div>
                 <div class="perk-card-back">
-                    ${perk.emoji ? `<div class="perk-card-emoji">${perk.emoji}</div>` : ''}
-                    <div class="perk-card-header">
+                    <div class="perk-name">${perk.name}</div>
+                    <div class="perk-card-meta">
                         <div class="perk-rarity-badge">${perk.rarity}</div>
-                        <div class="perk-name">${perk.name}</div>
+                        ${perk.emoji ? `<div class="perk-card-emoji">${perk.emoji}</div>` : ''}
                     </div>
                     <div class="perk-description">${perk.extended_description || perk.brief_description || perk.description || ''}</div>
                 </div>

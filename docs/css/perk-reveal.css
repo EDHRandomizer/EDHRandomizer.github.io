@@ -118,10 +118,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 1rem;
     padding: 2rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    top: 0;
+    left: 0;
 }
 
 /* Card Back (face-down) */
@@ -129,21 +129,50 @@
     background: linear-gradient(135deg, #2d3561 0%, #1f2544 100%);
     border: 2px solid #4a5568;
     transition: box-shadow 0.3s, border-color 0.3s;
-    position: relative;
+    justify-content: center;
 }
 
 /* Card Front (revealed) */
 .perk-card-back {
     transform: rotateY(180deg);
+    position: relative;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    padding-top: 2.5rem;
+}
+
+.perk-name {
+    font-size: 3.2rem;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    line-height: 1.2;
+    width: 100%;
+}
+
+.perk-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 1rem;
 }
 
 .perk-card-emoji {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    font-size: 2.5rem;
+    font-size: 3rem;
     opacity: 0.9;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.perk-description {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.95);
+    text-align: left;
+    line-height: 1.6;
+    padding: 0 2rem;
+    max-width: 100%;
+    flex: 1;
 }
 
 /* Hover glow hints for rarity (Hearthstone style) */
@@ -174,13 +203,6 @@
         repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px),
         repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px);
     border-radius: 8px;
-}
-
-.perk-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
 }
 
 /* Rarity-based styling */
@@ -225,24 +247,6 @@
     background: rgba(0, 0, 0, 0.4);
     color: #fff;
     white-space: nowrap;
-}
-
-.perk-name {
-    font-size: 2.8rem;
-    font-weight: bold;
-    color: #fff;
-    text-align: center;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    line-height: 1.2;
-}
-
-.perk-description {
-    font-size: 1.05rem;
-    color: rgba(255, 255, 255, 0.95);
-    text-align: left;
-    line-height: 1.6;
-    padding: 0 2rem;
-    max-width: 100%;
 }
 
 /* Particle Effects */
