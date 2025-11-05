@@ -349,7 +349,13 @@ class handler(BaseHTTPRequestHandler):
         elif path == '/roll-perks':
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"🎲 [REQ-{request_id}] Rolling perks for session: {session_code}")
-            self.handle_roll_perks(data)
+            try:
+                self.handle_roll_perks(data)
+            except Exception as e:
+                print(f"❌ [REQ-{request_id}] Error in handle_roll_perks: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                self.send_error_response(500, f"Error rolling perks: {str(e)}")
         elif path == '/lock-commander':
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"🔒 [REQ-{request_id}] Locking commander in session: {session_code}")
@@ -545,6 +551,8 @@ class handler(BaseHTTPRequestHandler):
         session_code = data.get('sessionCode', '').upper()
         player_id = data.get('playerId', '')
         
+        print(f"🎲 handle_roll_perks called for session {session_code}, player {player_id}")
+        
         session = get_session(session_code)
         if not session_code or not session:
             self.send_error_response(404, 'Session not found')
@@ -559,6 +567,7 @@ class handler(BaseHTTPRequestHandler):
         
         # Get perks count from session settings
         perks_count = session.get('settings', {}).get('perksCount', 3)
+        print(f"🎲 Rolling {perks_count} perks per player")
         
         # Roll perks for each player
         # Load perks data
@@ -568,19 +577,28 @@ class handler(BaseHTTPRequestHandler):
         # Get perks.json path
         current_dir = os.path.dirname(os.path.abspath(__file__))
         perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
+        print(f"🎲 Looking for perks.json at: {perks_path}")
+        print(f"🎲 Current dir: {current_dir}")
+        print(f"🎲 File exists: {os.path.exists(perks_path)}")
         
         try:
             with open(perks_path, 'r') as f:
                 perks_data = json.load(f)
+            print(f"🎲 Loaded perks.json successfully, version: {perks_data.get('version', 'unknown')}")
         except FileNotFoundError:
+            print(f"⚠️ perks.json not found at {perks_path}, using fallback")
             # Fallback: use hardcoded perk selection
             perks_data = {
                 'rarityWeights': {'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3},
                 'perks': []  # Will be loaded from file in production
             }
+        except Exception as e:
+            print(f"❌ Error loading perks.json: {str(e)}")
+            raise
         
         # Generate multiple perks for each player with type-based deduplication
         for player in session['players']:
+            print(f"🎲 Rolling perks for player {player.get('name', 'unknown')}")
             player_perks = []
             used_types = set()  # Track perk types to prevent duplicates
             
@@ -589,7 +607,9 @@ class handler(BaseHTTPRequestHandler):
             
             while len(player_perks) < perks_count and attempts < max_attempts:
                 perk = self.get_random_perk(perks_data)
+                print(f"🎲   Rolled perk: {perk.get('name', 'unknown')} (attempt {attempts + 1})")
                 perk_type = self.get_perk_type(perk, perks_data)
+                print(f"🎲   Perk type: {perk_type}")
                 
                 # Check if this type is already used
                 if perk_type not in used_types:
@@ -602,15 +622,21 @@ class handler(BaseHTTPRequestHandler):
                         'effects': perk.get('effects', {})
                     })
                     used_types.add(perk_type)
+                    print(f"🎲   ✅ Added perk (total: {len(player_perks)}/{perks_count})")
+                else:
+                    print(f"🎲   ⏭️ Skipped duplicate type")
                 
                 attempts += 1
             
             player['perks'] = player_perks
+            print(f"🎲 Final perks for {player.get('name', 'unknown')}: {len(player_perks)}")
         
         session['state'] = 'selecting'
         session['updated_at'] = time.time()
+        print(f"🎲 Updating session with new state: selecting")
         update_session(session_code, session)
         
+        print(f"🎲 Sending response with {len(session['players'])} players")
         self.send_json_response(200, session)
 
     def handle_lock_commander(self, data):
