@@ -58,23 +58,21 @@
 
 /* Perk Cards Container */
 #perk-cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
     width: 100%;
-    max-width: 100%;
-    margin-bottom: 2rem;
+    max-width: 1400px;
+    margin: 0 auto 2rem;
     padding: 0 2rem;
+    justify-items: center;
 }
 
 /* Individual Perk Card */
 .perk-card {
     perspective: 1000px;
-    width: calc(50% - 1rem);
-    min-width: 280px;
-    max-width: 500px;
+    width: 100%;
+    max-width: 450px;
     aspect-ratio: 3/2;
     position: relative;
     cursor: pointer;
