@@ -2,6 +2,7 @@
 """
 Sync perks.json from data/ to docs/data/
 This ensures both the API (uses data/perks.json) and frontend (uses docs/data/perks.json) have the same file.
+Also removes UTF-8 BOM if present.
 """
 import shutil
 from pathlib import Path
@@ -13,10 +14,18 @@ def sync_perks():
     # Create destination directory if it doesn't exist
     dest.parent.mkdir(parents=True, exist_ok=True)
     
-    # Copy file
-    shutil.copy2(source, dest)
+    # Read source with BOM handling
+    with open(source, 'r', encoding='utf-8-sig') as f:
+        content = f.read()
     
-    print(f"✓ Synced {source} → {dest}")
+    # Write both files without BOM
+    with open(source, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    with open(dest, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    print(f"✓ Synced (BOM removed) {source} → {dest}")
 
 if __name__ == '__main__':
     sync_perks()

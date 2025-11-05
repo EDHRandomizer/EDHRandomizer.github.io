@@ -71,6 +71,7 @@
           "id": "color_restrict",
           "name": "Restrict 1 Color",
           "rarity": "common",
+          "weightMultiplier": 1.5,
           "description": "Exclude one color from commander pool",
           "perkPhase": "commander_selection",
           "effects": {
@@ -82,6 +83,7 @@
           "id": "color_include_1",
           "name": "Include 1 Color",
           "rarity": "common",
+          "weightMultiplier": 1.5,
           "description": "Pick 1 color to include in commander",
           "perkPhase": "commander_selection",
           "effects": {

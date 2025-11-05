@@ -1049,8 +1049,8 @@ class handler(BaseHTTPRequestHandler):
         return bundle_config
 
     def get_random_perk(self, perks_data):
-        """Get random perk based on rarity weights - supports both v1 and v2 format"""
-        weights = perks_data.get('rarityWeights', {
+        """Get random perk based on rarity weights with optional per-perk weight multipliers"""
+        base_weights = perks_data.get('rarityWeights', {
             'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3
         })
         
@@ -1074,25 +1074,26 @@ class handler(BaseHTTPRequestHandler):
                 'effects': {}
             }
         
-        # Calculate total weight
-        total = sum(weights.values())
-        rand = random.random() * total
+        # Calculate effective weight for each perk (base_weight * multiplier)
+        perk_weights = []
+        for perk in perks:
+            base_weight = base_weights.get(perk['rarity'], 1)
+            multiplier = perk.get('weightMultiplier', 1.0)
+            effective_weight = base_weight * multiplier
+            perk_weights.append(effective_weight)
         
-        # Determine rarity
+        # Select perk based on weighted random
+        total_weight = sum(perk_weights)
+        rand = random.random() * total_weight
+        
         cumulative = 0
-        selected_rarity = 'common'
-        for rarity, weight in weights.items():
+        for i, weight in enumerate(perk_weights):
             cumulative += weight
             if rand <= cumulative:
-                selected_rarity = rarity
-                break
+                return perks[i]
         
-        # Get perks of that rarity
-        rarity_perks = [p for p in perks if p['rarity'] == selected_rarity]
-        if not rarity_perks:
-            rarity_perks = [p for p in perks if p['rarity'] == 'common']
-        
-        return random.choice(rarity_perks)
+        # Fallback (should never reach here)
+        return perks[-1]
 
     def get_perk_type(self, perk, perks_data):
         """Get the type category for a perk (for deduplication)"""

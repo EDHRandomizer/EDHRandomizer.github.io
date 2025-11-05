@@ -144,6 +144,10 @@ Edit `data/perks.json` and add a new perk type:
 - **id** - Unique identifier
 - **name** - Display name (shown to player)
 - **rarity** - `common`, `uncommon`, `rare`, or `mythic`
+- **weightMultiplier** - (Optional) Multiplier for probability (default: 1.0)
+  - `1.5` = 50% more likely than other perks of same rarity
+  - `0.5` = 50% less likely than other perks of same rarity
+  - `2.0` = Twice as likely (use sparingly)
 - **description** - Explanation of what the perk does
 - **perkPhase** - `commander_selection` or `drafting`
 - **effects** - Object containing perk effects (see below)
@@ -183,6 +187,31 @@ Default distribution:
 - **Uncommon:** 30%
 - **Rare:** 18%
 - **Mythic:** 7%
+
+**Weight Multipliers:**
+
+You can fine-tune individual perk probabilities using `weightMultiplier`:
+- Omit the field (or set to `1.0`) for default probability
+- Use `1.5` to make a perk 50% more common
+- Use `0.5` to make a perk 50% less common
+- Use `2.0` to double the probability
+
+**Example:**
+```json
+{
+  "id": "color_restrict",
+  "name": "Restrict 1 Color",
+  "rarity": "common",
+  "weightMultiplier": 1.5,  // 50% more common than other commons
+  "description": "Exclude one color from commander pool"
+}
+```
+
+**Calculation:**
+```
+Effective Weight = Base Rarity Weight × Weight Multiplier
+Example: 45 (common) × 1.5 = 67.5 effective weight
+```
 
 ### 6. Sync and Test
 
