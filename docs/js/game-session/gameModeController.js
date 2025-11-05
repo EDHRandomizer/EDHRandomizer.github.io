@@ -46,14 +46,14 @@ export class GameModeController {
         const quantityModifier = perkEffects.commanderQuantity || 0;
         const quantity = baseQuantity + quantityModifier;
         
-        // Create normal distribution function centered at 1100 (adjustable by perks)
+        // Create normal distribution function centered at 1000 (adjustable by perks)
         // Lower distributionCenter = stronger commanders (lower rank numbers)
         // Higher distributionCenter = weaker commanders (higher rank numbers)
         // Avatar Mode uses flatter distribution (larger sigma) for more uniform selection
-        const baseDistributionCenter = 1100;
+        const baseDistributionCenter = 1000;
         const distributionShift = perkEffects.distributionShift || 0; // Negative = stronger, Positive = weaker
         const distributionCenter = baseDistributionCenter + distributionShift;
-        const distributionWidth = avatarMode ? 800 : 300; // Avatar Mode: wider/flatter distribution
+        const distributionWidth = avatarMode ? 800 : 350; // Avatar Mode: wider/flatter distribution, slightly flatter base
         
         // Normal distribution: exp(-((rank - mean)^2) / (2 * sigma^2))
         const distributionFunc = (rank, min, max) => {
