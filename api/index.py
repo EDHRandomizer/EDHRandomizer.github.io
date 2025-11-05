@@ -15,33 +15,6 @@ from http.server import BaseHTTPRequestHandler
 
 
 # ==========================================
-# MOXFIELD URL GENERATION
-# ==========================================
-
-def generate_moxfield_url(card_names: List[str]) -> str:
-    """
-    Generate a Moxfield import URL from a list of card names
-    
-    Args:
-        card_names: List of card names to include in the deck
-    
-    Returns:
-        Moxfield import URL
-    """
-    # Format as decklist (1 of each card)
-    decklist = "\n".join([f"1 {card}" for card in card_names])
-    
-    # Encode the decklist for URL
-    encoded_decklist = urllib.parse.quote(decklist, safe='')
-    
-    # Generate the Moxfield URL
-    base_url = "https://moxfield.com/import?"
-    moxfield_url = f"{base_url}c={encoded_decklist}"
-    
-    return moxfield_url
-
-
-# ==========================================
 # COLOR IDENTITY MAPPING
 # ==========================================
 
@@ -1188,13 +1161,9 @@ def generate_packs(commander_slug: str, config: Dict[str, Any], bracket: int = 2
                 # Join with pipe separator
                 pack_display_name = " | ".join(parts)
             
-            # Generate Moxfield import URL for this pack
-            moxfield_url = generate_moxfield_url(pack_cards)
-            
             packs.append({
                 "name": pack_display_name,
-                "cards": pack_cards,
-                "moxfieldUrl": moxfield_url
+                "cards": pack_cards
             })
     
     return packs
