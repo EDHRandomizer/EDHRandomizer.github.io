@@ -153,8 +153,11 @@ export class PerkRevealController {
      */
     enableContinueButton() {
         const continueBtn = document.getElementById('perk-reveal-continue');
+        const continueBtnTop = document.getElementById('perk-reveal-continue-top');
         continueBtn.disabled = false;
         continueBtn.classList.add('pulse');
+        continueBtnTop.disabled = false;
+        continueBtnTop.classList.add('pulse');
     }
 
     /**
@@ -162,8 +165,11 @@ export class PerkRevealController {
      */
     disableContinueButton() {
         const continueBtn = document.getElementById('perk-reveal-continue');
+        const continueBtnTop = document.getElementById('perk-reveal-continue-top');
         continueBtn.disabled = true;
         continueBtn.classList.remove('pulse');
+        continueBtnTop.disabled = true;
+        continueBtnTop.classList.remove('pulse');
     }
 
     /**

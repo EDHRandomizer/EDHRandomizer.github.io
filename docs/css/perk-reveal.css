@@ -34,6 +34,8 @@
 .perk-reveal-header {
     text-align: center;
     margin-bottom: 2rem;
+    position: relative;
+    width: 100%;
 }
 
 .perk-reveal-title {
@@ -49,6 +51,13 @@
     color: #e0e0e0;
     font-style: italic;
     animation: pulse-hint 2s ease-in-out infinite;
+}
+
+.perk-reveal-btn-top {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
 }
 
 @keyframes pulse-hint {
@@ -294,7 +303,8 @@
     display: flex;
     justify-content: center;
     gap: 1rem;
-    margin-top: 2rem;
+    padding: 2rem 0;
+    width: 100%;
 }
 
 .perk-reveal-btn {
@@ -360,6 +370,16 @@
 
     .perk-reveal-title {
         font-size: 2rem;
+    }
+
+    .perk-reveal-header {
+        margin-bottom: 1rem;
+    }
+
+    .perk-reveal-btn-top {
+        position: static;
+        margin-top: 1rem;
+        width: 100%;
     }
 
     .perk-reveal-controls {

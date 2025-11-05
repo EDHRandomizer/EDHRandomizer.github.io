@@ -841,6 +841,7 @@
             <div class="perk-reveal-header">
                 <h1 class="perk-reveal-title">✨ Your Perks ✨</h1>
                 <p class="perk-reveal-subtitle">Click cards to reveal your perks!</p>
+                <button id="perk-reveal-continue-top" class="perk-reveal-btn perk-reveal-btn-top" disabled>Continue</button>
             </div>
             
             <div id="perk-cards-container"></div>
@@ -959,10 +960,12 @@
                 
                 // Wire up perk reveal control buttons
                 console.log('🔘 [INIT] Setting up perk reveal controls...');
-                document.getElementById('perk-reveal-continue').addEventListener('click', () => {
+                const continueHandler = () => {
                     console.log('➡️ [REVEAL] Continue button clicked');
                     perkRevealController.continue();
-                });
+                };
+                document.getElementById('perk-reveal-continue').addEventListener('click', continueHandler);
+                document.getElementById('perk-reveal-continue-top').addEventListener('click', continueHandler);
                 console.log('✅ [INIT] Perk reveal controls ready');
                 
                 console.log('✅ [INIT] Initialization complete!');

@@ -408,7 +408,7 @@
             "specialPackCount": 3,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
           },
-          "extended_description": "Get 3 random ScangTech cards. ScangTech cards feature Scang's favorite cards, which are commonly comprised of high value cards, ramp, copy effects, big spells, chaos, and more. ",
+          "extended_description": "Get 3 random ScangTech cards. These are favorites, high value cards, ramp, copy effects, big spells, chaos, and more.",
           "emoji": "💻",
           "description": "Get 3 random ScangTech cards"
         },
@@ -422,7 +422,7 @@
             "specialPackCount": 6,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
           },
-          "extended_description": "Get 6 random ScangTech cards. Scang's favorite cards, which are commonly comprised of value engines, ramp, copy effects, big spells, chaos, and more. ",
+          "extended_description": "Get 6 random ScangTech cards. These are favorites, high value cards, ramp, copy effects, big spells, chaos, and more.",
           "emoji": "🧪",
           "description": "Get 6 random ScangTech cards"
         }
@@ -530,7 +530,7 @@
           "effects": {
             "manual": true
           },
-          "extended_description": "You choose an instant or sorcery card from your deck to be your 'signature spell'. This card goes into the command zone and can be cast from there, paying its normal mana cost plus an additional 2 colorless for each time it has been cast from the command zone.",
+          "extended_description": "You choose an instant or sorcery card from your deck to be your 'signature spell'. You can cast it from the command zone.",
           "emoji": "🧙",
           "description": "Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)"
         },
