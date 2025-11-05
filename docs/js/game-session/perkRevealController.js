@@ -22,9 +22,8 @@ export class PerkRevealController {
         this.onComplete = onComplete;
         this.revealedCount = 0;
 
-        // Sort perks by rarity (common → uncommon → rare → mythic)
-        const rarityOrder = { 'common': 0, 'uncommon': 1, 'rare': 2, 'mythic': 3 };
-        this.perks.sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity]);
+        // Randomize perk order for surprise factor
+        this.perks = this.shuffleArray([...this.perks]);
 
         // Clear previous reveals
         const container = document.getElementById('perk-cards-container');
@@ -37,6 +36,19 @@ export class PerkRevealController {
 
         // Continue button stays disabled until all cards are revealed
         this.disableContinueButton();
+    }
+
+    /**
+     * Shuffle an array using Fisher-Yates algorithm
+     * @param {Array} array - Array to shuffle
+     * @returns {Array} - Shuffled array
+     */
+    shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 
     /**
