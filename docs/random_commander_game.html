@@ -877,6 +877,7 @@
         let currentPlayerId = null;
         let perksData = null;
         let playerCommandersGenerated = {}; // Track which players have generated commanders
+        let packCodesAlreadyShown = false; // Track if pack codes page has been shown to prevent re-rendering
 
         // DOM Elements
         const joinCreateSection = document.getElementById('join-create-section');
@@ -1704,8 +1705,9 @@
                 // Check if all locked
                 const allLocked = gameModeController.allPlayersLocked();
                 console.log(`🔍 [LOCK-P${playerNumber}] All players locked:`, allLocked);
-                if (allLocked) {
+                if (allLocked && !packCodesAlreadyShown) {
                     console.log(`🎉 [LOCK-P${playerNumber}] All players locked! Showing pack codes...`);
+                    packCodesAlreadyShown = true;
                     showPackCodes();
                 }
             } catch (error) {
@@ -1755,8 +1757,6 @@
         function startPolling() {
             console.log('🔄 [POLLING] Starting session polling (500ms interval)');
             
-            let packCodesShown = false; // Track if we've already shown pack codes
-            
             setInterval(async () => {
                 if (!currentSession) {
                     return; // Silent skip when no session
@@ -1776,7 +1776,7 @@
                     // Update UI based on state
                     if (session.state === 'selecting' && playerGridSection.classList.contains('hidden')) {
                         console.log('🎮 [POLLING] State changed to selecting - entering game mode');
-                        packCodesShown = false; // Reset when entering game mode
+                        packCodesAlreadyShown = false; // Reset when entering game mode
                         enterGameMode();
                     }
                     
@@ -1787,9 +1787,9 @@
                     
                     // Check if all locked - only show pack codes ONCE
                     const allLocked = gameModeController.allPlayersLocked();
-                    if (allLocked && session.state === 'complete' && !packCodesShown) {
+                    if (allLocked && session.state === 'complete' && !packCodesAlreadyShown) {
                         console.log('🎉 [POLLING] All players locked - showing pack codes');
-                        packCodesShown = true;
+                        packCodesAlreadyShown = true;
                         showPackCodes();
                     }
                 } catch (error) {
