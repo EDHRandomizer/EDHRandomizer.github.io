@@ -839,7 +839,7 @@
         <div id="perk-reveal-page">
             <div class="perk-reveal-header">
                 <h1 class="perk-reveal-title">✨ Your Perks ✨</h1>
-                <p class="perk-reveal-subtitle">Prepare for your commander selection...</p>
+                <p class="perk-reveal-subtitle">Click cards to reveal your perks!</p>
             </div>
             
             <div id="perk-cards-container"></div>
@@ -1205,10 +1205,23 @@
             }
             
             console.log('🎴 [REVEAL] Starting reveal for', currentPlayer.perks.length, 'perks');
+            console.log('🔍 [REVEAL] Perk data:', currentPlayer.perks);
+            
+            // Enrich perks with full data from perksData
+            const enrichedPerks = currentPlayer.perks.map(perk => {
+                const fullPerkData = perksData.find(p => p.id === perk.id);
+                if (fullPerkData) {
+                    console.log('✅ [REVEAL] Enriched perk:', perk.name, 'with extended_description:', fullPerkData.extended_description);
+                    return { ...perk, ...fullPerkData };
+                }
+                console.warn('⚠️ [REVEAL] No full data found for perk:', perk.id);
+                return perk;
+            });
+            
             hideAllPages();
             document.getElementById('perk-reveal-page').classList.add('active');
             
-            perkRevealController.startReveal(currentPlayer.perks, () => {
+            perkRevealController.startReveal(enrichedPerks, () => {
                 console.log('✅ [REVEAL] Reveal complete, proceeding to commander selection');
                 proceedToCommanderSelection(session);
             });
