@@ -894,12 +894,18 @@ class handler(BaseHTTPRequestHandler):
         """Generate bundle config from combined perk effects"""
         bundle_config = {'packTypes': []}
         
-        # Base standard pack (1 expensive, 11 budget, 3 lands)
+        # Base standard pack (1 any budget, 14 budget budget)
         base_standard_pack = {
             'slots': [
-                {'cardType': 'weighted', 'budget': 'expensive', 'bracket': 'any', 'count': 1},
-                {'cardType': 'weighted', 'budget': 'budget', 'bracket': 'any', 'count': 11},
-                {'cardType': 'lands', 'budget': 'any', 'bracket': 'any', 'count': 3}
+                {'cardType': 'weighted', 'budget': 'any', 'bracket': 'any', 'count': 1},
+                {'cardType': 'weighted', 'budget': 'budget', 'bracket': 'any', 'count': 14}
+            ]
+        }
+        
+        # Base lands pack (15 lands)
+        base_lands_pack = {
+            'slots': [
+                {'cardType': 'lands', 'budget': 'any', 'bracket': 'any', 'count': 15}
             ]
         }
         
@@ -1016,13 +1022,20 @@ class handler(BaseHTTPRequestHandler):
         bracket_upgrade = effects.get('bracketUpgrade')
         
         # Calculate pack distribution
+        # Base: 4 standard card packs + 1 lands pack = 5 total
+        # normal_packs are standard card packs (not lands)
         normal_packs = base_pack_count - budget_upgrade_packs - full_expensive_packs - bracket_upgrade_packs
         normal_packs = max(0, normal_packs)
         
-        # Add normal packs
+        # Add normal standard packs (card packs, not lands)
         if normal_packs > 0:
             pack = {'count': normal_packs, 'slots': base_standard_pack['slots'].copy()}
             bundle_config['packTypes'].append(pack)
+        
+        # Always add 1 lands pack (unless player has 0 packs total somehow)
+        if base_pack_count > 0:
+            lands_pack = {'name': 'Lands', 'count': 1, 'slots': base_lands_pack['slots'].copy()}
+            bundle_config['packTypes'].append(lands_pack)
         
         # Add budget upgraded packs
         if budget_upgrade_packs > 0:
