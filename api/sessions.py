@@ -574,15 +574,21 @@ class handler(BaseHTTPRequestHandler):
         import os
         import sys
         
-        # Get perks.json path
+        # Get perks.json path - try multiple locations
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
+        
+        # Try same directory first (for Vercel deployment)
+        perks_path = os.path.join(current_dir, 'perks.json')
+        if not os.path.exists(perks_path):
+            # Fallback to ../data/perks.json (for local development)
+            perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
+        
         print(f"🎲 Looking for perks.json at: {perks_path}")
         print(f"🎲 Current dir: {current_dir}")
         print(f"🎲 File exists: {os.path.exists(perks_path)}")
         
         try:
-            with open(perks_path, 'r') as f:
+            with open(perks_path, 'r', encoding='utf-8') as f:
                 perks_data = json.load(f)
             print(f"🎲 Loaded perks.json successfully, version: {perks_data.get('version', 'unknown')}")
         except FileNotFoundError:
