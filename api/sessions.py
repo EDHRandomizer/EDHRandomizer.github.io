@@ -368,6 +368,9 @@ class handler(BaseHTTPRequestHandler):
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"📦 [REQ-{request_id}] Generating pack codes for session: {session_code}")
             self.handle_generate_pack_codes(data)
+        elif path == '/test-perks':
+            print(f"🧪 [REQ-{request_id}] Testing perks.json loading")
+            self.handle_test_perks()
         else:
             print(f"❌ [REQ-{request_id}] Invalid endpoint: {self.path}")
             self.send_error_response(404, f'Endpoint not found: {self.path}')
@@ -1166,6 +1169,48 @@ class handler(BaseHTTPRequestHandler):
         
         # Default: use the perk ID itself as the type (unique)
         return perk_id
+
+    def handle_test_perks(self):
+        """Test endpoint to verify perks.json can be loaded"""
+        import os
+        
+        result = {
+            'cwd': os.getcwd(),
+            'file_location': os.path.abspath(__file__),
+            'attempted_paths': [],
+            'loaded': False,
+            'error': None
+        }
+        
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Try same directory first
+        path1 = os.path.join(current_dir, 'perks.json')
+        result['attempted_paths'].append({
+            'path': path1,
+            'exists': os.path.exists(path1)
+        })
+        
+        # Try ../data/perks.json
+        path2 = os.path.join(current_dir, '..', 'data', 'perks.json')
+        result['attempted_paths'].append({
+            'path': path2,
+            'exists': os.path.exists(path2)
+        })
+        
+        # Try to load
+        perks_path = path1 if os.path.exists(path1) else path2
+        
+        try:
+            with open(perks_path, 'r', encoding='utf-8') as f:
+                perks_data = json.load(f)
+            result['loaded'] = True
+            result['version'] = perks_data.get('version', 'unknown')
+            result['perk_count'] = sum(len(pt.get('perks', [])) for pt in perks_data.get('perkTypes', []))
+        except Exception as e:
+            result['error'] = str(e)
+        
+        self.send_json_response(200, result)
 
     def send_json_response(self, status_code, data):
         """Send JSON response with CORS headers"""
