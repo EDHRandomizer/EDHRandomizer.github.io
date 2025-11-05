@@ -1333,9 +1333,18 @@
             // Get powerups (now an array)
             const powerups = player.perks || (player.perk ? [player.perk] : []);
             
+            // Enrich powerups with full perk data (including emoji)
+            const enrichedPowerups = powerups.map(perk => {
+                const fullPerkData = perksData.find(p => p.id === perk.id);
+                if (fullPerkData) {
+                    return { ...perk, ...fullPerkData };
+                }
+                return perk;
+            });
+            
             // Sort powerups by rarity (common -> uncommon -> rare -> mythic)
             const raritySortOrder = { common: 1, uncommon: 2, rare: 3, mythic: 4 };
-            const sortedPowerups = [...powerups].sort((a, b) => {
+            const sortedPowerups = [...enrichedPowerups].sort((a, b) => {
                 const rarityA = raritySortOrder[a?.rarity || 'common'] || 1;
                 const rarityB = raritySortOrder[b?.rarity || 'common'] || 1;
                 return rarityA - rarityB;
@@ -1929,9 +1938,18 @@
                 // Get powerup data (now an array)
                 const powerups = player.perks || (player.perk ? [player.perk] : []);
                 
+                // Enrich powerups with full perk data (including emoji)
+                const enrichedPowerups = powerups.map(perk => {
+                    const fullPerkData = perksData.find(p => p.id === perk.id);
+                    if (fullPerkData) {
+                        return { ...perk, ...fullPerkData };
+                    }
+                    return perk;
+                });
+                
                 // Sort powerups by rarity (common -> uncommon -> rare -> mythic)
                 const raritySortOrder = { common: 1, uncommon: 2, rare: 3, mythic: 4 };
-                const sortedPowerups = [...powerups].sort((a, b) => {
+                const sortedPowerups = [...enrichedPowerups].sort((a, b) => {
                     const rarityA = raritySortOrder[a?.rarity || 'common'] || 1;
                     const rarityB = raritySortOrder[b?.rarity || 'common'] || 1;
                     return rarityA - rarityB;
