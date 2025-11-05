@@ -4,13 +4,8 @@
 
 export async function getCardImageUrl(commanderName, version = 'normal') {
     try {
-        // Handle partner commanders
-        let searchName = commanderName;
-        if (commanderName.includes('//')) {
-            searchName = commanderName.split('//')[0].trim();
-        }
-        
-        const url = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(searchName)}`;
+        // Use fuzzy search - it handles // characters correctly and is more forgiving
+        const url = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(commanderName)}`;
         const response = await fetch(url);
         
         if (!response.ok) {
