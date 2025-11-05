@@ -163,27 +163,18 @@
 .perk-card-back {
     transform: rotateY(180deg);
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1.5rem 2rem;
-}
-
-.perk-card-back-left {
-    display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    flex: 0 0 auto;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
 }
 
-.perk-card-back-right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-}
-
-/* Rarity-based styling */
+    .perk-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }/* Rarity-based styling */
 .perk-common .perk-card-back {
     background: linear-gradient(135deg, #616161 0%, #424242 100%);
     border: 2px solid #757575;
@@ -216,31 +207,32 @@
 
 /* Perk Content */
 .perk-rarity-badge {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
     color: #fff;
-    align-self: flex-start;
+    white-space: nowrap;
 }
 
 .perk-name {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: bold;
     color: #fff;
-    text-align: left;
+    text-align: center;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     line-height: 1.2;
 }
 
 .perk-description {
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: rgba(255, 255, 255, 0.95);
-    text-align: left;
-    line-height: 1.5;
+    text-align: center;
+    line-height: 1.6;
+    padding: 0 1rem;
 }
 
 /* Particle Effects */
