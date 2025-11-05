@@ -824,7 +824,11 @@ def select_weighted_cards(cards: List[Dict], count: int, type_weights: Dict[str,
 
 def select_cards_from_category(cards: List[Dict], category: str, count: int, used_cards: set) -> List[str]:
     """Select cards from a specific EDHRec category/tag"""
-    available = [c['name'] for c in cards if c['sourceList'] == category and c['name'] not in used_cards]
+    # When requesting 'lands', include both 'lands' and 'utilitylands'
+    if category == 'lands':
+        available = [c['name'] for c in cards if c['sourceList'] in ['lands', 'utilitylands'] and c['name'] not in used_cards]
+    else:
+        available = [c['name'] for c in cards if c['sourceList'] == category and c['name'] not in used_cards]
     
     if not available:
         return []
