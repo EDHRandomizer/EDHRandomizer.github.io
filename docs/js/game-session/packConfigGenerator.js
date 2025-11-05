@@ -102,8 +102,8 @@ export class PackConfigGenerator {
                     }
                 ]
             },
-            silly_cards: {
-                name: "Silly Cards Pack",
+            silver_border_cards: {
+                name: "Silver-Border Cards Pack",
                 source: "moxfield",
                 count: 1,
                 slots: [

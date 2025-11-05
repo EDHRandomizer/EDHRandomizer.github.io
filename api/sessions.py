@@ -940,8 +940,8 @@ class handler(BaseHTTPRequestHandler):
                     'count': 1
                 }]
             },
-            'silly_cards': {
-                'name': 'Silly Cards',
+            'silver_border_cards': {
+                'name': 'Silver-Border Cards',
                 'source': 'moxfield',
                 'count': 1,
                 'useCommanderColorIdentity': True,

@@ -310,30 +310,30 @@
       ]
     },
     {
-      "type": "silly_cards",
-      "name": "Silly Cards",
+      "type": "silver_border_cards",
+      "name": "Silver-Border Cards",
       "mutuallyExclusive": false,
       "perks": [
         {
-          "id": "silly_card_2",
-          "name": "Silly Cards x2",
+          "id": "silver_border_card_2",
+          "name": "Silver-Border Cards x2",
           "rarity": "common",
-          "description": "Get 2 random silly cards",
+          "description": "Get 2 random silver-border cards",
           "perkPhase": "drafting",
           "effects": {
-            "specialPack": "silly_cards",
+            "specialPack": "silver_border_cards",
             "specialPackCount": 2,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
         },
         {
-          "id": "silly_card_4",
-          "name": "Silly Cards x4",
+          "id": "silver_border_card_4",
+          "name": "Silver-Border Cards x4",
           "rarity": "uncommon",
-          "description": "Get 4 random silly cards",
+          "description": "Get 4 random silver-border cards",
           "perkPhase": "drafting",
           "effects": {
-            "specialPack": "silly_cards",
+            "specialPack": "silver_border_cards",
             "specialPackCount": 4,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           }
