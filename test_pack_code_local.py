@@ -4,7 +4,7 @@ Test pack generation locally with a specific pack code configuration
 import sys
 sys.path.insert(0, 'api')
 
-from pack_generator import generate_packs
+from index import generate_packs
 import json
 
 # Pack config from FRHQTISL

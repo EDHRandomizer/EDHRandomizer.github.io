@@ -6,7 +6,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'api'))
 
-from pack_generator import generate_packs
+from index import generate_packs
 
 print("=" * 60)
 print("Testing Pack Generator Locally")
