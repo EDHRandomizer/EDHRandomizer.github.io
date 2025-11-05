@@ -14,7 +14,7 @@
       "perks": [
         {
           "id": "popular_slight",
-          "name": "More Popular Pool",
+          "name": "Slightly More Popular Commander",
           "rarity": "common",
           "perkPhase": "commander_selection",
           "effects": {
@@ -25,7 +25,7 @@
         },
         {
           "id": "popular_considerable",
-          "name": "Considerably Popular Pool",
+          "name": "More Popular Commander",
           "rarity": "uncommon",
           "perkPhase": "commander_selection",
           "effects": {
@@ -36,7 +36,7 @@
         },
         {
           "id": "popular_much",
-          "name": "Much More Popular Pool",
+          "name": "Considerably More Popular Commander",
           "rarity": "rare",
           "perkPhase": "commander_selection",
           "effects": {
@@ -47,7 +47,7 @@
         },
         {
           "id": "popular_elite",
-          "name": "Elite Commander Pool",
+          "name": "Extremely Popular Commander",
           "rarity": "mythic",
           "weightMultiplier": 0.8,
           "perkPhase": "commander_selection",
@@ -167,7 +167,7 @@
       "perks": [
         {
           "id": "budget_any_cost",
-          "name": "Any Cost Pack",
+          "name": "+1 Pack of Any Budget",
           "rarity": "uncommon",
           "perkPhase": "drafting",
           "effects": {
@@ -179,7 +179,7 @@
         },
         {
           "id": "budget_expensive",
-          "name": "Expensive Pack",
+          "name": "+1 Expensive Pack",
           "rarity": "rare",
           "perkPhase": "drafting",
           "effects": {
@@ -197,7 +197,7 @@
       "perks": [
         {
           "id": "bracket_3",
-          "name": "Bracket 3 Pack",
+          "name": "+1 Bracket 3 Pack",
           "rarity": "uncommon",
           "perkPhase": "drafting",
           "effects": {
@@ -209,7 +209,7 @@
         },
         {
           "id": "bracket_4",
-          "name": "Bracket 4 Pack",
+          "name": "+1 Bracket 4 Pack",
           "rarity": "rare",
           "perkPhase": "drafting",
           "effects": {
@@ -227,7 +227,7 @@
       "perks": [
         {
           "id": "gamechanger_1",
-          "name": "Game Changer Pack",
+          "name": "1 Game Changer",
           "rarity": "rare",
           "perkPhase": "drafting",
           "effects": {
@@ -239,7 +239,7 @@
         },
         {
           "id": "gamechanger_3",
-          "name": "Game Changer Pack - Extended",
+          "name": "Game Changers 3x",
           "rarity": "mythic",
           "perkPhase": "drafting",
           "effects": {
@@ -270,7 +270,7 @@
         },
         {
           "id": "conspiracy_3",
-          "name": "Conspiracy Cards x3",
+          "name": "Conspiracy Cards 3x",
           "rarity": "uncommon",
           "weightMultiplier": 0.8,
           "perkPhase": "drafting",
@@ -289,7 +289,7 @@
       "perks": [
         {
           "id": "test_card_1",
-          "name": "Test Card",
+          "name": "1 Test Card",
           "rarity": "common",
           "weightMultiplier": 0.7,
           "perkPhase": "drafting",
@@ -303,7 +303,7 @@
         },
         {
           "id": "test_card_3",
-          "name": "Test Cards x3",
+          "name": "Test Cards 3x",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
           "perkPhase": "drafting",
@@ -357,7 +357,7 @@
       "perks": [
         {
           "id": "banned_cards_3",
-          "name": "Banned Cards",
+          "name": "Banned Cards 3x",
           "rarity": "mythic",
           "perkPhase": "drafting",
           "effects": {
@@ -376,7 +376,7 @@
       "perks": [
         {
           "id": "scangtech_3",
-          "name": "ScangTech Card x3",
+          "name": "ScangTech Cards x3",
           "rarity": "uncommon",
           "perkPhase": "drafting",
           "effects": {
@@ -408,7 +408,7 @@
       "perks": [
         {
           "id": "jptech_3",
-          "name": "JpTech Card x3",
+          "name": "JpTech Cards x3",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
           "perkPhase": "drafting",
@@ -442,7 +442,7 @@
       "perks": [
         {
           "id": "manabase_any_cost",
-          "name": "Any Cost Lands Pack",
+          "name": "+1 Pack of Lands of Any Cost",
           "rarity": "common",
           "weightMultiplier": 0.7,
           "perkPhase": "drafting",
@@ -455,7 +455,7 @@
         },
         {
           "id": "manabase_expensive",
-          "name": "Expensive Lands Pack",
+          "name": "+1 Pack of Expensive Lands",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
           "perkPhase": "drafting",
@@ -474,7 +474,7 @@
       "perks": [
         {
           "id": "mdfc_pilled",
-          "name": "MDFC-Pilled",
+          "name": "Become MDFC-Pilled",
           "rarity": "common",
           "weightMultiplier": 0.7,
           "perkPhase": "drafting",
@@ -515,7 +515,7 @@
         },
         {
           "id": "sharpie",
-          "name": "Sharpie",
+          "name": "Sharpie Commander",
           "rarity": "mythic",
           "perkPhase": "drafting",
           "effects": {
