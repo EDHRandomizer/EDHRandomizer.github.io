@@ -735,10 +735,6 @@ section h3 {
     transition: all 0.3s ease, transform 0.3s ease;
 }
 
-.btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-}
-
 .btn-primary {
     background-color: var(--accent-bg);
     color: var(--fg-color);
