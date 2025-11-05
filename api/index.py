@@ -349,6 +349,24 @@ GAMECHANGER_ONLY_CARDS = {
 }
 
 
+# Fetch lands with their color identities
+# Only include in packs where ALL colors are in commander's color identity
+FETCH_LANDS = {
+    # Onslaught fetches (allied colors)
+    'Flooded Strand': ['W', 'U'],
+    'Polluted Delta': ['U', 'B'],
+    'Bloodstained Mire': ['B', 'R'],
+    'Wooded Foothills': ['R', 'G'],
+    'Windswept Heath': ['G', 'W'],
+    # Zendikar fetches (enemy colors)
+    'Marsh Flats': ['W', 'B'],
+    'Scalding Tarn': ['U', 'R'],
+    'Verdant Catacombs': ['B', 'G'],
+    'Arid Mesa': ['R', 'W'],
+    'Misty Rainforest': ['G', 'U']
+}
+
+
 def get_game_changers() -> set:
     """Fetch game changer cards from Scryfall and add manually tracked cards"""
     gc_cards = fetch_scryfall_cards("is:gamechanger")
@@ -822,13 +840,39 @@ def select_weighted_cards(cards: List[Dict], count: int, type_weights: Dict[str,
     return selected
 
 
-def select_cards_from_category(cards: List[Dict], category: str, count: int, used_cards: set) -> List[str]:
-    """Select cards from a specific EDHRec category/tag"""
+def select_cards_from_category(cards: List[Dict], category: str, count: int, used_cards: set, commander_colors: Optional[List[str]] = None) -> List[str]:
+    """Select cards from a specific EDHRec category/tag
+    
+    Args:
+        cards: List of card dictionaries with name, category, sourceList, etc.
+        category: The EDHRec category/tag to select from
+        count: Number of cards to select
+        used_cards: Set of card names already used
+        commander_colors: Optional commander color identity to filter off-color fetch lands
+    
+    Returns:
+        List of selected card names
+    """
     # When requesting 'lands', include both 'lands' and 'utilitylands'
     if category == 'lands':
         available = [c['name'] for c in cards if c['sourceList'] in ['lands', 'utilitylands'] and c['name'] not in used_cards]
     else:
         available = [c['name'] for c in cards if c['sourceList'] == category and c['name'] not in used_cards]
+    
+    # Filter out off-color fetch lands if commander colors are provided
+    if commander_colors and category in ['lands', 'utilitylands']:
+        commander_color_set = set(commander_colors)
+        filtered = []
+        for card_name in available:
+            if card_name in FETCH_LANDS:
+                # Only include fetch if ALL its colors are in commander's color identity
+                fetch_colors = set(FETCH_LANDS[card_name])
+                if fetch_colors.issubset(commander_color_set):
+                    filtered.append(card_name)
+            else:
+                # Not a fetch land, include it
+                filtered.append(card_name)
+        available = filtered
     
     if not available:
         return []
@@ -1048,10 +1092,10 @@ def generate_packs(commander_slug: str, config: Dict[str, Any], bracket: int = 2
                     elif card_type in ['creatures', 'instants', 'sorceries', 'enchantments', 'planeswalkers', 
                                        'battles', 'lands', 'utilityartifacts', 'manaartifacts', 
                                        'newcards', 'highsynergycards', 'topcards', 'gamechangers']:
-                        selected = select_cards_from_category(cards, card_type, card_count, pack_used_cards | global_used_cards)
+                        selected = select_cards_from_category(cards, card_type, card_count, pack_used_cards | global_used_cards, commander_colors)
                     
                     else:
-                        selected = select_cards_from_category(cards, card_type, card_count, pack_used_cards | global_used_cards)
+                        selected = select_cards_from_category(cards, card_type, card_count, pack_used_cards | global_used_cards, commander_colors)
                     
                     pack_cards.extend(selected)
                     pack_used_cards.update(selected)
