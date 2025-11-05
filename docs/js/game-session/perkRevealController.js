@@ -13,16 +13,14 @@ export class PerkRevealController {
     }
 
     /**
-     * Start the perk reveal animation
-     * @param {Array} perks - Array of perk objects with {name, rarity, description}
-     * @param {Function} onComplete - Callback when animation completes
+     * Start the perk reveal - display all cards face down
+     * @param {Array} perks - Array of perk objects with {name, rarity, extended_description}
+     * @param {Function} onComplete - Callback when all cards are revealed
      */
     async startReveal(perks, onComplete) {
         this.perks = perks;
-        this.currentIndex = 0;
-        this.isRevealing = true;
-        this.skipRequested = false;
         this.onComplete = onComplete;
+        this.revealedCount = 0;
 
         // Sort perks by rarity (common → uncommon → rare → mythic)
         const rarityOrder = { 'common': 0, 'uncommon': 1, 'rare': 2, 'mythic': 3 };
@@ -32,59 +30,77 @@ export class PerkRevealController {
         const container = document.getElementById('perk-cards-container');
         container.innerHTML = '';
 
-        // Reveal perks one by one
-        for (let i = 0; i < this.perks.length; i++) {
-            await this.revealPerk(this.perks[i], i);
-            this.currentIndex = i + 1;
+        // Display all cards face-down
+        this.perks.forEach((perk, index) => {
+            this.createPerkCard(perk, index);
+        });
 
-            // Shorter wait before next reveal for smoother experience
-            await this.delay(400);
-        }
-
-        this.isRevealing = false;
-
-        // Enable continue button after all reveals
-        this.enableContinueButton();
+        // Continue button stays disabled until all cards are revealed
+        this.disableContinueButton();
     }
 
     /**
-     * Reveal a single perk with animation
+     * Create a single perk card (face-down)
      * @param {Object} perk - Perk object
      * @param {number} index - Index in the array
      */
-    async revealPerk(perk, index) {
+    createPerkCard(perk, index) {
         const container = document.getElementById('perk-cards-container');
         
         // Create perk card
         const card = document.createElement('div');
         card.className = `perk-card perk-${perk.rarity}`;
+        card.dataset.index = index;
         card.innerHTML = `
             <div class="perk-card-inner">
-                <div class="perk-card-front">
+                <div class="perk-card-front ${perk.rarity}-hint">
                     <div class="card-back-pattern"></div>
                 </div>
                 <div class="perk-card-back">
-                    <div class="perk-rarity-badge">${perk.rarity}</div>
-                    <div class="perk-name">${perk.name}</div>
-                    <div class="perk-description">${perk.extended_description || perk.brief_description || perk.description || ''}</div>
+                    <div class="perk-card-back-left">
+                        <div class="perk-rarity-badge">${perk.rarity}</div>
+                        <div class="perk-name">${perk.name}</div>
+                    </div>
+                    <div class="perk-card-back-right">
+                        <div class="perk-description">${perk.extended_description || perk.brief_description || perk.description || ''}</div>
+                    </div>
                 </div>
             </div>
         `;
 
-        container.appendChild(card);
+        // Add click handler to flip card
+        card.addEventListener('click', () => this.flipCard(card, perk));
 
-        // Trigger flip animation after a brief delay
-        await this.delay(50);
+        container.appendChild(card);
+    }
+
+    /**
+     * Flip a card when clicked
+     * @param {HTMLElement} card - Card element
+     * @param {Object} perk - Perk object
+     */
+    flipCard(card, perk) {
+        // Only flip if not already flipped
+        if (card.classList.contains('flipped')) {
+            return;
+        }
+
         card.classList.add('flipped');
+        this.revealedCount++;
 
         // Add particle effect for rare/mythic
         if (perk.rarity === 'rare' || perk.rarity === 'mythic') {
-            this.createParticleEffect(card, perk.rarity);
+            setTimeout(() => this.createParticleEffect(card, perk.rarity), 300);
         }
 
         // Screen shake for mythic
         if (perk.rarity === 'mythic') {
-            this.screenShake();
+            setTimeout(() => this.screenShake(), 300);
+        }
+
+        // Check if all cards are revealed
+        if (this.revealedCount >= this.perks.length) {
+            this.enableContinueButton();
         }
     }
 
@@ -140,6 +156,15 @@ export class PerkRevealController {
         const continueBtn = document.getElementById('perk-reveal-continue');
         continueBtn.disabled = false;
         continueBtn.classList.add('pulse');
+    }
+
+    /**
+     * Disable the continue button
+     */
+    disableContinueButton() {
+        const continueBtn = document.getElementById('perk-reveal-continue');
+        continueBtn.disabled = true;
+        continueBtn.classList.remove('pulse');
     }
 
     /**

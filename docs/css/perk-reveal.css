@@ -51,20 +51,37 @@
 
 /* Perk Cards Container */
 #perk-cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
     width: 100%;
-    max-width: 1400px;
+    max-width: 100%;
     margin-bottom: 2rem;
+    padding: 0 2rem;
 }
 
 /* Individual Perk Card */
 .perk-card {
     perspective: 1000px;
-    width: 100%;
-    aspect-ratio: 2/3;
+    width: calc(50% - 1rem);
+    min-width: 280px;
+    max-width: 500px;
+    aspect-ratio: 3/2;
     position: relative;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.perk-card:hover {
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+    .perk-card {
+        width: 100%;
+    }
 }
 
 .perk-card-inner {
@@ -102,6 +119,28 @@
 .perk-card-front {
     background: linear-gradient(135deg, #2d3561 0%, #1f2544 100%);
     border: 2px solid #4a5568;
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+/* Hover glow hints for rarity (Hearthstone style) */
+.perk-card:not(.flipped):hover .perk-card-front.common-hint {
+    box-shadow: 0 0 30px rgba(117, 117, 117, 0.6);
+    border-color: #757575;
+}
+
+.perk-card:not(.flipped):hover .perk-card-front.uncommon-hint {
+    box-shadow: 0 0 30px rgba(56, 142, 60, 0.6);
+    border-color: #388e3c;
+}
+
+.perk-card:not(.flipped):hover .perk-card-front.rare-hint {
+    box-shadow: 0 0 35px rgba(142, 36, 170, 0.7);
+    border-color: #8e24aa;
+}
+
+.perk-card:not(.flipped):hover .perk-card-front.mythic-hint {
+    box-shadow: 0 0 40px rgba(245, 124, 0, 0.8);
+    border-color: #f57c00;
 }
 
 .card-back-pattern {
@@ -117,9 +156,24 @@
 .perk-card-back {
     transform: rotateY(180deg);
     display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+}
+
+.perk-card-back-left {
+    display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    justify-content: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+}
+
+.perk-card-back-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
 }
 
 /* Rarity-based styling */
@@ -155,30 +209,31 @@
 
 /* Perk Content */
 .perk-rarity-badge {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 12px;
     background: rgba(0, 0, 0, 0.3);
     color: #fff;
+    align-self: flex-start;
 }
 
 .perk-name {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #fff;
-    text-align: center;
+    text-align: left;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     line-height: 1.2;
 }
 
 .perk-description {
-    font-size: 1.15rem;
-    color: rgba(255, 255, 255, 0.9);
-    text-align: center;
-    line-height: 1.6;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.95);
+    text-align: left;
+    line-height: 1.5;
 }
 
 /* Particle Effects */
