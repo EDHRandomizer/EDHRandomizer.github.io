@@ -1755,6 +1755,8 @@
         function startPolling() {
             console.log('🔄 [POLLING] Starting session polling (500ms interval)');
             
+            let packCodesShown = false; // Track if we've already shown pack codes
+            
             setInterval(async () => {
                 if (!currentSession) {
                     return; // Silent skip when no session
@@ -1774,6 +1776,7 @@
                     // Update UI based on state
                     if (session.state === 'selecting' && playerGridSection.classList.contains('hidden')) {
                         console.log('🎮 [POLLING] State changed to selecting - entering game mode');
+                        packCodesShown = false; // Reset when entering game mode
                         enterGameMode();
                     }
                     
@@ -1782,10 +1785,11 @@
                         updatePlayerStatuses();
                     }
                     
-                    // Check if all locked
+                    // Check if all locked - only show pack codes ONCE
                     const allLocked = gameModeController.allPlayersLocked();
-                    if (allLocked && session.state === 'complete') {
+                    if (allLocked && session.state === 'complete' && !packCodesShown) {
                         console.log('🎉 [POLLING] All players locked - showing pack codes');
+                        packCodesShown = true;
                         showPackCodes();
                     }
                 } catch (error) {
