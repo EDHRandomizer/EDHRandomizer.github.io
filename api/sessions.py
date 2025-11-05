@@ -778,13 +778,13 @@ class handler(BaseHTTPRequestHandler):
 
     def generate_pack_codes_internal(self, session):
         """Internal helper to generate pack codes and configs"""
-        # Load perks to get effects
+        # Load perks to get effects from single source of truth: docs/data/perks.json
         import os
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
+        perks_path = os.path.join(current_dir, '..', 'docs', 'data', 'perks.json')
         
         try:
-            with open(perks_path, 'r') as f:
+            with open(perks_path, 'r', encoding='utf-8') as f:
                 perks_data = json.load(f)
         except:
             perks_data = {'perks': []}
