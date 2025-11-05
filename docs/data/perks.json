@@ -2,16 +2,15 @@
   "version": "2.0.0",
   "description": "Perk system with type-based deduplication",
   "rarityWeights": {
-    "common": 45,
+    "common": 40,
     "uncommon": 30,
-    "rare": 18,
-    "mythic": 7
+    "rare": 20,
+    "mythic": 10
   },
   "perkTypes": [
     {
       "type": "commander_popularity",
       "name": "Commander Popularity",
-      "mutuallyExclusive": true,
       "perks": [
         {
           "id": "popular_slight",
@@ -50,7 +49,6 @@
     {
       "type": "salty_commander",
       "name": "Salty Commander",
-      "mutuallyExclusive": true,
       "perks": [
         {
           "id": "salty_pool",
@@ -65,7 +63,6 @@
     {
       "type": "color_filter",
       "name": "Color Filtering",
-      "mutuallyExclusive": true,
       "perks": [
         {
           "id": "color_restrict",
@@ -106,7 +103,6 @@
     {
       "type": "commander_choices",
       "name": "Extra Commander Choices",
-      "mutuallyExclusive": true,
       "perks": [
         {
           "id": "extra_choice_1",
@@ -139,7 +135,6 @@
     {
       "type": "budget_upgrade",
       "name": "Budget Upgrades",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "budget_any_cost",
@@ -168,7 +163,6 @@
     {
       "type": "bracket_upgrade",
       "name": "Bracket Upgrades",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "bracket_3",
@@ -195,24 +189,8 @@
       ]
     },
     {
-      "type": "extra_packs",
-      "name": "Extra Packs",
-      "mutuallyExclusive": false,
-      "perks": [
-        {
-          "id": "extra_pack_1",
-          "name": "+1 Pack",
-          "rarity": "common",
-          "description": "Get 1 extra regular pack",
-          "perkPhase": "drafting",
-          "effects": { "packQuantity": 1 }
-        }
-      ]
-    },
-    {
       "type": "gamechanger_cards",
       "name": "Game Changer Packs",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "gamechanger_1",
@@ -241,7 +219,6 @@
     {
       "type": "conspiracy_cards",
       "name": "Conspiracy Cards",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "conspiracy_1",
@@ -281,7 +258,6 @@
     {
       "type": "test_cards",
       "name": "Test Cards",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "test_card_1",
@@ -312,7 +288,6 @@
     {
       "type": "silver_border_cards",
       "name": "Silver-Border Cards",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "silver_border_card_2",
@@ -343,7 +318,6 @@
     {
       "type": "banned_cards",
       "name": "Banned Cards",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "banned_cards_3",
@@ -362,7 +336,6 @@
     {
       "type": "scangtech_cards",
       "name": "ScangTech Cards",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "scangtech_1",
@@ -393,7 +366,6 @@
     {
       "type": "jptech_cards",
       "name": "JpTech Cards",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "jptech_1",
@@ -426,7 +398,6 @@
     {
       "type": "manabase",
       "name": "Manabase Upgrades",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "manabase_any_cost",
@@ -455,7 +426,6 @@
     {
       "type": "mdfc_lands",
       "name": "MDFC Lands",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "mdfc_pilled",
@@ -473,7 +443,6 @@
     {
       "type": "manual_powerups",
       "name": "Manual Powerups",
-      "mutuallyExclusive": false,
       "perks": [
         {
           "id": "signature_spell",
