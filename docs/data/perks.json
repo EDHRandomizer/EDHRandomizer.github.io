@@ -399,6 +399,7 @@
           "id": "jptech_1",
           "name": "JpTech Card",
           "rarity": "uncommon",
+          "weightMultiplier": 0.7,
           "description": "Get 1 random JpTech card",
           "perkPhase": "drafting",
           "effects": {
@@ -411,6 +412,7 @@
           "id": "jptech_3",
           "name": "JpTech Cards x3",
           "rarity": "rare",
+          "weightMultiplier": 0.7,
           "description": "Get 3 random JpTech cards",
           "perkPhase": "drafting",
           "effects": {
