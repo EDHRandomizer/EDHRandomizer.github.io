@@ -34,17 +34,11 @@ export class PerkRevealController {
 
         // Reveal perks one by one
         for (let i = 0; i < this.perks.length; i++) {
-            if (this.skipRequested) {
-                // Skip animation - show all at once
-                this.revealAllRemaining(i);
-                break;
-            }
-
             await this.revealPerk(this.perks[i], i);
             this.currentIndex = i + 1;
 
-            // Wait before next reveal
-            await this.delay(this.skipRequested ? 0 : 600);
+            // Shorter wait before next reveal for smoother experience
+            await this.delay(400);
         }
 
         this.isRevealing = false;
@@ -95,35 +89,6 @@ export class PerkRevealController {
     }
 
     /**
-     * Reveal all remaining perks at once (skip animation)
-     * @param {number} startIndex - Index to start from
-     */
-    revealAllRemaining(startIndex) {
-        const container = document.getElementById('perk-cards-container');
-        
-        for (let i = startIndex; i < this.perks.length; i++) {
-            const perk = this.perks[i];
-            
-            const card = document.createElement('div');
-            card.className = `perk-card perk-${perk.rarity} flipped instant`;
-            card.innerHTML = `
-                <div class="perk-card-inner">
-                    <div class="perk-card-front">
-                        <div class="card-back-pattern"></div>
-                    </div>
-                    <div class="perk-card-back">
-                        <div class="perk-rarity-badge">${perk.rarity}</div>
-                        <div class="perk-name">${perk.name}</div>
-                        <div class="perk-description">${perk.description}</div>
-                    </div>
-                </div>
-            `;
-            
-            container.appendChild(card);
-        }
-    }
-
-    /**
      * Create particle effect around a card
      * @param {HTMLElement} card - Card element
      * @param {string} rarity - Rarity level
@@ -166,26 +131,6 @@ export class PerkRevealController {
         setTimeout(() => {
             page.classList.remove('shake');
         }, 500);
-    }
-
-    /**
-     * Skip the animation
-     */
-    skip() {
-        this.skipRequested = true;
-    }
-
-    /**
-     * Replay the reveal animation
-     */
-    async replay() {
-        if (this.isRevealing) return;
-        
-        this.skipRequested = false;
-        const continueBtn = document.getElementById('perk-reveal-continue');
-        continueBtn.disabled = true;
-        
-        await this.startReveal(this.perks, this.onComplete);
     }
 
     /**

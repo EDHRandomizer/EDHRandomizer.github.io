@@ -844,8 +844,6 @@
             <div id="perk-cards-container"></div>
             
             <div class="perk-reveal-controls">
-                <button id="perk-reveal-skip" class="perk-reveal-btn">Skip Animation</button>
-                <button id="perk-reveal-replay" class="perk-reveal-btn">Replay</button>
                 <button id="perk-reveal-continue" class="perk-reveal-btn" disabled>Continue</button>
             </div>
         </div>
@@ -958,14 +956,6 @@
                 
                 // Wire up perk reveal control buttons
                 console.log('🔘 [INIT] Setting up perk reveal controls...');
-                document.getElementById('perk-reveal-skip').addEventListener('click', () => {
-                    console.log('⏩ [REVEAL] Skip button clicked');
-                    perkRevealController.skip();
-                });
-                document.getElementById('perk-reveal-replay').addEventListener('click', () => {
-                    console.log('🔄 [REVEAL] Replay button clicked');
-                    perkRevealController.replay();
-                });
                 document.getElementById('perk-reveal-continue').addEventListener('click', () => {
                     console.log('➡️ [REVEAL] Continue button clicked');
                     perkRevealController.continue();
@@ -1847,6 +1837,7 @@
                 try {
                     const session = await sessionManager.getSession(currentSession.sessionCode);
                     
+                    const previousState = currentSession.state;
                     currentSession = session;
                     gameModeController.currentSession = session;
                     
@@ -1855,8 +1846,17 @@
                         updateLobbyPlayers();
                     }
                     
+                    // Check if perks were just rolled (transition from waiting to rolling)
+                    if (previousState === 'waiting' && session.state === 'rolling') {
+                        console.log('🎲 [POLLING] Perks rolled - showing reveal page');
+                        showPerkReveal(session);
+                    }
+                    
                     // Update UI based on state
-                    if (session.state === 'selecting' && playerGridSection.classList.contains('hidden')) {
+                    if (session.state === 'selecting' && playerGridSection.classList.contains('hidden') && document.getElementById('perk-reveal-page').classList.contains('active')) {
+                        // Already on perk reveal page, don't enter game mode yet
+                        console.log('🎴 [POLLING] Perk reveal in progress, waiting...');
+                    } else if (session.state === 'selecting' && playerGridSection.classList.contains('hidden') && !document.getElementById('perk-reveal-page').classList.contains('active')) {
                         console.log('🎮 [POLLING] State changed to selecting - entering game mode');
                         packCodesAlreadyShown = false; // Reset when entering game mode
                         enterGameMode();
