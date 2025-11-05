@@ -1,6 +1,7 @@
 """
 EDHRec Pack Generator - Core Logic
 Fetches and processes EDHRec data to generate card packs
+Includes utility lands in land pool (fixed 2025-11-05)
 """
 
 import json
