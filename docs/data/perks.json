@@ -20,9 +20,9 @@
           "effects": {
             "distributionShift": -100
           },
-          "brief_description": "Slightly more popular commanders.",
-          "extended_description": "The pool of commanders that you are offered is generated via normal distrubtion of EDHRec Rank. This perk shifts the center of the normal distrubtion curve towards more popular commanders.",
-          "emoji": "📈"
+          "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
+          "emoji": "📈",
+          "description": "Slightly more popular commanders."
         },
         {
           "id": "popular_considerable",
@@ -32,9 +32,9 @@
           "effects": {
             "distributionShift": -200
           },
-          "brief_description": "Considerably more popular commanders",
-          "extended_description": "The pool of commanders that you are offered is generated via normal distrubtion of EDHRec Rank. This perk shifts the center of the normal distrubtion curve towards considerably more popular commanders.",
-          "emoji": "📊"
+          "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
+          "emoji": "📊",
+          "description": "Considerably more popular commanders"
         },
         {
           "id": "popular_much",
@@ -44,9 +44,9 @@
           "effects": {
             "distributionShift": -300
           },
-          "brief_description": "Much more popular commanders",
-          "extended_description": "The pool of commanders that you are offered is generated via normal distrubtion of EDHRec Rank. This perk shifts the center of the normal distrubtion curve towards MUCH more popular commanders.",
-          "emoji": "🔥"
+          "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
+          "emoji": "🔥",
+          "description": "Much more popular commanders"
         },
         {
           "id": "popular_elite",
@@ -57,9 +57,9 @@
           "effects": {
             "distributionShift": -500
           },
-          "brief_description": "Your pool will include Popular 'well-known' Commanders",
-          "extended_description": "The pool of commanders that you are offered is generated via normal distrubtion of EDHRec Rank. This perk shifts the center of the normal distrubtion curve towards MUCH more popular commanders.",
-          "emoji": "⭐"
+          "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
+          "emoji": "⭐",
+          "description": "Your pool will include Popular 'well-known' Commanders"
         }
       ]
     },
@@ -76,9 +76,9 @@
           "effects": {
             "saltMode": "salty"
           },
-          "brief_description": "All commander options from the salty pool",
           "extended_description": "All of your commander options will feature commanders with a high salt rating from EDHRec. This typically correlates with power.",
-          "emoji": "🧂"
+          "emoji": "🧂",
+          "description": "All commander options from the salty pool"
         }
       ]
     },
@@ -96,9 +96,9 @@
             "colorFilterMode": "exclude",
             "colorFilterCount": 1
           },
-          "brief_description": "Exclude one color from commander pool",
           "extended_description": "Choose one color, your commander options WILL NOT include commanders that have that color in their color identity.",
-          "emoji": "🚫"
+          "emoji": "🚫",
+          "description": "Exclude one color from commander pool"
         },
         {
           "id": "color_include_1",
@@ -110,9 +110,9 @@
             "colorFilterMode": "include",
             "colorFilterCount": 1
           },
-          "brief_description": "Pick 1 color to include in commander",
           "extended_description": "Choose one color, your commander options WILL include commanders that have that color in their color identity.",
-          "emoji": "🎨"
+          "emoji": "🎨",
+          "description": "Pick 1 color to include in commander"
         },
         {
           "id": "color_exact",
@@ -122,9 +122,9 @@
           "effects": {
             "colorFilterMode": "exact"
           },
-          "brief_description": "Pick exactly which colors in commander",
           "extended_description": "Decide exactly which colors your commander options will have in their color identity.",
-          "emoji": "🎯"
+          "emoji": "🎯",
+          "description": "Pick exactly which colors in commander"
         }
       ]
     },
@@ -141,9 +141,9 @@
           "effects": {
             "commanderQuantity": 1
           },
-          "brief_description": "Pick from 1 additional commander",
           "extended_description": "You will be shown 1 additional random commander option to choose from.",
-          "emoji": "➕"
+          "emoji": "➕",
+          "description": "Pick from 1 additional commander"
         },
         {
           "id": "extra_choice_3",
@@ -154,9 +154,9 @@
           "effects": {
             "commanderQuantity": 3
           },
-          "brief_description": "Pick from 3 additional commanders",
           "extended_description": "You will be shown 3 additional random commander options to choose from.",
-          "emoji": "✨"
+          "emoji": "✨",
+          "description": "Pick from 3 additional commanders"
         },
         {
           "id": "extra_choice_5",
@@ -166,9 +166,9 @@
           "effects": {
             "commanderQuantity": 5
           },
-          "brief_description": "Pick from 5 additional commanders",
           "extended_description": "You will be shown 5 additional random commander options to choose from.",
-          "emoji": "🌟"
+          "emoji": "🌟",
+          "description": "Pick from 5 additional commanders"
         }
       ]
     },
@@ -185,9 +185,9 @@
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "any"
           },
-          "brief_description": "Get an extra pack with any budget",
           "extended_description": "Get an extra pack to draft your deck from. This pack can include both cheap and expensive cards.",
-          "emoji": "💵"
+          "emoji": "💵",
+          "description": "Get an extra pack with any budget"
         },
         {
           "id": "budget_expensive",
@@ -198,9 +198,9 @@
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "expensive"
           },
-          "brief_description": "Get an additional expensive pack",
           "extended_description": "Get an extra pack to draft your deck from. This pack will only include expensive cards. (Uses TCGPlayer Price USD)",
-          "emoji": "💰"
+          "emoji": "💰",
+          "description": "Get an additional expensive pack"
         }
       ]
     },
@@ -217,9 +217,9 @@
             "bracketUpgrade": 3,
             "bracketUpgradePacks": 1
           },
-          "brief_description": "Get an additional bracket 3 pack",
           "extended_description": "Get an extra pack to draft your deck from. This pack will include cards commonly put in bracket 3 decks for your chosen commander.",
-          "emoji": "3️⃣"
+          "emoji": "3️⃣",
+          "description": "Get an additional bracket 3 pack"
         },
         {
           "id": "bracket_4",
@@ -230,9 +230,9 @@
             "bracketUpgrade": 4,
             "bracketUpgradePacks": 1
           },
-          "brief_description": "Get an additional bracket 4 pack",
           "extended_description": "Get an extra pack to draft your deck from. This pack will include cards commonly put in bracket 4 decks for your chosen commander.",
-          "emoji": "4️⃣"
+          "emoji": "4️⃣",
+          "description": "Get an additional bracket 4 pack"
         }
       ]
     },
@@ -249,9 +249,9 @@
             "specialPack": "gamechanger",
             "specialPackCount": 1
           },
-          "brief_description": "Get a pack with 1 game changer",
           "extended_description": "Get a pack that will have a game changer in it that players commonly use with your chosen commander.",
-          "emoji": "💥"
+          "emoji": "💥",
+          "description": "Get a pack with 1 game changer"
         },
         {
           "id": "gamechanger_3",
@@ -262,9 +262,9 @@
             "specialPack": "gamechanger",
             "specialPackCount": 3
           },
-          "brief_description": "Get a pack with 3 game changers",
           "extended_description": "Get a pack that will have 3 game changers in it that players commonly use with your chosen commander.",
-          "emoji": "💣"
+          "emoji": "💣",
+          "description": "Get a pack with 3 game changers"
         }
       ]
     },
@@ -282,9 +282,9 @@
             "specialPack": "conspiracy",
             "specialPackCount": 1
           },
-          "brief_description": "Get 1 random conspiracy card",
           "extended_description": "Get 1 random conspiracy card, these cards go into the command zone and have unique effects on the game.",
-          "emoji": "🎭"
+          "emoji": "🎭",
+          "description": "Get 1 random conspiracy card"
         },
         {
           "id": "conspiracy_3",
@@ -296,9 +296,9 @@
             "specialPack": "conspiracy",
             "specialPackCount": 3
           },
-          "brief_description": "Get 3 random conspiracy cards, choose 1 to use",
           "extended_description": "Get 3 random conspiracy cards, choose 1 to use, these cards go into the command zone and have unique effects on the game.",
-          "emoji": "🔍"
+          "emoji": "🔍",
+          "description": "Get 3 random conspiracy cards, choose 1 to use"
         }
       ]
     },
@@ -317,9 +317,9 @@
             "specialPackCount": 1,
             "moxfieldDeck": "dMTwgMp7UEuI33ACXNjOBg"
           },
-          "brief_description": "Get 1 random test card",
           "extended_description": "Get 1 random test card. These cards are 'scrapbook' looking cards made by WotC that sometimes have crazy effects.",
-          "emoji": "🧪"
+          "emoji": "🧪",
+          "description": "Get 1 random test card"
         },
         {
           "id": "test_card_3",
@@ -332,9 +332,9 @@
             "specialPackCount": 3,
             "moxfieldDeck": "dMTwgMp7UEuI33ACXNjOBg"
           },
-          "brief_description": "Get 3 random test cards",
           "extended_description": "Get 3 random test cards. These cards are 'scrapbook' looking cards made by WotC that sometimes have crazy effects.",
-          "emoji": "🔬"
+          "emoji": "🔬",
+          "description": "Get 3 random test cards"
         }
       ]
     },
@@ -353,9 +353,9 @@
             "specialPackCount": 2,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           },
-          "brief_description": "Get 2 random silver-border cards",
           "extended_description": "Get 2 random silver-border cards, these are fun, whimsical cards not legal in most formats.",
-          "emoji": "🤡"
+          "emoji": "🤡",
+          "description": "Get 2 random silver-border cards"
         },
         {
           "id": "silver_border_card_4",
@@ -368,9 +368,9 @@
             "specialPackCount": 4,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
           },
-          "brief_description": "Get 4 random silver-border cards",
           "extended_description": "Get 4 random silver-border cards, these are fun, whimsical cards not legal in most formats.",
-          "emoji": "🐵"
+          "emoji": "🐵",
+          "description": "Get 4 random silver-border cards"
         }
       ]
     },
@@ -388,9 +388,9 @@
             "specialPackCount": 3,
             "moxfieldDeck": "5OpLbDPxxkG6yAmxTT7YjA"
           },
-          "brief_description": "Get 3 random banned cards",
           "extended_description": "Get 3 random cards from the commander banlist that fit within your commander's color identity.",
-          "emoji": "⛔"
+          "emoji": "⛔",
+          "description": "Get 3 random banned cards"
         }
       ]
     },
@@ -408,9 +408,9 @@
             "specialPackCount": 3,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
           },
-          "brief_description": "Get 3 random ScangTech cards",
           "extended_description": "Get 3 random ScangTech cards. ScangTech cards feature Scang's favorite cards, which are commonly comprised of high value cards, ramp, copy effects, big spells, chaos, and more. ",
-          "emoji": "💻"
+          "emoji": "💻",
+          "description": "Get 3 random ScangTech cards"
         },
         {
           "id": "scangtech_6",
@@ -422,9 +422,9 @@
             "specialPackCount": 6,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
           },
-          "brief_description": "Get 6 random ScangTech cards",
           "extended_description": "Get 6 random ScangTech cards. Scang's favorite cards, which are commonly comprised of value engines, ramp, copy effects, big spells, chaos, and more. ",
-          "emoji": "🧪"
+          "emoji": "🧪",
+          "description": "Get 6 random ScangTech cards"
         }
       ]
     },
@@ -443,9 +443,9 @@
             "specialPackCount": 3,
             "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
           },
-          "brief_description": "Get 3 random JpTech cards",
           "extended_description": "Get 3 random JpTech cards. Jp's favorite cards, which are commonly comprised of token synergies, aristocrat themes, and versatile interaction pieces.",
-          "emoji": "🏴‍☠️"
+          "emoji": "🏴‍☠️",
+          "description": "Get 3 random JpTech cards"
         },
         {
           "id": "jptech_6",
@@ -458,9 +458,9 @@
             "specialPackCount": 6,
             "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
           },
-          "brief_description": "Get 6 random JpTech cards",
           "extended_description": "Get 6 random JpTech cards. Jp's favorite cards, which are commonly comprised of token synergies, aristocrat themes, and versatile interaction pieces.",
-          "emoji": "👬"
+          "emoji": "👬",
+          "description": "Get 6 random JpTech cards"
         }
       ]
     },
@@ -478,9 +478,9 @@
             "specialPack": "any_cost_lands",
             "specialPackCount": 15
           },
-          "brief_description": "Get an additional pack that is 15 any cost lands",
           "extended_description": "Get an additional pack that is comprised of 15 lands that can be of ANY price.",
-          "emoji": "🗺️"
+          "emoji": "🗺️",
+          "description": "Get an additional pack that is 15 any cost lands"
         },
         {
           "id": "manabase_expensive",
@@ -492,9 +492,9 @@
             "specialPack": "expensive_lands",
             "specialPackCount": 15
           },
-          "brief_description": "Get an additional pack that is 15 expensive lands",
           "extended_description": "Get an additional pack that is comprised of 15 lands that are on the higher end of the price spectrum. Often includes OG dual lands and fetches.",
-          "emoji": "🏝️"
+          "emoji": "🏝️",
+          "description": "Get an additional pack that is 15 expensive lands"
         }
       ]
     },
@@ -512,9 +512,9 @@
             "specialPack": "mdfc_lands",
             "specialPackCount": 15
           },
-          "brief_description": "Get a pack of 15 MDFC lands",
           "extended_description": "Get a pack of 15 MDFC lands. These are lands with spells on the other side, so you can feel less bad about running enough lands.",
-          "emoji": "💊"
+          "emoji": "💊",
+          "description": "Get a pack of 15 MDFC lands"
         }
       ]
     },
@@ -530,9 +530,9 @@
           "effects": {
             "manual": true
           },
-          "brief_description": "Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)",
           "extended_description": "You choose an instant or sorcery card from your deck to be your 'signature spell'. This card goes into the command zone and can be cast from there, paying its normal mana cost plus an additional 2 colorless for each time it has been cast from the command zone.",
-          "emoji": "🧙"
+          "emoji": "🧙",
+          "description": "Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)"
         },
         {
           "id": "partner_commander",
@@ -542,9 +542,9 @@
           "effects": {
             "manual": true
           },
-          "brief_description": "Choose a creature from your deck to be a partner commander.",
           "extended_description": "Pick any creature from your deck, you may add it as a partner commander, must be within color identity of main commander. The chosen creature doesn't need to have 'partner.'",
-          "emoji": "🤝"
+          "emoji": "🤝",
+          "description": "Choose a creature from your deck to be a partner commander."
         },
         {
           "id": "sharpie",
@@ -554,9 +554,9 @@
           "effects": {
             "manual": true
           },
-          "brief_description": "Sharpie text off of your commander to alter what it does.",
           "extended_description": "Sharpie some text off of your commander's textbox section. The text you remove must be a contiguous line going only between words.",
-          "emoji": "🖊️"
+          "emoji": "🖊️",
+          "description": "Sharpie text off of your commander to alter what it does."
         }
       ]
     }
