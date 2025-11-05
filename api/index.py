@@ -274,13 +274,13 @@ def weighted_random_sample(cards_with_colors: List[Dict[str, Any]], count: int, 
         use_quantity: If True, multiply weight by card quantity (for Moxfield)
     
     Returns:
-        List of selected card names
+        List of selected card names (unique - no duplicates)
     """
     if not cards_with_colors:
         return []
     
-    # Build weighted list
-    weighted_pool = []
+    # Build list of cards with their weights
+    weighted_cards = []
     for card in cards_with_colors:
         name = card['name']
         color_identity = card.get('color_identity', [])
@@ -292,16 +292,32 @@ def weighted_random_sample(cards_with_colors: List[Dict[str, Any]], count: int, 
         # Total weight = color_weight * quantity
         total_weight = color_weight * quantity
         
-        # Add card to pool 'total_weight' times
-        for _ in range(total_weight):
-            weighted_pool.append(name)
+        weighted_cards.append({'name': name, 'weight': total_weight})
     
-    # Sample from weighted pool
-    if not weighted_pool:
-        return []
+    # Select cards using weighted random choice without duplicates
+    selected = []
+    available_cards = weighted_cards.copy()
     
-    selected_count = min(count, len(weighted_pool))
-    return random.sample(weighted_pool, selected_count)
+    for _ in range(min(count, len(available_cards))):
+        if not available_cards:
+            break
+        
+        # Calculate total weight of remaining cards
+        total_weight = sum(c['weight'] for c in available_cards)
+        
+        # Random selection based on weights
+        rand = random.random() * total_weight
+        cumulative = 0
+        
+        for i, card in enumerate(available_cards):
+            cumulative += card['weight']
+            if rand <= cumulative:
+                selected.append(card['name'])
+                # Remove the selected card to prevent duplicates
+                available_cards.pop(i)
+                break
+    
+    return selected
 
 
 def fetch_scryfall_cards_with_colors(query_or_url: str) -> List[Dict[str, Any]]:
