@@ -55,9 +55,9 @@ export class PerkRevealController {
             <div class="perk-card-inner">
                 <div class="perk-card-front ${perk.rarity}-hint">
                     <div class="card-back-pattern"></div>
-                    ${perk.emoji ? `<div class="perk-card-emoji">${perk.emoji}</div>` : ''}
                 </div>
                 <div class="perk-card-back">
+                    ${perk.emoji ? `<div class="perk-card-emoji">${perk.emoji}</div>` : ''}
                     <div class="perk-card-header">
                         <div class="perk-rarity-badge">${perk.rarity}</div>
                         <div class="perk-name">${perk.name}</div>

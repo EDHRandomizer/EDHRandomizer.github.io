@@ -118,8 +118,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-evenly;
-    padding: 2rem 1.5rem;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -129,6 +130,11 @@
     border: 2px solid #4a5568;
     transition: box-shadow 0.3s, border-color 0.3s;
     position: relative;
+}
+
+/* Card Front (revealed) */
+.perk-card-back {
+    transform: rotateY(180deg);
 }
 
 .perk-card-emoji {
@@ -170,22 +176,14 @@
     border-radius: 8px;
 }
 
-/* Card Front (revealed) */
-.perk-card-back {
-    transform: rotateY(180deg);
+.perk-card-header {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: center;
     gap: 1rem;
-    padding: 2rem;
 }
 
-    .perk-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-    }/* Rarity-based styling */
+/* Rarity-based styling */
 .perk-common .perk-card-back {
     background: linear-gradient(135deg, #616161 0%, #424242 100%);
     border: 2px solid #757575;

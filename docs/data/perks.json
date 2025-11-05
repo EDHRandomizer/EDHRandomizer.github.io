@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "description": "Perk system with type-based deduplication",
   "rarityWeights": {
-    "common": 44,
+    "common": 40,
     "uncommon": 30,
-    "rare": 17,
-    "mythic": 9
+    "rare": 20,
+    "mythic": 10
   },
   "perkTypes": [
     {
