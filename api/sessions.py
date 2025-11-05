@@ -573,18 +573,13 @@ class handler(BaseHTTPRequestHandler):
         print(f"🎲 Rolling {perks_count} perks per player")
         
         # Roll perks for each player
-        # Load perks data
+        # Load perks data from single source of truth: docs/data/perks.json
         import os
         import sys
         
-        # Get perks.json path - try multiple locations
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Try same directory first (for Vercel deployment)
-        perks_path = os.path.join(current_dir, 'perks.json')
-        if not os.path.exists(perks_path):
-            # Fallback to ../data/perks.json (for local development)
-            perks_path = os.path.join(current_dir, '..', 'data', 'perks.json')
+        # Single source of truth: docs/data/perks.json
+        perks_path = os.path.join(current_dir, '..', 'docs', 'data', 'perks.json')
         
         print(f"🎲 Looking for perks.json at: {perks_path}")
         print(f"🎲 Current dir: {current_dir}")
@@ -1177,29 +1172,17 @@ class handler(BaseHTTPRequestHandler):
         result = {
             'cwd': os.getcwd(),
             'file_location': os.path.abspath(__file__),
-            'attempted_paths': [],
+            'source_of_truth': 'docs/data/perks.json',
             'loaded': False,
             'error': None
         }
         
         current_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Try same directory first
-        path1 = os.path.join(current_dir, 'perks.json')
-        result['attempted_paths'].append({
-            'path': path1,
-            'exists': os.path.exists(path1)
-        })
-        
-        # Try ../data/perks.json
-        path2 = os.path.join(current_dir, '..', 'data', 'perks.json')
-        result['attempted_paths'].append({
-            'path': path2,
-            'exists': os.path.exists(path2)
-        })
-        
-        # Try to load
-        perks_path = path1 if os.path.exists(path1) else path2
+        # Single source of truth
+        perks_path = os.path.join(current_dir, '..', 'docs', 'data', 'perks.json')
+        result['perks_path'] = perks_path
+        result['file_exists'] = os.path.exists(perks_path)
         
         try:
             with open(perks_path, 'r', encoding='utf-8') as f:
