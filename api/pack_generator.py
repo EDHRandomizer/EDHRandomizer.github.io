@@ -258,15 +258,18 @@ def select_cards_from_category(cards: List[Dict], category: str, count: int, use
     # When requesting 'lands', include both 'lands' and 'utilitylands'
     if category == 'lands':
         available = [c['name'] for c in cards if c['sourceList'] in ['lands', 'utilitylands'] and c['name'] not in used_cards]
+        print(f"[DEBUG] Selecting {count} lands from {len(available)} available (including utility lands)")
     else:
         available = [c['name'] for c in cards if c['sourceList'] == category and c['name'] not in used_cards]
     
     if not available:
+        print(f"[DEBUG] No available cards for category: {category}")
         return []
     
     selected_count = min(count, len(available))
     selected = random.sample(available, selected_count)
     
+    print(f"[DEBUG] Selected {len(selected)}/{count} cards from category: {category}")
     return selected
 
 
