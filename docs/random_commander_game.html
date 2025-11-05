@@ -1799,7 +1799,14 @@
         }
 
         function showPackCodes() {
+            // Prevent re-rendering if already shown
+            if (packCodesAlreadyShown && !packCodesSection.classList.contains('hidden')) {
+                console.log('⏭️ [PACK-CODES] Already shown, skipping re-render');
+                return;
+            }
+            
             console.log('📦 [PACK-CODES] Showing pack codes section');
+            packCodesAlreadyShown = true; // Mark as shown
             
             playerGridSection.classList.add('hidden');
             packCodesSection.classList.remove('hidden');
