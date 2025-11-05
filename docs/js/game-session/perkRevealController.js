@@ -66,7 +66,7 @@ export class PerkRevealController {
                 <div class="perk-card-back">
                     <div class="perk-rarity-badge">${perk.rarity}</div>
                     <div class="perk-name">${perk.name}</div>
-                    <div class="perk-description">${perk.description}</div>
+                    <div class="perk-description">${perk.extended_description || perk.brief_description || perk.description || ''}</div>
                 </div>
             </div>
         `;

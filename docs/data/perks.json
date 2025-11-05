@@ -16,34 +16,46 @@
           "id": "popular_slight",
           "name": "More Popular Pool",
           "rarity": "common",
-          "description": "Slightly more popular commanders",
           "perkPhase": "commander_selection",
-          "effects": { "distributionShift": -100 }
+          "effects": {
+            "distributionShift": -100
+          },
+          "brief_description": "Slightly more popular commanders.",
+          "extended_description": "Shifts your commander pool slightly towards more popular options, giving you access to commanders with slightly higher play rates."
         },
         {
           "id": "popular_considerable",
           "name": "Considerably Popular Pool",
           "rarity": "uncommon",
-          "description": "Considerably more popular commanders",
           "perkPhase": "commander_selection",
-          "effects": { "distributionShift": -200 }
+          "effects": {
+            "distributionShift": -200
+          },
+          "brief_description": "Considerably more popular commanders",
+          "extended_description": "Significantly shifts your pool toward popular commanders, ensuring you'll see commanders that are more commonly played in the format."
         },
         {
           "id": "popular_much",
           "name": "Much More Popular Pool",
           "rarity": "rare",
-          "description": "Much more popular commanders",
           "perkPhase": "commander_selection",
-          "effects": { "distributionShift": -300 }
+          "effects": {
+            "distributionShift": -300
+          },
+          "brief_description": "Much more popular commanders",
+          "extended_description": "Heavily skews your commander options towards the most popular choices, focusing on commanders with high play rates."
         },
         {
           "id": "popular_elite",
           "name": "Elite Commander Pool",
           "rarity": "mythic",
           "weightMultiplier": 0.8,
-          "description": "Elite tier commanders",
           "perkPhase": "commander_selection",
-          "effects": { "distributionShift": -500 }
+          "effects": {
+            "distributionShift": -500
+          },
+          "brief_description": "Elite tier commanders",
+          "extended_description": "Exclusively shows elite-tier commanders - only the most popular and widely-played options in the entire format."
         }
       ]
     },
@@ -56,9 +68,12 @@
           "name": "Salty Commander",
           "weightMultiplier": 1.2,
           "rarity": "rare",
-          "description": "All commander options from the salty pool (salt score > 0.8)",
           "perkPhase": "commander_selection",
-          "effects": { "saltMode": "salty" }
+          "effects": {
+            "saltMode": "salty"
+          },
+          "brief_description": "All commander options from the salty pool (salt score > 0.8)",
+          "extended_description": "All commander options from the salty pool (salt score > 0.8)"
         }
       ]
     },
@@ -71,34 +86,37 @@
           "name": "Restrict 1 Color",
           "rarity": "common",
           "weightMultiplier": 1.5,
-          "description": "Exclude one color from commander pool",
           "perkPhase": "commander_selection",
           "effects": {
             "colorFilterMode": "exclude",
             "colorFilterCount": 1
-          }
+          },
+          "brief_description": "Exclude one color from commander pool",
+          "extended_description": "Exclude one color from commander pool"
         },
         {
           "id": "color_include_1",
           "name": "Include 1 Color",
           "rarity": "common",
           "weightMultiplier": 1.5,
-          "description": "Pick 1 color to include in commander",
           "perkPhase": "commander_selection",
           "effects": {
             "colorFilterMode": "include",
             "colorFilterCount": 1
-          }
+          },
+          "brief_description": "Pick 1 color to include in commander",
+          "extended_description": "Pick 1 color to include in commander"
         },
         {
           "id": "color_exact",
           "name": "Exact Color Selection",
           "rarity": "rare",
-          "description": "Pick exactly which colors in commander",
           "perkPhase": "commander_selection",
           "effects": {
             "colorFilterMode": "exact"
-          }
+          },
+          "brief_description": "Pick exactly which colors in commander",
+          "extended_description": "Pick exactly which colors in commander"
         }
       ]
     },
@@ -111,26 +129,35 @@
           "name": "+1 Commander Choice",
           "rarity": "common",
           "weightMultiplier": 1.3,
-          "description": "Pick from 1 additional commander",
           "perkPhase": "commander_selection",
-          "effects": { "commanderQuantity": 1 }
+          "effects": {
+            "commanderQuantity": 1
+          },
+          "brief_description": "Pick from 1 additional commander",
+          "extended_description": "Pick from 1 additional commander"
         },
         {
           "id": "extra_choice_3",
           "name": "+3 Commander Choices",
           "rarity": "uncommon",
           "weightMultiplier": 1.2,
-          "description": "Pick from 3 additional commanders",
           "perkPhase": "commander_selection",
-          "effects": { "commanderQuantity": 3 }
+          "effects": {
+            "commanderQuantity": 3
+          },
+          "brief_description": "Pick from 3 additional commanders",
+          "extended_description": "Pick from 3 additional commanders"
         },
         {
           "id": "extra_choice_5",
           "name": "+5 Commander Choices",
           "rarity": "rare",
-          "description": "Pick from 5 additional commanders",
           "perkPhase": "commander_selection",
-          "effects": { "commanderQuantity": 5 }
+          "effects": {
+            "commanderQuantity": 5
+          },
+          "brief_description": "Pick from 5 additional commanders",
+          "extended_description": "Pick from 5 additional commanders"
         }
       ]
     },
@@ -142,23 +169,25 @@
           "id": "budget_any_cost",
           "name": "Any Cost Pack",
           "rarity": "uncommon",
-          "description": "Get an extra pack with any budget",
           "perkPhase": "drafting",
-          "effects": { 
+          "effects": {
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "any"
-          }
+          },
+          "brief_description": "Get an extra pack with any budget",
+          "extended_description": "Get an extra pack with any budget"
         },
         {
           "id": "budget_expensive",
           "name": "Expensive Pack",
           "rarity": "rare",
-          "description": "Get an additional expensive pack",
           "perkPhase": "drafting",
-          "effects": { 
+          "effects": {
             "budgetUpgradePacks": 1,
             "budgetUpgradeType": "expensive"
-          }
+          },
+          "brief_description": "Get an additional expensive pack",
+          "extended_description": "Get an additional expensive pack"
         }
       ]
     },
@@ -170,23 +199,25 @@
           "id": "bracket_3",
           "name": "Bracket 3 Pack",
           "rarity": "uncommon",
-          "description": "Get an additional bracket 3 pack",
           "perkPhase": "drafting",
           "effects": {
             "bracketUpgrade": 3,
             "bracketUpgradePacks": 1
-          }
+          },
+          "brief_description": "Get an additional bracket 3 pack",
+          "extended_description": "Get an additional bracket 3 pack"
         },
         {
           "id": "bracket_4",
           "name": "Bracket 4 Pack",
           "rarity": "rare",
-          "description": "Get an additional bracket 4 pack",
           "perkPhase": "drafting",
           "effects": {
             "bracketUpgrade": 4,
             "bracketUpgradePacks": 1
-          }
+          },
+          "brief_description": "Get an additional bracket 4 pack",
+          "extended_description": "Get an additional bracket 4 pack"
         }
       ]
     },
@@ -198,23 +229,25 @@
           "id": "gamechanger_1",
           "name": "Game Changer Pack",
           "rarity": "rare",
-          "description": "Get a pack with 1 game changer",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "gamechanger",
             "specialPackCount": 1
-          }
+          },
+          "brief_description": "Get a pack with 1 game changer",
+          "extended_description": "Get a pack with 1 game changer"
         },
         {
           "id": "gamechanger_3",
           "name": "Game Changer Pack - Extended",
           "rarity": "mythic",
-          "description": "Get a pack with 3 game changers",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "gamechanger",
             "specialPackCount": 3
-          }
+          },
+          "brief_description": "Get a pack with 3 game changers",
+          "extended_description": "Get a pack with 3 game changers"
         }
       ]
     },
@@ -227,24 +260,26 @@
           "name": "Conspiracy Card",
           "rarity": "common",
           "weightMultiplier": 0.8,
-          "description": "Get 1 random conspiracy card",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "conspiracy",
             "specialPackCount": 1
-          }
+          },
+          "brief_description": "Get 1 random conspiracy card",
+          "extended_description": "Get 1 random conspiracy card"
         },
         {
           "id": "conspiracy_3",
           "name": "Conspiracy Cards x3",
           "rarity": "uncommon",
           "weightMultiplier": 0.8,
-          "description": "Get 3 random conspiracy cards, choose 1 to use",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "conspiracy",
             "specialPackCount": 3
-          }
+          },
+          "brief_description": "Get 3 random conspiracy cards, choose 1 to use",
+          "extended_description": "Get 3 random conspiracy cards, choose 1 to use"
         }
       ]
     },
@@ -257,26 +292,28 @@
           "name": "Test Card",
           "rarity": "common",
           "weightMultiplier": 0.7,
-          "description": "Get 1 random test card",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "test_cards",
             "specialPackCount": 1,
             "moxfieldDeck": "dMTwgMp7UEuI33ACXNjOBg"
-          }
+          },
+          "brief_description": "Get 1 random test card",
+          "extended_description": "Get 1 random test card"
         },
         {
           "id": "test_card_3",
           "name": "Test Cards x3",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
-          "description": "Get 3 random test cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "test_cards",
             "specialPackCount": 3,
             "moxfieldDeck": "dMTwgMp7UEuI33ACXNjOBg"
-          }
+          },
+          "brief_description": "Get 3 random test cards",
+          "extended_description": "Get 3 random test cards"
         }
       ]
     },
@@ -289,26 +326,28 @@
           "name": "Silver-Border Cards x2",
           "rarity": "common",
           "weightMultiplier": 0.7,
-          "description": "Get 2 random silver-border cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silver_border_cards",
             "specialPackCount": 2,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
-          }
+          },
+          "brief_description": "Get 2 random silver-border cards",
+          "extended_description": "Get 2 random silver-border cards"
         },
         {
           "id": "silver_border_card_4",
           "name": "Silver-Border Cards x4",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
-          "description": "Get 4 random silver-border cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silver_border_cards",
             "specialPackCount": 4,
             "moxfieldDeck": "Ph3OYF_lLkuBhDpiP1qwuQ"
-          }
+          },
+          "brief_description": "Get 4 random silver-border cards",
+          "extended_description": "Get 4 random silver-border cards"
         }
       ]
     },
@@ -320,13 +359,14 @@
           "id": "banned_cards_3",
           "name": "Banned Cards",
           "rarity": "mythic",
-          "description": "Get 3 random banned cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "banned",
             "specialPackCount": 3,
             "moxfieldDeck": "5OpLbDPxxkG6yAmxTT7YjA"
-          }
+          },
+          "brief_description": "Get 3 random banned cards",
+          "extended_description": "Get 3 random banned cards"
         }
       ]
     },
@@ -338,25 +378,27 @@
           "id": "scangtech_3",
           "name": "ScangTech Card x3",
           "rarity": "uncommon",
-          "description": "Get 3 random ScangTech cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "scangtech",
             "specialPackCount": 3,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
-          }
+          },
+          "brief_description": "Get 3 random ScangTech cards",
+          "extended_description": "Get 3 random ScangTech cards"
         },
         {
           "id": "scangtech_6",
           "name": "ScangTech Cards x6",
           "rarity": "rare",
-          "description": "Get 6 random ScangTech cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "scangtech",
             "specialPackCount": 6,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
-          }
+          },
+          "brief_description": "Get 6 random ScangTech cards",
+          "extended_description": "Get 6 random ScangTech cards"
         }
       ]
     },
@@ -369,26 +411,28 @@
           "name": "JpTech Card x3",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
-          "description": "Get 3 random JpTech cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "jptech",
             "specialPackCount": 3,
             "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
-          }
+          },
+          "brief_description": "Get 3 random JpTech cards",
+          "extended_description": "Add 3 random Japanese-exclusive technology preview cards - unique cards not available in English."
         },
         {
           "id": "jptech_6",
           "name": "JpTech Cards x6",
           "rarity": "rare",
           "weightMultiplier": 0.7,
-          "description": "Get 6 random JpTech cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "jptech",
             "specialPackCount": 6,
             "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
-          }
+          },
+          "brief_description": "Get 6 random JpTech cards",
+          "extended_description": "Include 6 Japanese tech cards in your pool - double the amount of exclusive JP content."
         }
       ]
     },
@@ -401,24 +445,26 @@
           "name": "Any Cost Lands Pack",
           "rarity": "common",
           "weightMultiplier": 0.7,
-          "description": "Get an additional pack that is 15 any cost lands",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "any_cost_lands",
             "specialPackCount": 15
-          }
+          },
+          "brief_description": "Get an additional pack that is 15 any cost lands",
+          "extended_description": "Get an additional pack that is 15 any cost lands"
         },
         {
           "id": "manabase_expensive",
           "name": "Expensive Lands Pack",
           "rarity": "uncommon",
           "weightMultiplier": 0.7,
-          "description": "Get an additional pack that is 15 expensive lands",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "expensive_lands",
             "specialPackCount": 15
-          }
+          },
+          "brief_description": "Get an additional pack that is 15 expensive lands",
+          "extended_description": "Get an additional pack that is 15 expensive lands"
         }
       ]
     },
@@ -431,12 +477,13 @@
           "name": "MDFC-Pilled",
           "rarity": "common",
           "weightMultiplier": 0.7,
-          "description": "Get a pack of 15 MDFC lands",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "mdfc_lands",
             "specialPackCount": 15
-          }
+          },
+          "brief_description": "Get a pack of 15 MDFC lands",
+          "extended_description": "Get a pack of 15 MDFC lands"
         }
       ]
     },
@@ -448,34 +495,36 @@
           "id": "signature_spell",
           "name": "Signature Spell",
           "rarity": "mythic",
-          "description": "MANUAL: Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)",
           "perkPhase": "drafting",
           "effects": {
             "manual": true
-          }
+          },
+          "brief_description": "MANUAL: Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)",
+          "extended_description": "MANUAL: Instant/sorcery in the command zone, can recast with separate commander tax (like oathbreaker)"
         },
         {
           "id": "partner_commander",
           "name": "Partner Commander",
           "rarity": "mythic",
-          "description": "MANUAL: Pick any creature from your deck, you may add it as a partner commander, within color identity of your main commander",
           "perkPhase": "drafting",
           "effects": {
             "manual": true
-          }
+          },
+          "brief_description": "MANUAL: Pick any creature from your deck, you may add it as a partner commander, within color identity of your main commander",
+          "extended_description": "MANUAL: Pick any creature from your deck, you may add it as a partner commander, within color identity of your main commander"
         },
         {
           "id": "sharpie",
           "name": "Sharpie",
           "rarity": "mythic",
-          "description": "MANUAL: Sharpie text off of your commander, must be a contiguous line going only from adjacent words",
           "perkPhase": "drafting",
           "effects": {
             "manual": true
-          }
+          },
+          "brief_description": "MANUAL: Sharpie text off of your commander, must be a contiguous line going only from adjacent words",
+          "extended_description": "MANUAL: Sharpie text off of your commander, must be a contiguous line going only from adjacent words"
         }
       ]
     }
   ]
 }
-

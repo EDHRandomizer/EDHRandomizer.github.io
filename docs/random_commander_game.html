@@ -185,8 +185,9 @@
             padding: 0.4rem 0.6rem;
             margin-bottom: 0.3rem;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
+            gap: 0.5rem;
             min-height: 28px;
             cursor: help;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -895,6 +896,7 @@
         let perksData = null;
         let playerCommandersGenerated = {}; // Track which players have generated commanders
         let packCodesAlreadyShown = false; // Track if pack codes page has been shown to prevent re-rendering
+        let perkRevealShown = false; // Track if perk reveal has been shown
 
         // DOM Elements
         const joinCreateSection = document.getElementById('join-create-section');
@@ -1846,10 +1848,12 @@
                         updateLobbyPlayers();
                     }
                     
-                    // Check if perks were just rolled (transition from waiting to rolling)
-                    if (previousState === 'waiting' && session.state === 'rolling') {
+                    // Check if we should show perk reveal (transition to selecting state and haven't shown yet)
+                    if (session.state === 'selecting' && previousState === 'waiting' && !perkRevealShown) {
                         console.log('🎲 [POLLING] Perks rolled - showing reveal page');
+                        perkRevealShown = true;
                         showPerkReveal(session);
+                        return; // Don't proceed to enterGameMode yet
                     }
                     
                     // Update UI based on state
