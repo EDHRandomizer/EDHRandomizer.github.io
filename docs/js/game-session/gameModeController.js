@@ -34,7 +34,7 @@ export class GameModeController {
         // Base configuration
         const timePeriod = avatarMode ? 'Weekly' : 'Monthly'; // Avatar Mode uses Weekly
         const minRank = 1;
-        const maxRank = avatarMode ? 9999 : 1400; // Avatar Mode removes rank limit
+        const maxRank = avatarMode ? 9999 : 1400; // Avatar Mode removes rank limit, default caps at 1400
         const excludePartners = true;
         
         // Avatar Mode set filtering (TLA and TLE only)
