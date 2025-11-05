@@ -40,6 +40,7 @@
           "id": "popular_elite",
           "name": "Elite Commander Pool",
           "rarity": "mythic",
+          "weightMultiplier": 0.8,
           "description": "Elite tier commanders",
           "perkPhase": "commander_selection",
           "effects": { "distributionShift": -500 }
@@ -53,6 +54,7 @@
         {
           "id": "salty_pool",
           "name": "Salty Commander",
+          "weightMultiplier": 1.2,
           "rarity": "rare",
           "description": "All commander options from the salty pool (salt score > 0.8)",
           "perkPhase": "commander_selection",
@@ -108,7 +110,7 @@
           "id": "extra_choice_1",
           "name": "+1 Commander Choice",
           "rarity": "common",
-          "weightMultiplier": 1.2,
+          "weightMultiplier": 1.3,
           "description": "Pick from 1 additional commander",
           "perkPhase": "commander_selection",
           "effects": { "commanderQuantity": 1 }
@@ -224,6 +226,7 @@
           "id": "conspiracy_1",
           "name": "Conspiracy Card",
           "rarity": "common",
+          "weightMultiplier": 0.8,
           "description": "Get 1 random conspiracy card",
           "perkPhase": "drafting",
           "effects": {
@@ -232,21 +235,11 @@
           }
         },
         {
-          "id": "conspiracy_2",
-          "name": "Conspiracy Cards x2",
-          "rarity": "uncommon",
-          "description": "Get 2 random conspiracy cards",
-          "perkPhase": "drafting",
-          "effects": {
-            "specialPack": "conspiracy",
-            "specialPackCount": 2
-          }
-        },
-        {
           "id": "conspiracy_3",
           "name": "Conspiracy Cards x3",
-          "rarity": "rare",
-          "description": "Get 3 random conspiracy cards",
+          "rarity": "uncommon",
+          "weightMultiplier": 0.8,
+          "description": "Get 3 random conspiracy cards, choose 1 to use",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "conspiracy",
@@ -263,6 +256,7 @@
           "id": "test_card_1",
           "name": "Test Card",
           "rarity": "common",
+          "weightMultiplier": 0.7,
           "description": "Get 1 random test card",
           "perkPhase": "drafting",
           "effects": {
@@ -275,6 +269,7 @@
           "id": "test_card_3",
           "name": "Test Cards x3",
           "rarity": "uncommon",
+          "weightMultiplier": 0.7,
           "description": "Get 3 random test cards",
           "perkPhase": "drafting",
           "effects": {
@@ -293,6 +288,7 @@
           "id": "silver_border_card_2",
           "name": "Silver-Border Cards x2",
           "rarity": "common",
+          "weightMultiplier": 0.7,
           "description": "Get 2 random silver-border cards",
           "perkPhase": "drafting",
           "effects": {
@@ -305,6 +301,7 @@
           "id": "silver_border_card_4",
           "name": "Silver-Border Cards x4",
           "rarity": "uncommon",
+          "weightMultiplier": 0.7,
           "description": "Get 4 random silver-border cards",
           "perkPhase": "drafting",
           "effects": {

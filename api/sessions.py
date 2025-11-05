@@ -1099,7 +1099,7 @@ class handler(BaseHTTPRequestHandler):
     def get_random_perk(self, perks_data):
         """Get random perk based on rarity weights with optional per-perk weight multipliers"""
         base_weights = perks_data.get('rarityWeights', {
-            'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3
+            'common': 44, 'uncommon': 30, 'rare': 17, 'mythic': 9
         })
         
         # Get all perks - support both formats
