@@ -1215,10 +1215,13 @@
                         playerCommandersGenerated[player.number] = true;
                     }
                     
-                    // If player is locked, always show locked commander display
+                    // If player is locked, only render if not already showing locked state
                     if (player.commanderLocked) {
-                        console.log(`🔒 [UPDATE] Player ${player.number} is locked - showing locked commander`);
-                        commandersGrid.innerHTML = renderCommanders(player);
+                        const alreadyShowingLocked = commandersGrid.querySelector('.commander-item-small.locked');
+                        if (!alreadyShowingLocked) {
+                            console.log(`🔒 [UPDATE] Player ${player.number} is locked - showing locked commander`);
+                            commandersGrid.innerHTML = renderCommanders(player);
+                        }
                     }
                     // Only update if the grid is currently showing "Waiting for commanders..."
                     else if (commandersGrid.querySelector('em')) {
