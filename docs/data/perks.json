@@ -338,26 +338,26 @@
       "name": "ScangTech Cards",
       "perks": [
         {
-          "id": "scangtech_1",
-          "name": "ScangTech Card",
-          "rarity": "uncommon",
-          "description": "Get 1 random ScangTech card",
-          "perkPhase": "drafting",
-          "effects": {
-            "specialPack": "scangtech",
-            "specialPackCount": 1,
-            "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
-          }
-        },
-        {
           "id": "scangtech_3",
-          "name": "ScangTech Cards x3",
-          "rarity": "rare",
+          "name": "ScangTech Card x3",
+          "rarity": "uncommon",
           "description": "Get 3 random ScangTech cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "scangtech",
             "specialPackCount": 3,
+            "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
+          }
+        },
+        {
+          "id": "scangtech_6",
+          "name": "ScangTech Cards x6",
+          "rarity": "rare",
+          "description": "Get 6 random ScangTech cards",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "scangtech",
+            "specialPackCount": 6,
             "moxfieldDeck": "S-Pxf1bY5kmaHlWiKN1Wug"
           }
         }
@@ -368,28 +368,28 @@
       "name": "JpTech Cards",
       "perks": [
         {
-          "id": "jptech_1",
-          "name": "JpTech Card",
-          "rarity": "uncommon",
-          "weightMultiplier": 0.7,
-          "description": "Get 1 random JpTech card",
-          "perkPhase": "drafting",
-          "effects": {
-            "specialPack": "jptech",
-            "specialPackCount": 1,
-            "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
-          }
-        },
-        {
           "id": "jptech_3",
-          "name": "JpTech Cards x3",
-          "rarity": "rare",
+          "name": "JpTech Card x3",
+          "rarity": "uncommon",
           "weightMultiplier": 0.7,
           "description": "Get 3 random JpTech cards",
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "jptech",
             "specialPackCount": 3,
+            "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
+          }
+        },
+        {
+          "id": "jptech_6",
+          "name": "JpTech Cards x6",
+          "rarity": "rare",
+          "weightMultiplier": 0.7,
+          "description": "Get 6 random JpTech cards",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "jptech",
+            "specialPackCount": 6,
             "moxfieldDeck": "Ba27o7m7QUaDUL0zE_j6fQ"
           }
         }
@@ -403,6 +403,7 @@
           "id": "manabase_any_cost",
           "name": "Any Cost Lands Pack",
           "rarity": "common",
+          "weightMultiplier": 0.7,
           "description": "Get an additional pack that is 15 any cost lands",
           "perkPhase": "drafting",
           "effects": {
@@ -414,6 +415,7 @@
           "id": "manabase_expensive",
           "name": "Expensive Lands Pack",
           "rarity": "uncommon",
+          "weightMultiplier": 0.7,
           "description": "Get an additional pack that is 15 expensive lands",
           "perkPhase": "drafting",
           "effects": {
@@ -431,6 +433,7 @@
           "id": "mdfc_pilled",
           "name": "MDFC-Pilled",
           "rarity": "common",
+          "weightMultiplier": 0.7,
           "description": "Get a pack of 15 MDFC lands",
           "perkPhase": "drafting",
           "effects": {
