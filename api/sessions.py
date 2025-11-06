@@ -384,6 +384,10 @@ class handler(BaseHTTPRequestHandler):
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"👢 [REQ-{request_id}] Kicking player from session: {session_code}")
             self.handle_kick_player(data)
+        elif path == '/mark-perks-seen':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"👁️ [REQ-{request_id}] Marking perks as seen for session: {session_code}")
+            self.handle_mark_perks_seen(data)
         elif path == '/test-perks':
             print(f"🧪 [REQ-{request_id}] Testing perks.json loading")
             self.handle_test_perks()
@@ -464,6 +468,7 @@ class handler(BaseHTTPRequestHandler):
                     'number': 1,
                     'name': player_name,
                     'perks': [],
+                    'hasSeenPerks': False,
                     'commanderUrl': None,
                     'commanderData': None,
                     'commanderLocked': False,
@@ -533,6 +538,7 @@ class handler(BaseHTTPRequestHandler):
             'number': player_number,
             'name': player_name,
             'perks': perks,
+            'hasSeenPerks': False,
             'commanderUrl': None,
             'commanderData': None,
             'commanderLocked': False,
@@ -910,6 +916,31 @@ class handler(BaseHTTPRequestHandler):
                 'name': player_to_kick.get('name', 'Unknown')
             }
         })
+
+    def handle_mark_perks_seen(self, data):
+        """Mark that player has seen their perks reveal"""
+        session_code = data.get('sessionCode', '').upper()
+        player_id = data.get('playerId', '')
+        
+        session = get_session(session_code)
+        if not session_code or not session:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        # Find player
+        player = next((p for p in session['players'] if p['id'] == player_id), None)
+        if not player:
+            self.send_error_response(404, 'Player not found')
+            return
+        
+        # Mark perks as seen
+        player['hasSeenPerks'] = True
+        
+        session['updated_at'] = time.time()
+        update_session(session_code, session)
+        
+        print(f"👁️ Player {player.get('name', 'unknown')} marked perks as seen")
+        self.send_json_response(200, {'success': True})
 
     def handle_get_session(self, session_code):
         """Get current session data"""

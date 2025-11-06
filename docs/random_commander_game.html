@@ -955,7 +955,6 @@
         let perksData = null;
         let playerCommandersGenerated = {}; // Track which players have generated commanders
         let packCodesAlreadyShown = false; // Track if pack codes page has been shown to prevent re-rendering
-        let perkRevealShown = false; // Track if perk reveal has been shown
         let pollingInterval = null; // Track polling interval for cleanup
 
         // DOM Elements
@@ -1131,8 +1130,36 @@
             
             try {
                 showStatus('Joining session...');
+                
+                // Check if we have a stored player ID for this session (rejoining)
+                const storedPlayerId = sessionManager.getPlayerIdFromStorage(code);
+                
+                let result;
+                if (storedPlayerId) {
+                    console.log('� [JOIN] Found stored player ID, attempting rejoin...');
+                    try {
+                        result = await sessionManager.rejoinSession(code, storedPlayerId);
+                        console.log('✅ [JOIN] Rejoined session with existing player ID:', result);
+                        
+                        // If rejoining, skip name entry and go straight to lobby
+                        currentSession = result.sessionData;
+                        currentPlayerId = result.playerId;
+                        
+                        // Update URL with session code
+                        const url = new URL(window.location);
+                        url.searchParams.set('session', currentSession.sessionCode);
+                        window.history.pushState({}, '', url);
+                        
+                        enterLobby();
+                        return;
+                    } catch (rejoinError) {
+                        console.warn('⚠️ [JOIN] Rejoin failed, falling back to new join:', rejoinError);
+                        // Fall through to normal join
+                    }
+                }
+                
                 console.log('📡 [JOIN] Calling sessionManager.joinSession()...');
-                const result = await sessionManager.joinSession(code, ''); // Empty name initially
+                result = await sessionManager.joinSession(code, ''); // Empty name initially
                 console.log('✅ [JOIN] Joined session:', result);
                 
                 currentSession = result.sessionData;
@@ -1479,6 +1506,13 @@
                 return;
             }
             
+            // Check if player has already seen perks (e.g., after refresh/rejoin)
+            if (currentPlayer.hasSeenPerks) {
+                console.log('👁️ [REVEAL] Player already seen perks, skipping reveal');
+                proceedToCommanderSelection(session);
+                return;
+            }
+            
             console.log('🎴 [REVEAL] Starting reveal for', currentPlayer.perks.length, 'perks');
             console.log('🔍 [REVEAL] Perk data:', currentPlayer.perks);
             
@@ -1496,8 +1530,17 @@
             hideAllPages();
             document.getElementById('perk-reveal-page').classList.add('active');
             
-            perkRevealController.startReveal(enrichedPerks, () => {
+            perkRevealController.startReveal(enrichedPerks, async () => {
                 console.log('✅ [REVEAL] Reveal complete, proceeding to commander selection');
+                
+                // Mark perks as seen on backend
+                try {
+                    await sessionManager.markPerksSeen();
+                    console.log('👁️ [REVEAL] Marked perks as seen on backend');
+                } catch (error) {
+                    console.warn('⚠️ [REVEAL] Failed to mark perks as seen:', error);
+                }
+                
                 proceedToCommanderSelection(session);
             });
         }
@@ -2196,10 +2239,22 @@
                         updateLobbyPlayers();
                     }
                     
-                    // Check if we should show perk reveal (transition to selecting state and haven't shown yet)
-                    if (session.state === 'selecting' && previousState === 'waiting' && !perkRevealShown) {
-                        console.log('🎲 [POLLING] Perks rolled - showing reveal page');
-                        perkRevealShown = true;
+                    // Check if we should show perk reveal
+                    // Show if: state is 'selecting' AND player hasn't seen perks yet
+                    const currentPlayer = session.players.find(p => p.id === currentPlayerId);
+                    const shouldShowReveal = session.state === 'selecting' && 
+                                           currentPlayer && 
+                                           !currentPlayer.hasSeenPerks &&
+                                           !document.getElementById('perk-reveal-page').classList.contains('active');
+                    
+                    if (shouldShowReveal) {
+                        console.log('🎲 [POLLING] Perks ready and not seen - showing reveal page');
+                        
+                        // If they're on name entry screen, skip to reveal
+                        if (!enterNameSection.classList.contains('hidden')) {
+                            console.log('📝 [POLLING] Player on name entry, moving to reveal');
+                        }
+                        
                         showPerkReveal(session);
                         return; // Don't proceed to enterGameMode yet
                     }

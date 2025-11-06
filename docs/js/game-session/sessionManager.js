@@ -409,6 +409,39 @@ class SessionManager {
     }
 
     /**
+     * Mark that player has seen their perks reveal
+     * @returns {Promise<Object>} - Success response
+     */
+    async markPerksSeen() {
+        if (!this.currentSession || !this.currentPlayerId) {
+            throw new Error('No active session');
+        }
+
+        try {
+            const response = await this.fetchWithRetry(`${this.apiBase}/mark-perks-seen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionCode: this.currentSession,
+                    playerId: this.currentPlayerId
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Failed to mark perks as seen: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error marking perks as seen:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get current session data
      * @returns {Promise<Object>} - Full session data
      */
