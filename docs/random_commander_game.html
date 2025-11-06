@@ -956,6 +956,7 @@
         let playerCommandersGenerated = {}; // Track which players have generated commanders
         let packCodesAlreadyShown = false; // Track if pack codes page has been shown to prevent re-rendering
         let perkRevealShown = false; // Track if perk reveal has been shown
+        let pollingInterval = null; // Track polling interval for cleanup
 
         // DOM Elements
         const joinCreateSection = document.getElementById('join-create-section');
@@ -1669,12 +1670,14 @@
             ` : '';
             
             section.innerHTML = `
-                ${!isCurrentPlayer && currentSession.hostId === currentPlayerId ? `
-                    <button class="kick-btn" style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; font-size: 0.85rem; padding: 0.25rem 0.5rem;" onclick="kickPlayerFromGame('${player.id}', '${player.name || 'Player ' + player.number}')">❌</button>
-                ` : ''}
                 <div class="player-header">
                     <span class="player-number">${player.name || `Player ${player.number}`}${isCurrentPlayer ? ' (You)' : ''}</span>
-                    <span class="player-status">${player.commanderLocked ? '🔒 Locked' : 'Selecting...'}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        ${!isCurrentPlayer && currentSession.hostId === currentPlayerId ? `
+                            <button class="kick-btn" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="kickPlayerFromGame('${player.id}', '${player.name || 'Player ' + player.number}')">❌ Kick</button>
+                        ` : ''}
+                        <span class="player-status">${player.commanderLocked ? '🔒 Locked' : 'Selecting...'}</span>
+                    </div>
                 </div>
                 
                 ${powerupsHTML}
@@ -2138,7 +2141,12 @@
         function startPolling() {
             console.log('🔄 [POLLING] Starting session polling (500ms interval)');
             
-            setInterval(async () => {
+            // Clear any existing interval first
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            
+            pollingInterval = setInterval(async () => {
                 if (!currentSession) {
                     return; // Silent skip when no session
                 }
