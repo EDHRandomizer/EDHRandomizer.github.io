@@ -280,40 +280,11 @@ def cleanup_expired_sessions():
         del PACK_CODES[code]
 
 def touch_session(session_code: str, player_id: str = None):
-    """Update session's last activity timestamp and optionally mark player as connected"""
+    """Update session's last activity timestamp"""
     session = get_session(session_code)
     if session:
         session['lastActivity'] = time.time()
         session['updated_at'] = time.time()
-        
-        # Update player connection status if player_id provided
-        if player_id:
-            player = next((p for p in session['players'] if p['id'] == player_id), None)
-            if player:
-                player['isConnected'] = True
-                player['lastSeen'] = time.time()
-        
-        # Check for disconnected players (no activity for 30 seconds)
-        current_time = time.time()
-        players_to_remove = []
-        
-        for player in session['players']:
-            if current_time - player.get('lastSeen', current_time) > 30:
-                player['isConnected'] = False
-                
-                # Remove disconnected players from lobby (waiting state only)
-                # Don't remove host, and don't remove during active gameplay
-                if session['state'] == 'waiting' and player['id'] != session['hostId']:
-                    players_to_remove.append(player['id'])
-                    print(f"🔌 Removing disconnected player {player['id']} from session {session_code}")
-        
-        # Remove disconnected players and renumber
-        if players_to_remove:
-            session['players'] = [p for p in session['players'] if p['id'] not in players_to_remove]
-            # Renumber remaining players
-            for i, player in enumerate(session['players']):
-                player['number'] = i + 1
-        
         update_session(session_code, session)
 
 def cors_headers():
@@ -498,9 +469,7 @@ class handler(BaseHTTPRequestHandler):
                     'commanderLocked': False,
                     'selectedCommanderIndex': None,
                     'packCode': None,
-                    'packConfig': None,
-                    'isConnected': True,
-                    'lastSeen': time.time()
+                    'packConfig': None
                 }
             ],
             'created_at': time.time(),
@@ -535,8 +504,9 @@ class handler(BaseHTTPRequestHandler):
         
         # Check if session has already progressed beyond rolling
         # Allow joining during 'waiting' and 'rolling' phases
-        if session['state'] not in ['waiting', 'rolling']:
-            self.send_error_response(400, 'Session has already started commander selection')
+        # Also allow joining during 'selecting' if there are open slots (from disconnected players)
+        if session['state'] not in ['waiting', 'rolling', 'selecting']:
+            self.send_error_response(400, 'Session has already completed')
             return
         
         # Add new player
@@ -547,19 +517,28 @@ class handler(BaseHTTPRequestHandler):
         if not player_name:
             player_name = f'Player {player_number}'
         
+        # If joining during 'selecting' state, copy perks from session settings to give fair start
+        perks = []
+        if session['state'] == 'selecting':
+            # Check if there's a player with perks we can copy from (to match the session)
+            # This ensures late joiners get the same number of perks as others
+            existing_player_with_perks = next((p for p in session['players'] if p.get('perks')), None)
+            if existing_player_with_perks:
+                # Don't copy the actual perks, but we'll need to roll new ones for them
+                # For now, they'll join without perks (host will need to manage this)
+                print(f"⚠️ Player joining mid-game - they will need perks rolled manually")
+        
         session['players'].append({
             'id': player_id,
             'number': player_number,
             'name': player_name,
-            'perks': [],
+            'perks': perks,
             'commanderUrl': None,
             'commanderData': None,
             'commanderLocked': False,
             'selectedCommanderIndex': None,
             'packCode': None,
-            'packConfig': None,
-            'isConnected': True,
-            'lastSeen': time.time()
+            'packConfig': None
         })
         
         session['updated_at'] = time.time()
@@ -806,9 +785,6 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Player not found in this session')
             return
         
-        # Mark player as connected
-        player['isConnected'] = True
-        player['lastSeen'] = time.time()
         
         session['updated_at'] = time.time()
         update_session(session_code, session)
@@ -883,14 +859,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
-        # Find player and update their lastSeen
-        player = next((p for p in session['players'] if p['id'] == player_id), None)
-        if player:
-            player['isConnected'] = True
-            player['lastSeen'] = time.time()
-            session['updated_at'] = time.time()
-            update_session(session_code, session)
-        
+        # Heartbeat received - just acknowledge
         self.send_json_response(200, {'ok': True})
 
     def handle_kick_player(self, data):

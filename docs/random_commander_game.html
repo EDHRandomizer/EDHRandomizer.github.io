@@ -1218,9 +1218,20 @@
 
         leaveSessionBtn.addEventListener('click', () => {
             console.log('🚪 [LEAVE] Leave session clicked');
-            if (confirm('Are you sure you want to leave the session?')) {
-                console.log('✅ [LEAVE] User confirmed, clearing URL and reloading');
-                // Remove session parameter from URL
+            if (confirm('Are you sure you want to leave the session?\n\nYou can rejoin later using the same session code.')) {
+                console.log('✅ [LEAVE] User confirmed');
+                
+                // Stop polling
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    console.log('🚪 [LEAVE] Stopped polling');
+                }
+                
+                // Keep player ID in localStorage so they can rejoin
+                
+                // Remove session parameter from URL and reload
+                console.log('🚪 [LEAVE] Clearing URL and reloading');
                 window.history.pushState({}, document.title, window.location.pathname);
                 location.reload();
             } else {
@@ -1330,7 +1341,8 @@
         }
 
         // Kick player from lobby
-        async function kickPlayerFromLobby(playerId, playerName) {
+        // Kick player from lobby (expose to global scope for onclick)
+        window.kickPlayerFromLobby = async function(playerId, playerName) {
             console.log('👢 [KICK] Kick player clicked:', playerId, playerName);
             
             if (!confirm(`Kick ${playerName} from the session?\n\nThey will be able to rejoin if they want.`)) {
@@ -1351,8 +1363,8 @@
             }
         }
 
-        // Kick player from game mode (commander selection)
-        async function kickPlayerFromGame(playerId, playerName) {
+        // Kick player from game mode (commander selection) (expose to global scope for onclick)
+        window.kickPlayerFromGame = async function(playerId, playerName) {
             console.log('👢 [KICK] Kick player from game clicked:', playerId, playerName);
             
             if (!confirm(`Kick ${playerName} from the session?\n\nThey will be able to rejoin if they want.`)) {
@@ -1414,11 +1426,6 @@
                 if (player) {
                     const isYou = player.id === currentPlayerId;
                     const isPlayerHost = player.id === currentSession.hostId;
-                    const isDisconnected = player.isConnected === false;
-                    
-                    if (isDisconnected) {
-                        div.classList.add('disconnected');
-                    }
                     
                     // Show kick button for host (not on their own card)
                     const kickButton = (isHost && !isYou) 
@@ -1430,7 +1437,6 @@
                             <strong>${player.name || `Player ${player.number}`}</strong>
                             ${isYou ? '<br>(You)' : ''}
                             ${isPlayerHost ? '<br>👑 Host' : ''}
-                            ${isDisconnected ? '<br>⚠️ Disconnected' : ''}
                         </div>
                         ${kickButton}
                     `;
@@ -1529,16 +1535,10 @@
                 
                 const playerStatus = playerSection.querySelector('.player-status');
                 if (playerStatus) {
-                    const isDisconnected = player.isConnected === false;
-                    if (isDisconnected) {
-                        playerStatus.textContent = '⚠️ Disconnected';
-                        playerSection.classList.add('disconnected');
-                    } else if (player.commanderLocked) {
+                    if (player.commanderLocked) {
                         playerStatus.textContent = '🔒 Locked';
-                        playerSection.classList.remove('disconnected');
                     } else {
                         playerStatus.textContent = 'Selecting...';
-                        playerSection.classList.remove('disconnected');
                     }
                 }
                 
@@ -1662,13 +1662,12 @@
             
             section.innerHTML = `
                 <div class="player-header">
+                    ${!isCurrentPlayer && currentSession.hostId === currentPlayerId ? `
+                        <button class="kick-btn" style="position: absolute; top: 8px; left: 8px; z-index: 5;" onclick="kickPlayerFromGame('${player.id}', '${player.name || 'Player ' + player.number}')">❌ Kick</button>
+                    ` : ''}
                     <span class="player-number">${player.name || `Player ${player.number}`}${isCurrentPlayer ? ' (You)' : ''}</span>
                     <span class="player-status">${player.commanderLocked ? '🔒 Locked' : 'Selecting...'}</span>
                 </div>
-                
-                ${!isCurrentPlayer && currentSession.hostId === currentPlayerId ? `
-                    <button class="kick-btn" style="position: absolute; top: 8px; right: 8px; z-index: 5;" onclick="kickPlayerFromGame('${player.id}', '${player.name || 'Player ' + player.number}')">❌ Kick</button>
-                ` : ''}
                 
                 ${powerupsHTML}
                 
