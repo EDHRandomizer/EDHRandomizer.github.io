@@ -537,9 +537,11 @@ class SessionManager {
     /**
      * Update generated commanders for current player
      * @param {Array} commanders - Array of commander objects
+     * @param {Object|null} colorSelections - Color filter selections
+     * @param {boolean} force - Force update even if already generated (for host force advance)
      * @returns {Promise<Object>} - Updated session data
      */
-    async updateCommanders(commanders, colorSelections = null) {
+    async updateCommanders(commanders, colorSelections = null, force = false) {
         if (!this.currentSession || !this.currentPlayerId) {
             throw new Error('No active session');
         }
@@ -548,7 +550,8 @@ class SessionManager {
             const payload = {
                 sessionCode: this.currentSession,
                 playerId: this.currentPlayerId,
-                commanders: commanders
+                commanders: commanders,
+                force: force
             };
             
             // Include color selections if provided

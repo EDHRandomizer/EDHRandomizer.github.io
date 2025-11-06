@@ -726,6 +726,7 @@ class handler(BaseHTTPRequestHandler):
         player_id = data.get('playerId', '')
         commanders = data.get('commanders', [])
         color_selections = data.get('colorSelections')
+        force = data.get('force', False)  # Allow host to force generate
         
         session = get_session(session_code)
         if not session_code or not session:
@@ -741,7 +742,8 @@ class handler(BaseHTTPRequestHandler):
             return
         
         # Check if player has already generated commanders (prevent cheating by refresh)
-        if player.get('commandersGenerated', False):
+        # Allow force override for host-initiated force advance
+        if player.get('commandersGenerated', False) and not force:
             print(f"⚠️ Player {player.get('name', 'unknown')} attempted to regenerate commanders - blocked")
             self.send_error_response(403, 'Commanders already generated. Cannot regenerate.')
             return
@@ -756,7 +758,8 @@ class handler(BaseHTTPRequestHandler):
         if color_selections is not None:
             player['colorSelections'] = color_selections
         
-        print(f"✅ Player {player.get('name', 'unknown')} generated {len(commanders)} commanders (first time)")
+        force_msg = " (forced by host)" if force else " (first time)"
+        print(f"✅ Player {player.get('name', 'unknown')} generated {len(commanders)} commanders{force_msg}")
         
         session['updated_at'] = time.time()
         update_session(session_code, session)

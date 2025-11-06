@@ -1106,11 +1106,15 @@
                             } else {
                                 // Already seen perks, go straight to game mode
                                 enterGameMode();
+                                // Start polling for updates
+                                startPolling();
                             }
                         } else if (currentSession.state === 'complete') {
                             // Game is complete, go to pack codes
                             // First enter game mode to set up the grid, then show pack codes
                             enterGameMode();
+                            // Start polling for updates
+                            startPolling();
                             // Use setTimeout to ensure grid is rendered first
                             setTimeout(() => {
                                 showPackCodes();
@@ -1209,7 +1213,11 @@
                         
                         if (currentSession.state === 'complete') {
                             // Show pack codes
-                            showPackCodes(currentSession);
+                            enterGameMode();
+                            startPolling();
+                            setTimeout(() => {
+                                showPackCodes();
+                            }, 100);
                         } else if (currentSession.state === 'selecting') {
                             // Check if player needs to see perk reveal
                             if (currentPlayer && !currentPlayer.hasSeenPerks) {
@@ -1217,6 +1225,7 @@
                             } else {
                                 // Go to commander selection
                                 enterGameMode();
+                                startPolling();
                             }
                         } else if (currentSession.state === 'waiting') {
                             // Go to lobby
@@ -1282,8 +1291,9 @@
 
         function showEnterNameScreen() {
             console.log('📝 [NAME] Showing enter name screen');
-            joinCreateSection.classList.add('hidden');
+            hideAllPages();
             enterNameSection.classList.remove('hidden');
+            sessionInfo.classList.remove('hidden');
             tempSessionCode.textContent = currentSession.sessionCode;
             playerNameInput.value = '';
             playerNameInput.focus();
@@ -1433,8 +1443,8 @@
                             
                             console.log(`✅ [FORCE] Generated ${commanders.length} commanders for Player ${player.number}`);
                             
-                            // Update session with generated commanders
-                            await sessionManager.updateCommanders(commanders, null);
+                            // Update session with generated commanders (force=true to override already generated check)
+                            await sessionManager.updateCommanders(commanders, null, true);
                         }
                     }
                     
@@ -1499,8 +1509,7 @@
 
         function enterLobby() {
             console.log('🚪 [LOBBY] Entering lobby...');
-            joinCreateSection.classList.add('hidden');
-            enterNameSection.classList.add('hidden');
+            hideAllPages();
             lobbySection.classList.remove('hidden');
             sessionInfo.classList.remove('hidden');
             sessionCodeDisplay.textContent = currentSession.sessionCode;
@@ -1564,7 +1573,8 @@
 
         function hideAllPages() {
             console.log('🙈 [PAGES] Hiding all pages');
-            document.getElementById('landing-page')?.classList.remove('active');
+            document.getElementById('join-create-section')?.classList.add('hidden');
+            document.getElementById('enter-name-section')?.classList.add('hidden');
             document.getElementById('lobby-section')?.classList.add('hidden');
             document.getElementById('perk-reveal-page')?.classList.remove('active');
             document.getElementById('player-grid-section')?.classList.add('hidden');
@@ -1660,7 +1670,7 @@
         }
 
         function enterGameMode() {
-            lobbySection.classList.add('hidden');
+            hideAllPages();
             playerGridSection.classList.remove('hidden');
             
             // Ensure gameModeController has current session
