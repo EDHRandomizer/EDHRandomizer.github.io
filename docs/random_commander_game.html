@@ -298,6 +298,40 @@
             padding-left: 1rem;
         }
 
+        .perks-rolling-placeholder {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 0.3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            text-align: center;
+            /* Height is set dynamically via inline style to match number of perks */
+        }
+
+        .perks-rolling-placeholder .player-name-label {
+            font-weight: 600;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .perks-container {
             margin-bottom: 1rem;
         }
@@ -1057,13 +1091,30 @@
                         currentSession = result.sessionData;
                         currentPlayerId = result.playerId;
                         
+                        // Sync gameModeController
+                        gameModeController.currentSession = currentSession;
+                        gameModeController.currentPlayerId = currentPlayerId;
+                        
                         // Navigate to appropriate screen based on session state
                         if (currentSession.state === 'waiting') {
                             enterLobby();
                         } else if (currentSession.state === 'selecting') {
-                            showPerkReveal(currentSession);
+                            // Check if player has seen perks
+                            const currentPlayer = currentSession.players.find(p => p.id === currentPlayerId);
+                            if (currentPlayer && !currentPlayer.hasSeenPerks) {
+                                showPerkReveal(currentSession);
+                            } else {
+                                // Already seen perks, go straight to game mode
+                                enterGameMode();
+                            }
                         } else if (currentSession.state === 'complete') {
-                            showPackCodes();
+                            // Game is complete, go to pack codes
+                            // First enter game mode to set up the grid, then show pack codes
+                            enterGameMode();
+                            // Use setTimeout to ensure grid is rendered first
+                            setTimeout(() => {
+                                showPackCodes();
+                            }, 100);
                         }
                         
                         showStatus('Reconnected successfully!');
@@ -1666,6 +1717,25 @@
                 return;
             }
             
+            // Check if any player's perk visibility changed (need to re-render to show actual perks)
+            const perkVisibilityChanged = activePlayers.some(player => {
+                const playerSection = document.getElementById(`player-${player.number}`);
+                if (!playerSection) return false;
+                
+                const hasPlaceholder = playerSection.querySelector('.perks-rolling-placeholder');
+                const hasActualPerks = playerSection.querySelector('.powerups-container');
+                const shouldShowPerks = player.hasSeenPerks || player.id === currentPlayerId;
+                
+                // Need re-render if: showing placeholder but should show perks, or vice versa
+                return (hasPlaceholder && shouldShowPerks) || (hasActualPerks && !shouldShowPerks);
+            });
+            
+            if (perkVisibilityChanged) {
+                console.log('🔄 [UPDATE] Perk visibility changed - forcing full re-render');
+                renderPlayerGrid();
+                return;
+            }
+            
             // Update only the status indicators without re-rendering the entire grid
             currentSession.players.forEach(player => {
                 const playerSection = document.getElementById(`player-${player.number}`);
@@ -1800,7 +1870,20 @@
             }
             
             // Render powerups in compact stacked format
-            const powerupsHTML = sortedPowerups.length > 0 ? `
+            // For other players who haven't seen perks yet, show placeholder
+            const hasSeenPerks = player.hasSeenPerks || isCurrentPlayer;
+            
+            // Calculate exact height to match perks display
+            // Each perk: 28px min-height + 0.4rem padding (top+bottom) + 0.3rem margin = ~35px per perk
+            const perkHeight = 35;
+            const calculatedHeight = sortedPowerups.length * perkHeight;
+            
+            const powerupsHTML = !hasSeenPerks && sortedPowerups.length > 0 ? `
+                <div class="perks-rolling-placeholder" style="min-height: ${calculatedHeight}px;">
+                    <div class="spinner"></div>
+                    <div class="player-name-label">${player.name || `Player ${player.number}`} still rolling perks</div>
+                </div>
+            ` : sortedPowerups.length > 0 ? `
                 <div class="powerups-container">
                     ${sortedPowerups.map(powerup => {
                         console.log('🔍 [DEBUG] Perk data:', powerup);
