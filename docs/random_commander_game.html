@@ -828,6 +828,7 @@
                 <span class="session-code" id="session-code-display">-----</span>
                 <button class="btn btn-small" id="copy-session-code">Copy</button>
                 <button class="btn btn-small" id="leave-session">Leave Session</button>
+                <button class="btn btn-small hidden" id="force-advance-btn" style="background: #ff9800; border-color: #ff9800;">⏭️ Force Advance</button>
             </div>
         </header>
 
@@ -909,16 +910,6 @@
 
         <!-- Player Grid (after perks rolled) -->
         <section id="player-grid-section" class="hidden">
-            <!-- Host Controls -->
-            <div id="host-controls" class="hidden" style="text-align: center; margin-bottom: 1.5rem;">
-                <button class="btn btn-warning" id="force-advance-btn" style="background: #ff9800; border-color: #ff9800;">
-                    ⏭️ Force Advance to Pack Codes
-                </button>
-                <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 0.5rem;">
-                    Generate pack codes for all players (will auto-select commanders for disconnected players)
-                </p>
-            </div>
-            
             <div class="player-grid" id="player-grid">
                 <!-- Player sections populated by JS -->
             </div>
@@ -1258,11 +1249,18 @@
                     return;
                 }
                 
-                const confirmMsg = `Force advance to pack codes?\n\n` +
-                    `This will automatically select commanders for ${unlockedCount} player(s) who haven't locked in yet.\n\n` +
-                    `Players who generated commanders: A random one will be selected\n` +
-                    `Disconnected/pending players: Will get a placeholder commander\n\n` +
-                    `Continue?`;
+                // Count players who need commanders generated
+                const playersNeedingCommanders = unlockedPlayers.filter(p => !p.commanders || p.commanders.length === 0);
+                const needsGenCount = playersNeedingCommanders.length;
+                
+                let confirmMsg = `Force advance to pack codes?\n\n` +
+                    `This will automatically select commanders for ${unlockedCount} player(s) who haven't locked in yet.\n\n`;
+                
+                if (needsGenCount > 0) {
+                    confirmMsg += `${needsGenCount} player(s) need commanders generated first (this may take a moment)\n\n`;
+                }
+                
+                confirmMsg += `Continue?`;
                 
                 if (!confirm(confirmMsg)) {
                     console.log('❌ [FORCE] User cancelled');
@@ -1270,7 +1268,56 @@
                 }
                 
                 try {
-                    showStatus('Forcing advance to pack codes...');
+                    // Step 1: Generate commanders for players who don't have any
+                    if (playersNeedingCommanders.length > 0) {
+                        showStatus(`Generating commanders for ${playersNeedingCommanders.length} player(s)...`);
+                        console.log('🎲 [FORCE] Generating commanders for players:', playersNeedingCommanders.map(p => p.number));
+                        
+                        for (const player of playersNeedingCommanders) {
+                            console.log(`🎲 [FORCE] Generating commanders for Player ${player.number}...`);
+                            
+                            // Calculate effects from perks
+                            const powerups = player.perks || [];
+                            const enrichedPowerups = powerups.map(perk => {
+                                const fullPerkData = perksData.find(p => p.id === perk.id);
+                                if (fullPerkData) {
+                                    return { ...perk, ...fullPerkData };
+                                }
+                                return perk;
+                            });
+                            
+                            const baseQuantity = 3;
+                            const quantityModifier = enrichedPowerups.reduce((sum, p) => sum + (p?.effects?.commanderQuantity || 0), 0);
+                            const totalQuantity = baseQuantity + quantityModifier;
+                            
+                            const allEffects = {
+                                commanderQuantity: quantityModifier,
+                                distributionShift: enrichedPowerups.reduce((sum, p) => sum + (p?.effects?.distributionShift || 0), 0),
+                                saltMode: enrichedPowerups.find(p => p?.effects?.saltMode)?.effects?.saltMode || null
+                            };
+                            
+                            // Get avatar mode setting
+                            const gameModeOptions = {
+                                avatarMode: currentSession?.settings?.avatarMode || currentSession?.avatarMode || false
+                            };
+                            
+                            // Generate commanders (no color filter for force advance)
+                            const commanders = await gameModeController.generateCommandersForPlayer(
+                                player.number,
+                                allEffects,
+                                null, // No color selections for force advance
+                                gameModeOptions
+                            );
+                            
+                            console.log(`✅ [FORCE] Generated ${commanders.length} commanders for Player ${player.number}`);
+                            
+                            // Update session with generated commanders
+                            await sessionManager.updateCommanders(commanders, null);
+                        }
+                    }
+                    
+                    // Step 2: Force advance to pack codes
+                    showStatus('Advancing to pack codes...');
                     const result = await sessionManager.forceAdvance();
                     console.log('✅ [FORCE] Force advance successful:', result);
                     currentSession = result;
@@ -1463,11 +1510,11 @@
                 playerGrid.appendChild(section);
             });
             
-            // Show/hide host controls
-            const hostControls = document.getElementById('host-controls');
+            // Show/hide force advance button (host only)
+            const forceAdvanceBtn = document.getElementById('force-advance-btn');
             const isHost = currentSession && currentSession.hostId === currentPlayerId;
-            if (hostControls) {
-                hostControls.classList.toggle('hidden', !isHost);
+            if (forceAdvanceBtn) {
+                forceAdvanceBtn.classList.toggle('hidden', !isHost);
             }
             
             // Attach color filter event listeners
@@ -2096,6 +2143,10 @@
                     const currentPlayerInSession = session.players.find(p => p.id === currentPlayerId);
                     if (!currentPlayerInSession) {
                         console.log('👢 [POLLING] Current player no longer in session - kicked!');
+                        
+                        // Clear localStorage to prevent auto-reconnect
+                        sessionManager.clearPlayerIdFromStorage(currentSession.sessionCode);
+                        
                         showStatus('You have been removed from the session by the host. You can rejoin if you wish.');
                         
                         // Navigate back to join screen after 3 seconds

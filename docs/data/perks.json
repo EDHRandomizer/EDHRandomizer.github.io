@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "description": "Perk system with type-based deduplication",
   "rarityWeights": {
-    "common": 40,
-    "uncommon": 30,
-    "rare": 20,
-    "mythic": 10
+    "common": 44,
+    "uncommon": 29,
+    "rare": 17,
+    "mythic": 9
   },
   "perkTypes": [
     {
@@ -40,6 +40,7 @@
           "id": "popular_much",
           "name": "Considerably More Popular Commander",
           "rarity": "rare",
+          "weightMultiplier": 0.7,
           "perkPhase": "commander_selection",
           "effects": {
             "distributionShift": -300
@@ -52,7 +53,7 @@
           "id": "popular_elite",
           "name": "Extremely Popular Commander",
           "rarity": "mythic",
-          "weightMultiplier": 0.8,
+          "weightMultiplier": 0.7,
           "perkPhase": "commander_selection",
           "effects": {
             "distributionShift": -500
@@ -149,7 +150,7 @@
           "id": "extra_choice_3",
           "name": "+3 Commander Choices",
           "rarity": "uncommon",
-          "weightMultiplier": 1.2,
+          "weightMultiplier": 1.1,
           "perkPhase": "commander_selection",
           "effects": {
             "commanderQuantity": 3
@@ -310,7 +311,7 @@
           "id": "test_card_1",
           "name": "1 Test Card",
           "rarity": "common",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.6,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "test_cards",
@@ -325,7 +326,7 @@
           "id": "test_card_3",
           "name": "Test Cards 3x",
           "rarity": "uncommon",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.6,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "test_cards",
@@ -346,7 +347,7 @@
           "id": "silver_border_card_2",
           "name": "Silver-Border Cards x2",
           "rarity": "common",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.6,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silver_border_cards",
@@ -361,7 +362,7 @@
           "id": "silver_border_card_4",
           "name": "Silver-Border Cards x4",
           "rarity": "uncommon",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.6,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "silver_border_cards",
@@ -472,29 +473,29 @@
           "id": "manabase_any_cost",
           "name": "+1 Pack of Lands of Any Cost",
           "rarity": "common",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.3,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "any_cost_lands",
-            "specialPackCount": 15
+            "specialPackCount": 10
           },
-          "extended_description": "Get an additional pack that is comprised of 15 lands that can be of ANY price.",
+          "extended_description": "Get an additional pack that is comprised of 10 lands that can be of ANY price.",
           "emoji": "🗺️",
-          "description": "Get an additional pack that is 15 any cost lands"
+          "description": "Get an additional pack that is 10 any cost lands"
         },
         {
           "id": "manabase_expensive",
           "name": "+1 Pack of Expensive Lands",
           "rarity": "uncommon",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.5,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "expensive_lands",
-            "specialPackCount": 15
+            "specialPackCount": 10
           },
-          "extended_description": "Get an additional pack that is comprised of 15 lands that are on the higher end of the price spectrum. Often includes OG dual lands and fetches.",
+          "extended_description": "Get an additional pack that is comprised of 10 lands that are on the higher end of the price spectrum. Often includes OG dual lands and fetches.",
           "emoji": "🏝️",
-          "description": "Get an additional pack that is 15 expensive lands"
+          "description": "Get an additional pack that is 10 expensive lands"
         }
       ]
     },
@@ -506,15 +507,15 @@
           "id": "mdfc_pilled",
           "name": "Become MDFC-Pilled",
           "rarity": "common",
-          "weightMultiplier": 0.7,
+          "weightMultiplier": 0.3,
           "perkPhase": "drafting",
           "effects": {
             "specialPack": "mdfc_lands",
-            "specialPackCount": 15
+            "specialPackCount": 10
           },
-          "extended_description": "Get a pack of 15 MDFC lands. These are lands with spells on the other side, so you can feel less bad about running enough lands.",
+          "extended_description": "Get a pack of 10 MDFC lands. These are lands with spells on the other side, so you can feel less bad about running enough lands.",
           "emoji": "💊",
-          "description": "Get a pack of 15 MDFC lands"
+          "description": "Get a pack of 10 MDFC lands"
         }
       ]
     },

@@ -295,9 +295,24 @@ def touch_session(session_code: str, player_id: str = None):
         
         # Check for disconnected players (no activity for 30 seconds)
         current_time = time.time()
+        players_to_remove = []
+        
         for player in session['players']:
             if current_time - player.get('lastSeen', current_time) > 30:
                 player['isConnected'] = False
+                
+                # Remove disconnected players from lobby (waiting state only)
+                # Don't remove host, and don't remove during active gameplay
+                if session['state'] == 'waiting' and player['id'] != session['hostId']:
+                    players_to_remove.append(player['id'])
+                    print(f"🔌 Removing disconnected player {player['id']} from session {session_code}")
+        
+        # Remove disconnected players and renumber
+        if players_to_remove:
+            session['players'] = [p for p in session['players'] if p['id'] not in players_to_remove]
+            # Renumber remaining players
+            for i, player in enumerate(session['players']):
+                player['number'] = i + 1
         
         update_session(session_code, session)
 

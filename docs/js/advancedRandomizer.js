@@ -100,10 +100,10 @@ export const DISTRIBUTION_PRESETS = {
     },
     normal: {
         name: 'Normal Distribution',
-        description: 'Bell curve centered at rank 1000 with fixed width - most selections near rank 1000',
-        equation: 'Math.exp(-((rank - 1000) ** 2) / (2 * 300 ** 2))',
+        description: 'Bell curve centered at rank 1100 with fixed width - most selections near rank 1100',
+        equation: 'Math.exp(-((rank - 1100) ** 2) / (2 * 300 ** 2))',
         func: (rank, min, max) => {
-            const mean = 1000;  // Fixed center at rank 1000
+            const mean = 1100;  // Fixed center at rank 1100
             const sigma = 300;  // Fixed standard deviation - controls bell width
             const exponent = -Math.pow(rank - mean, 2) / (2 * Math.pow(sigma, 2));
             return Math.exp(exponent);

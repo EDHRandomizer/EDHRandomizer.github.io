@@ -329,6 +329,20 @@ class SessionManager {
     }
 
     /**
+     * Clear player ID from localStorage
+     * @param {string} sessionCode - Session code
+     */
+    clearPlayerIdFromStorage(sessionCode) {
+        try {
+            const key = `edh_session_${sessionCode}`;
+            localStorage.removeItem(key);
+            console.log(`🗑️ Cleared player ID from localStorage: ${sessionCode}`);
+        } catch (error) {
+            console.warn('Failed to clear player ID from localStorage:', error);
+        }
+    }
+
+    /**
      * Get stored player ID from localStorage
      * @param {string} sessionCode - Session code
      * @returns {string|null} - Player ID or null if not found/expired
