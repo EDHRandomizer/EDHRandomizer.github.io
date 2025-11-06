@@ -1152,6 +1152,10 @@
                         // Route to appropriate screen based on session state and player state
                         const currentPlayer = currentSession.players.find(p => p.id === currentPlayerId);
                         
+                        // Always set gameModeController state
+                        gameModeController.currentSession = currentSession;
+                        gameModeController.currentPlayerId = currentPlayerId;
+                        
                         if (currentSession.state === 'complete') {
                             // Show pack codes
                             showPackCodes(currentSession);
@@ -1578,6 +1582,10 @@
             lobbySection.classList.add('hidden');
             playerGridSection.classList.remove('hidden');
             
+            // Ensure gameModeController has current session
+            gameModeController.currentSession = currentSession;
+            gameModeController.currentPlayerId = currentPlayerId;
+            
             renderPlayerGrid();
         }
 
@@ -1589,6 +1597,11 @@
             const activePlayers = currentSession.players.filter(player => !player.isKicked);
             
             activePlayers.forEach(player => {
+                // Populate gameModeController with existing commanders from backend
+                if (player.commanders && player.commanders.length > 0) {
+                    gameModeController.playerCommanderData[player.number] = player.commanders;
+                }
+                
                 const isCurrentPlayer = player.id === currentPlayerId;
                 const section = createPlayerSection(player, isCurrentPlayer);
                 playerGrid.appendChild(section);
@@ -2087,6 +2100,9 @@
                 
                 console.log(`✅ [GEN-P${playerNumber}] Commander grid rendered`);
                 showStatus(`Generated ${commanders.length} commanders for Player ${playerNumber}`);
+                
+                // Store commanders in gameModeController for lock functionality
+                gameModeController.playerCommanderData[playerNumber] = commanders;
                 
                 // Mark player as having generated commanders
                 playerCommandersGenerated[playerNumber] = true;
