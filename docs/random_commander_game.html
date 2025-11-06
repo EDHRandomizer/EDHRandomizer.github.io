@@ -1980,6 +1980,9 @@
                 return '<em>Waiting for commanders...</em>';
             }
             
+            // Normalize all commanders to ensure consistent field names
+            const normalizedCommanders = commanders.map(normalizeCommanderData);
+            
             // If player is locked, show ONLY their selected commander
             if (player.commanderLocked) {
                 // Get selected commander index from session or local state
@@ -1988,8 +1991,8 @@
                     selectedIndex = gameModeController.playerSelectedCommander[player.number];
                 }
                 
-                if (selectedIndex !== undefined && commanders[selectedIndex]) {
-                    const selectedCommander = commanders[selectedIndex];
+                if (selectedIndex !== undefined && normalizedCommanders[selectedIndex]) {
+                    const selectedCommander = normalizedCommanders[selectedIndex];
                     // Return ONLY the locked commander in the same grid layout
                     return `
                         <div class="commander-item-small selected locked" id="commander-${player.number}-${selectedIndex}">
@@ -2015,7 +2018,7 @@
             
             // Not locked - show all commanders
             let html = '';
-            commanders.forEach((commander, index) => {
+            normalizedCommanders.forEach((commander, index) => {
                 const isSelected = gameModeController.playerSelectedCommander[player.number] === index;
                 html += `
                     <div class="commander-item-small ${isSelected ? 'selected' : ''}" id="commander-${player.number}-${index}">
