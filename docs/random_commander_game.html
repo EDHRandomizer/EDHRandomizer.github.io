@@ -1578,6 +1578,36 @@
             enterGameMode();
         }
 
+        function validateSessionState() {
+            // Helper to ensure session state is consistent
+            if (!currentSession) {
+                console.error('❌ [STATE] No current session!');
+                return false;
+            }
+            if (!currentPlayerId) {
+                console.error('❌ [STATE] No current player ID!');
+                return false;
+            }
+            if (!gameModeController.currentSession) {
+                console.warn('⚠️ [STATE] GameModeController session out of sync, fixing...');
+                gameModeController.currentSession = currentSession;
+                gameModeController.currentPlayerId = currentPlayerId;
+            }
+            return true;
+        }
+
+        function normalizeCommanderData(commander) {
+            // Normalize commander data to handle both fresh generation and backend storage
+            return {
+                name: commander.name,
+                rank: commander.rank,
+                edhrec_url: commander.edhrec_url || commander.edhrecUrl,
+                image_url: commander.image_url || commander.imageUrl || commander.image,
+                image: commander.image || commander.imageUrl || commander.image_url,
+                imageUrl: commander.imageUrl || commander.image_url || commander.image
+            };
+        }
+
         function enterGameMode() {
             lobbySection.classList.add('hidden');
             playerGridSection.classList.remove('hidden');
@@ -1599,7 +1629,8 @@
             activePlayers.forEach(player => {
                 // Populate gameModeController with existing commanders from backend
                 if (player.commanders && player.commanders.length > 0) {
-                    gameModeController.playerCommanderData[player.number] = player.commanders;
+                    // Normalize commander data to ensure consistent field names
+                    gameModeController.playerCommanderData[player.number] = player.commanders.map(normalizeCommanderData);
                 }
                 
                 const isCurrentPlayer = player.id === currentPlayerId;
@@ -1658,24 +1689,26 @@
                 
                 // Sync commanders from other players if they generated them
                 const commandersGrid = document.getElementById(`commanders-${player.number}`);
-                if (commandersGrid && (player.commanders || gameModeController.playerCommanderData[player.number])) {
+                if (commandersGrid && player.commanders && player.commanders.length > 0) {
                     // Mark this player as having generated commanders
-                    if (player.commanders && player.commanders.length > 0) {
-                        playerCommandersGenerated[player.number] = true;
-                    }
+                    playerCommandersGenerated[player.number] = true;
                     
-                    // If player is locked, only render if not already showing locked state
+                    // If player is locked, show only locked commander
                     if (player.commanderLocked) {
-                        const alreadyShowingLocked = commandersGrid.querySelector('.commander-item-small.locked');
+                        const alreadyShowingLocked = commandersGrid.querySelector('.commander-card.locked') || 
+                                                    commandersGrid.querySelector('.commander-item-small.locked');
                         if (!alreadyShowingLocked) {
                             console.log(`🔒 [UPDATE] Player ${player.number} is locked - showing locked commander`);
-                            commandersGrid.innerHTML = renderCommanders(player);
+                            commandersGrid.innerHTML = renderExistingCommanders(player);
                         }
                     }
-                    // Only update if the grid is currently showing "Waiting for commanders..."
-                    else if (commandersGrid.querySelector('em')) {
-                        console.log(`🔄 [UPDATE] Player ${player.number} generated commanders - rendering them`);
-                        commandersGrid.innerHTML = renderCommanders(player);
+                    // If not locked and grid is empty or showing "waiting", render commanders
+                    else {
+                        const isEmpty = commandersGrid.querySelector('em') || commandersGrid.children.length === 0;
+                        if (isEmpty) {
+                            console.log(`🔄 [UPDATE] Player ${player.number} generated commanders - rendering them`);
+                            commandersGrid.innerHTML = renderExistingCommanders(player);
+                        }
                     }
                 }
             });
@@ -1968,6 +2001,12 @@
         window.generateCommanders = async function(playerNumber, quantity, effects) {
             console.log(`🎲 [GEN-P${playerNumber}] Generate commanders clicked - Quantity: ${quantity}, Effects:`, effects);
             
+            // Validate session state before proceeding
+            if (!validateSessionState()) {
+                showStatus('Error: Session state invalid. Please refresh the page.');
+                return;
+            }
+            
             // Find current player and check if they've already generated commanders
             const currentPlayer = currentSession.players.find(p => p.id === currentPlayerId);
             if (!currentPlayer) {
@@ -2131,14 +2170,17 @@
                 // Send commanders to server in background (don't await - let it happen async)
                 console.log(`📡 [GEN-P${playerNumber}] Syncing commanders to server...`);
                 sessionManager.updateCommanders(commanders, colorSelections)
-                    .then(() => {
+                    .then((updatedSession) => {
                         console.log(`✅ [GEN-P${playerNumber}] Commanders synced to server`);
-                        // Update local session state to reflect backend state
-                        if (currentSession && currentSession.players) {
-                            const player = currentSession.players.find(p => p.id === currentPlayerId);
+                        
+                        // Update session state from backend response
+                        if (updatedSession) {
+                            currentSession = updatedSession;
+                            gameModeController.currentSession = updatedSession;
+                            
+                            const player = updatedSession.players.find(p => p.id === currentPlayerId);
                             if (player) {
-                                player.commandersGenerated = true;
-                                player.commanders = commanders;
+                                console.log(`✅ [GEN-P${playerNumber}] Backend confirmed: commandersGenerated=${player.commandersGenerated}`);
                             }
                         }
                     })
@@ -2169,6 +2211,13 @@
             // Find the current player's number from their ID
             const currentPlayer = currentSession.players.find(p => p.id === currentPlayerId);
             const currentPlayerNumber = currentPlayer ? currentPlayer.number : null;
+            
+            // Validate we have the session state
+            if (!currentSession) {
+                console.error('❌ [SELECT] No session found!');
+                checkbox.checked = !checkbox.checked;
+                return;
+            }
             
             // Only allow current player to select commanders
             if (playerNumber !== currentPlayerNumber) {
@@ -2233,6 +2282,12 @@
 
         window.lockCommander = async function(playerNumber) {
             console.log(`🔒 [LOCK-P${playerNumber}] Lock commander clicked`);
+            
+            // Validate session state before proceeding
+            if (!validateSessionState()) {
+                showStatus('Error: Session state invalid. Please refresh the page.');
+                return;
+            }
             
             // Check if player is already locked
             const player = currentSession.players.find(p => p.number === playerNumber);
@@ -2340,9 +2395,21 @@
                 clearInterval(pollingInterval);
             }
             
+            let pollCount = 0;
+            
             pollingInterval = setInterval(async () => {
                 if (!currentSession) {
                     return; // Silent skip when no session
+                }
+                
+                pollCount++;
+                
+                // Periodic health check (every 20 polls = ~10 seconds)
+                if (pollCount % 20 === 0) {
+                    if (!validateSessionState()) {
+                        console.warn('⚠️ [HEALTH-CHECK] Session state out of sync, attempting recovery...');
+                        // State will be auto-fixed by validateSessionState
+                    }
                 }
                 
                 try {
@@ -2377,7 +2444,17 @@
                     
                     const previousState = currentSession.state;
                     currentSession = session;
+                    
+                    // CRITICAL: Always keep gameModeController in sync
                     gameModeController.currentSession = session;
+                    gameModeController.currentPlayerId = currentPlayerId;
+                    
+                    // Sync commanders data from all players (in case others generated while we were away)
+                    session.players.forEach(player => {
+                        if (player.commanders && player.commanders.length > 0 && !player.isKicked) {
+                            gameModeController.playerCommanderData[player.number] = player.commanders.map(normalizeCommanderData);
+                        }
+                    });
                     
                     // Update lobby if in lobby state
                     if (session.state === 'waiting' && !lobbySection.classList.contains('hidden')) {
