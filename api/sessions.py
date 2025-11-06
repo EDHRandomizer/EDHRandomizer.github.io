@@ -469,6 +469,8 @@ class handler(BaseHTTPRequestHandler):
                     'name': player_name,
                     'perks': [],
                     'hasSeenPerks': False,
+                    'commanders': [],  # List of generated commanders
+                    'commandersGenerated': False,  # Has this player generated commanders at least once?
                     'commanderUrl': None,
                     'commanderData': None,
                     'commanderLocked': False,
@@ -539,6 +541,8 @@ class handler(BaseHTTPRequestHandler):
             'name': player_name,
             'perks': perks,
             'hasSeenPerks': False,
+            'commanders': [],  # List of generated commanders
+            'commandersGenerated': False,  # Has this player generated commanders at least once?
             'commanderUrl': None,
             'commanderData': None,
             'commanderLocked': False,
@@ -736,14 +740,23 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Player not found')
             return
         
+        # Check if player has already generated commanders (prevent cheating by refresh)
+        if player.get('commandersGenerated', False):
+            print(f"⚠️ Player {player.get('name', 'unknown')} attempted to regenerate commanders - blocked")
+            self.send_error_response(403, 'Commanders already generated. Cannot regenerate.')
+            return
+        
         # Store commanders in player data
         if 'commanders' not in player:
             player['commanders'] = []
         player['commanders'] = commanders[:10]  # Limit to 10 commanders max
+        player['commandersGenerated'] = True  # Mark as generated
         
         # Store color selections if provided
         if color_selections is not None:
             player['colorSelections'] = color_selections
+        
+        print(f"✅ Player {player.get('name', 'unknown')} generated {len(commanders)} commanders (first time)")
         
         session['updated_at'] = time.time()
         update_session(session_code, session)

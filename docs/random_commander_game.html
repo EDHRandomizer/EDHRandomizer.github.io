@@ -1141,7 +1141,6 @@
                         result = await sessionManager.rejoinSession(code, storedPlayerId);
                         console.log('✅ [JOIN] Rejoined session with existing player ID:', result);
                         
-                        // If rejoining, skip name entry and go straight to lobby
                         currentSession = result.sessionData;
                         currentPlayerId = result.playerId;
                         
@@ -1150,7 +1149,28 @@
                         url.searchParams.set('session', currentSession.sessionCode);
                         window.history.pushState({}, '', url);
                         
-                        enterLobby();
+                        // Route to appropriate screen based on session state and player state
+                        const currentPlayer = currentSession.players.find(p => p.id === currentPlayerId);
+                        
+                        if (currentSession.state === 'complete') {
+                            // Show pack codes
+                            showPackCodes(currentSession);
+                        } else if (currentSession.state === 'selecting') {
+                            // Check if player needs to see perk reveal
+                            if (currentPlayer && !currentPlayer.hasSeenPerks) {
+                                showPerkReveal(currentSession);
+                            } else {
+                                // Go to commander selection
+                                enterGameMode();
+                            }
+                        } else if (currentSession.state === 'waiting') {
+                            // Go to lobby
+                            enterLobby();
+                        } else {
+                            // Default to lobby
+                            enterLobby();
+                        }
+                        
                         return;
                     } catch (rejoinError) {
                         console.warn('⚠️ [JOIN] Rejoin failed, falling back to new join:', rejoinError);
@@ -1737,24 +1757,70 @@
                     </div>
                 ` : ''}
                 
-                ${isCurrentPlayer && !player.commanderLocked && !playerCommandersGenerated[player.number] ? `
+                ${isCurrentPlayer && !player.commanderLocked && !player.commandersGenerated ? `
                     <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(allEffects).replace(/"/g, '&quot;')})">
                         🎲 Generate ${totalQuantity} Commander${totalQuantity > 1 ? 's' : ''}
                     </button>
                 ` : ''}
                 
                 <div class="commander-grid-small" id="commanders-${player.number}">
-                    ${player.commanderData ? renderCommanders(player) : '<em>Waiting for commanders...</em>'}
+                    ${player.commanders && player.commanders.length > 0 ? renderExistingCommanders(player) : 
+                      player.commanderData ? renderCommanders(player) : 
+                      '<em>Waiting for commanders...</em>'}
                 </div>
                 
-                ${isCurrentPlayer && !player.commanderLocked && (playerCommandersGenerated[player.number] || gameModeController.playerCommanderData[player.number]?.length > 0 || player.commanders?.length > 0) ? `
-                    <button class="btn btn-primary" id="lock-btn-${player.number}" disabled onclick="lockCommander(${player.number})">
+                ${isCurrentPlayer && !player.commanderLocked && player.commandersGenerated ? `
+                    <button class="btn btn-primary" id="lock-btn-${player.number}" ${player.commanders?.length > 0 ? '' : 'disabled'} onclick="lockCommander(${player.number})">
                         🔒 Lock In Commander
                     </button>
                 ` : ''}
             `;
             
             return section;
+        }
+
+        function renderExistingCommanders(player) {
+            const isCurrentPlayer = player.id === currentPlayerId;
+            const commanders = player.commanders || [];
+            
+            if (commanders.length === 0) {
+                return '<em>Waiting for commanders...</em>';
+            }
+            
+            // If player is locked, show only selected commander
+            if (player.commanderLocked && player.selectedCommanderIndex !== undefined) {
+                const selectedCommander = commanders[player.selectedCommanderIndex];
+                if (selectedCommander) {
+                    return `
+                        <div class="commander-card locked">
+                            <img src="${selectedCommander.image || selectedCommander.imageUrl}" 
+                                 alt="${selectedCommander.name}" 
+                                 loading="lazy"
+                                 title="${selectedCommander.name} - LOCKED">
+                            <div class="commander-name">🔒 ${selectedCommander.name}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Show all commanders with checkboxes for current player
+            return commanders.map((cmd, index) => {
+                return `
+                    <div class="commander-card">
+                        <label>
+                            <input type="checkbox" 
+                                   name="commander-select-${player.number}" 
+                                   ${isCurrentPlayer ? '' : 'disabled'}
+                                   onchange="selectCommander(${player.number}, ${index}, this)">
+                            <img src="${cmd.image || cmd.imageUrl}" 
+                                 alt="${cmd.name}" 
+                                 loading="lazy"
+                                 onerror="this.src='https://via.placeholder.com/200x280?text=Image+Not+Found'">
+                            <div class="commander-name">${cmd.name}</div>
+                        </label>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderColorFilter(effects, playerNumber, isCurrentPlayer) {
@@ -1889,6 +1955,50 @@
         window.generateCommanders = async function(playerNumber, quantity, effects) {
             console.log(`🎲 [GEN-P${playerNumber}] Generate commanders clicked - Quantity: ${quantity}, Effects:`, effects);
             
+            // Find current player and check if they've already generated commanders
+            const currentPlayer = currentSession.players.find(p => p.id === currentPlayerId);
+            if (!currentPlayer) {
+                showStatus('Error: Player not found');
+                return;
+            }
+            
+            // Check if commanders have already been generated (prevent refresh cheating)
+            if (currentPlayer.commandersGenerated) {
+                console.warn(`🚫 [GEN-P${playerNumber}] Commanders already generated - using existing commanders`);
+                
+                // Display existing commanders from backend
+                if (currentPlayer.commanders && currentPlayer.commanders.length > 0) {
+                    const commandersGrid = document.getElementById(`commanders-${playerNumber}`);
+                    commandersGrid.innerHTML = currentPlayer.commanders.map((cmd, index) => {
+                        return `
+                            <div class="commander-card">
+                                <label>
+                                    <input type="checkbox" 
+                                           name="commander-select-${playerNumber}" 
+                                           onchange="selectCommander(${playerNumber}, ${index}, this)">
+                                    <img src="${cmd.image || cmd.imageUrl}" 
+                                         alt="${cmd.name}" 
+                                         loading="lazy"
+                                         onerror="this.src='https://via.placeholder.com/200x280?text=Image+Not+Found'">
+                                    <div class="commander-name">${cmd.name}</div>
+                                </label>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Enable lock button
+                    const lockBtn = document.getElementById(`lock-btn-${playerNumber}`);
+                    if (lockBtn) {
+                        lockBtn.disabled = false;
+                    }
+                    
+                    showStatus('Commanders already generated. Select one to lock in.');
+                } else {
+                    showStatus('Error: Commanders were generated but not found. Please contact support.');
+                }
+                return;
+            }
+            
             const playerSection = document.getElementById(`player-${playerNumber}`);
             const commandersGrid = document.getElementById(`commanders-${playerNumber}`);
             const colorFilterContainer = playerSection.querySelector('.color-filter-checkboxes');
@@ -2007,10 +2117,29 @@
                 sessionManager.updateCommanders(commanders, colorSelections)
                     .then(() => {
                         console.log(`✅ [GEN-P${playerNumber}] Commanders synced to server`);
+                        // Update local session state to reflect backend state
+                        if (currentSession && currentSession.players) {
+                            const player = currentSession.players.find(p => p.id === currentPlayerId);
+                            if (player) {
+                                player.commandersGenerated = true;
+                                player.commanders = commanders;
+                            }
+                        }
                     })
                     .catch(error => {
-                        console.warn(`⚠️ [GEN-P${playerNumber}] Failed to sync commanders:`, error.message);
-                        // Don't show error to user - local commanders are already displayed
+                        console.error(`❌ [GEN-P${playerNumber}] Failed to sync commanders:`, error.message);
+                        
+                        // If backend rejected (e.g., already generated), show error
+                        if (error.message.includes('already generated')) {
+                            showStatus('⚠️ Commanders already generated. Cannot regenerate.');
+                            // Hide the generate button
+                            const generateBtn = document.getElementById(`gen-btn-${playerNumber}`);
+                            if (generateBtn) {
+                                generateBtn.style.display = 'none';
+                            }
+                        } else {
+                            showStatus(`⚠️ Failed to save commanders to server: ${error.message}`);
+                        }
                     });
                 
             } catch (error) {
