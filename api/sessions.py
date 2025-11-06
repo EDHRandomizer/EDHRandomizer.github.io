@@ -785,6 +785,11 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Player not found in this session')
             return
         
+        # If player was kicked, allow them to rejoin (clear kicked status)
+        if player.get('isKicked'):
+            player['isKicked'] = False
+            player.pop('kickedAt', None)
+            print(f"🔄 Player {player_id} rejoining after being kicked - slot restored")
         
         session['updated_at'] = time.time()
         update_session(session_code, session)
@@ -889,17 +894,14 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Player not found')
             return
         
-        # Remove player from session
-        session['players'] = [p for p in session['players'] if p['id'] != kick_player_id]
-        
-        # Renumber remaining players
-        for i, player in enumerate(session['players']):
-            player['number'] = i + 1
+        # Mark player as kicked (don't remove them - preserve their slot and data)
+        player_to_kick['isKicked'] = True
+        player_to_kick['kickedAt'] = time.time()
         
         session['updated_at'] = time.time()
         update_session(session_code, session)
         
-        print(f"👢 Kicked player {kick_player_id} from session {session_code}")
+        print(f"👢 Kicked player {kick_player_id} from session {session_code} (slot preserved)")
         
         self.send_json_response(200, {
             'sessionData': session,

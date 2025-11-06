@@ -1427,8 +1427,11 @@
             
             const isHost = currentSession && currentSession.hostId === currentPlayerId;
             
+            // Filter out kicked players for display
+            const activePlayers = currentSession.players.filter(p => !p.isKicked);
+            
             for (let i = 0; i < 4; i++) {
-                const player = currentSession.players[i];
+                const player = activePlayers[i];
                 const div = document.createElement('div');
                 div.className = 'lobby-player' + (player ? ' active' : '');
                 
@@ -1519,7 +1522,10 @@
             const playerGrid = document.getElementById('player-grid');
             playerGrid.innerHTML = '';
             
-            currentSession.players.forEach(player => {
+            // Filter out kicked players for display
+            const activePlayers = currentSession.players.filter(player => !player.isKicked);
+            
+            activePlayers.forEach(player => {
                 const isCurrentPlayer = player.id === currentPlayerId;
                 const section = createPlayerSection(player, isCurrentPlayer);
                 playerGrid.appendChild(section);
@@ -2156,8 +2162,8 @@
                     
                     // Check if current player was kicked from session
                     const currentPlayerInSession = session.players.find(p => p.id === currentPlayerId);
-                    if (!currentPlayerInSession) {
-                        console.log('👢 [POLLING] Current player no longer in session - kicked!');
+                    if (!currentPlayerInSession || currentPlayerInSession.isKicked) {
+                        console.log('👢 [POLLING] Current player kicked from session');
                         
                         // Stop polling immediately
                         if (pollingInterval) {
@@ -2166,8 +2172,8 @@
                             console.log('👢 [POLLING] Stopped polling after being kicked');
                         }
                         
-                        // Clear localStorage to prevent auto-reconnect
-                        sessionManager.clearPlayerIdFromStorage(currentSession.sessionCode);
+                        // DON'T clear localStorage - keep player ID so they can rejoin with their slot
+                        // sessionManager.clearPlayerIdFromStorage(currentSession.sessionCode);
                         
                         // Clear current session
                         currentSession = null;
