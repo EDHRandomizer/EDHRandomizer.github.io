@@ -123,6 +123,9 @@ class SessionManager {
             this.currentSession = data.sessionCode;
             this.currentPlayerId = data.playerId;
 
+            // Store player ID in localStorage for reconnection
+            this.savePlayerIdToStorage(this.currentSession, this.currentPlayerId);
+
             // Start polling for updates
             this.startPolling();
 
@@ -161,6 +164,9 @@ class SessionManager {
             this.currentSession = sessionCode.toUpperCase();
             this.currentPlayerId = data.playerId;
 
+            // Store player ID in localStorage for reconnection
+            this.savePlayerIdToStorage(this.currentSession, this.currentPlayerId);
+
             // Start polling for updates
             this.startPolling();
 
@@ -168,6 +174,188 @@ class SessionManager {
         } catch (error) {
             console.error('Error joining session:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Rejoin an existing session using stored player ID
+     * @param {string} sessionCode - 5-character session code
+     * @param {string} playerId - Previously assigned player ID
+     * @returns {Promise<Object>} - { playerId, sessionData, rejoined: true }
+     */
+    async rejoinSession(sessionCode, playerId) {
+        try {
+            const response = await this.fetchWithRetry(`${this.apiBase}/rejoin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    sessionCode: sessionCode.toUpperCase(),
+                    playerId: playerId
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Failed to rejoin session: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            this.currentSession = sessionCode.toUpperCase();
+            this.currentPlayerId = playerId;
+
+            // Start polling for updates
+            this.startPolling();
+
+            return data;
+        } catch (error) {
+            console.error('Error rejoining session:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Force advance to pack codes (host only)
+     * @returns {Promise<Object>} - Updated session data with pack codes
+     */
+    async forceAdvance() {
+        if (!this.currentSession || !this.currentPlayerId) {
+            throw new Error('No active session');
+        }
+
+        try {
+            const response = await this.fetchWithRetry(`${this.apiBase}/force-advance`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionCode: this.currentSession,
+                    playerId: this.currentPlayerId
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Failed to force advance: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error forcing advance:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Kick a player from the session (host only)
+     * @param {string} kickPlayerId - Player ID to kick
+     * @returns {Promise<Object>} - Updated session data
+     */
+    async kickPlayer(kickPlayerId) {
+        if (!this.currentSession || !this.currentPlayerId) {
+            throw new Error('No active session');
+        }
+
+        try {
+            const response = await this.fetchWithRetry(`${this.apiBase}/kick`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionCode: this.currentSession,
+                    playerId: this.currentPlayerId,
+                    kickPlayerId: kickPlayerId
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Failed to kick player: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error kicking player:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Send heartbeat to mark player as connected
+     * @returns {Promise<void>}
+     */
+    async sendHeartbeat() {
+        if (!this.currentSession || !this.currentPlayerId) {
+            return;
+        }
+
+        try {
+            await this.fetchWithRetry(`${this.apiBase}/heartbeat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionCode: this.currentSession,
+                    playerId: this.currentPlayerId
+                })
+            });
+        } catch (error) {
+            // Silently fail - heartbeat is not critical
+            console.warn('Heartbeat failed:', error);
+        }
+    }
+
+    /**
+     * Save player ID to localStorage for reconnection
+     * @param {string} sessionCode - Session code
+     * @param {string} playerId - Player ID
+     */
+    savePlayerIdToStorage(sessionCode, playerId) {
+        try {
+            const key = `edh_session_${sessionCode}`;
+            const data = {
+                playerId: playerId,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(key, JSON.stringify(data));
+            console.log(`💾 Saved player ID to localStorage: ${sessionCode} -> ${playerId}`);
+        } catch (error) {
+            console.warn('Failed to save player ID to localStorage:', error);
+        }
+    }
+
+    /**
+     * Get stored player ID from localStorage
+     * @param {string} sessionCode - Session code
+     * @returns {string|null} - Player ID or null if not found/expired
+     */
+    getPlayerIdFromStorage(sessionCode) {
+        try {
+            const key = `edh_session_${sessionCode}`;
+            const stored = localStorage.getItem(key);
+            if (!stored) {
+                return null;
+            }
+
+            const data = JSON.parse(stored);
+            
+            // Check if data is older than 12 hours
+            const age = Date.now() - data.timestamp;
+            if (age > 12 * 60 * 60 * 1000) {
+                console.log(`⏰ Stored player ID expired for ${sessionCode}`);
+                localStorage.removeItem(key);
+                return null;
+            }
+
+            console.log(`💾 Retrieved player ID from localStorage: ${sessionCode} -> ${data.playerId}`);
+            return data.playerId;
+        } catch (error) {
+            console.warn('Failed to retrieve player ID from localStorage:', error);
+            return null;
         }
     }
 
@@ -412,6 +600,11 @@ class SessionManager {
             
             try {
                 console.log(`📡 [${pollId}] Polling session ${this.currentSession} (rate: ${this.pollingRate}ms, errors: ${this.consecutiveErrors})`);
+                
+                // Send heartbeat every 3rd poll (to mark player as connected)
+                if (pollCount % 3 === 0) {
+                    await this.sendHeartbeat();
+                }
                 
                 const sessionData = await this.getSession();
                 this.consecutiveErrors = 0; // Reset on success

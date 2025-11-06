@@ -84,11 +84,45 @@
             height: 100px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            gap: 0.5rem;
         }
 
         .lobby-player.active {
             border: 2px solid var(--accent-color, #58a6ff);
+        }
+
+        .kick-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .kick-btn:hover {
+            background: #cc0000;
+        }
+
+        .kick-btn:active {
+            transform: scale(0.95);
+        }
+
+        .lobby-player.disconnected {
+            opacity: 0.5;
+            border-color: #ff6b6b;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--input-bg, #2a2a2a),
+                var(--input-bg, #2a2a2a) 10px,
+                #3a2a2a 10px,
+                #3a2a2a 20px
+            );
         }
 
         .player-grid {
@@ -158,6 +192,28 @@
 
         .player-section.locked {
             border-color: #4caf50;
+        }
+
+        .player-section.disconnected {
+            opacity: 0.6;
+            border-color: #ff6b6b;
+            background: linear-gradient(135deg, #2a1a1a 0%, #1a1a1a 100%);
+        }
+
+        .player-section.disconnected::after {
+            content: '⚠️ DISCONNECTED';
+            position: absolute;
+            top: -12px;
+            right: 16px;
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 10;
         }
 
         .player-header {
@@ -853,6 +909,16 @@
 
         <!-- Player Grid (after perks rolled) -->
         <section id="player-grid-section" class="hidden">
+            <!-- Host Controls -->
+            <div id="host-controls" class="hidden" style="text-align: center; margin-bottom: 1.5rem;">
+                <button class="btn btn-warning" id="force-advance-btn" style="background: #ff9800; border-color: #ff9800;">
+                    ⏭️ Force Advance to Pack Codes
+                </button>
+                <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 0.5rem;">
+                    Generate pack codes for all players (will auto-select commanders for disconnected players)
+                </p>
+            </div>
+            
             <div class="player-grid" id="player-grid">
                 <!-- Player sections populated by JS -->
             </div>
@@ -980,12 +1046,45 @@
         }
 
         // Check URL parameters for direct session joining
-        function checkURLParameters() {
+        async function checkURLParameters() {
             const urlParams = new URLSearchParams(window.location.search);
             const sessionCode = urlParams.get('session');
             
             if (sessionCode) {
                 console.log('🔗 [URL] Session code found in URL:', sessionCode);
+                
+                // Check if we have a stored player ID for this session
+                const storedPlayerId = sessionManager.getPlayerIdFromStorage(sessionCode);
+                
+                if (storedPlayerId) {
+                    console.log('🔄 [URL] Found stored player ID, attempting to rejoin...');
+                    try {
+                        showStatus('Reconnecting to session...');
+                        const result = await sessionManager.rejoinSession(sessionCode, storedPlayerId);
+                        console.log('✅ [URL] Rejoined session:', result);
+                        
+                        currentSession = result.sessionData;
+                        currentPlayerId = result.playerId;
+                        
+                        // Navigate to appropriate screen based on session state
+                        if (currentSession.state === 'waiting') {
+                            enterLobby();
+                        } else if (currentSession.state === 'selecting') {
+                            showPerkReveal(currentSession);
+                        } else if (currentSession.state === 'complete') {
+                            showPackCodes();
+                        }
+                        
+                        showStatus('Reconnected successfully!');
+                        return;
+                    } catch (error) {
+                        console.error('❌ [URL] Rejoin failed:', error);
+                        // Fall through to normal join
+                        showStatus('Could not reconnect, please join manually');
+                    }
+                }
+                
+                // Normal join flow
                 joinCodeInput.value = sessionCode.toUpperCase();
                 // Automatically trigger join
                 joinSessionBtn.click();
@@ -1138,6 +1237,96 @@
             }
         });
 
+        // Force Advance button (host only)
+        const forceAdvanceBtn = document.getElementById('force-advance-btn');
+        if (forceAdvanceBtn) {
+            forceAdvanceBtn.addEventListener('click', async () => {
+                console.log('⏭️ [FORCE] Force advance button clicked');
+                
+                const isHost = currentSession && currentSession.hostId === currentPlayerId;
+                if (!isHost) {
+                    showStatus('Only the host can force advance');
+                    return;
+                }
+                
+                // Count players who haven't locked in
+                const unlockedPlayers = currentSession.players.filter(p => !p.commanderLocked);
+                const unlockedCount = unlockedPlayers.length;
+                
+                if (unlockedCount === 0) {
+                    showStatus('All players have already locked in');
+                    return;
+                }
+                
+                const confirmMsg = `Force advance to pack codes?\n\n` +
+                    `This will automatically select commanders for ${unlockedCount} player(s) who haven't locked in yet.\n\n` +
+                    `Players who generated commanders: A random one will be selected\n` +
+                    `Disconnected/pending players: Will get a placeholder commander\n\n` +
+                    `Continue?`;
+                
+                if (!confirm(confirmMsg)) {
+                    console.log('❌ [FORCE] User cancelled');
+                    return;
+                }
+                
+                try {
+                    showStatus('Forcing advance to pack codes...');
+                    const result = await sessionManager.forceAdvance();
+                    console.log('✅ [FORCE] Force advance successful:', result);
+                    currentSession = result;
+                    showPackCodes();
+                } catch (error) {
+                    console.error('❌ [FORCE] Force advance error:', error);
+                    showStatus('Failed to force advance: ' + error.message);
+                }
+            });
+        }
+
+        // Kick player from lobby
+        async function kickPlayerFromLobby(playerId, playerName) {
+            console.log('👢 [KICK] Kick player clicked:', playerId, playerName);
+            
+            if (!confirm(`Kick ${playerName} from the session?\n\nThey will be able to rejoin if they want.`)) {
+                console.log('❌ [KICK] User cancelled');
+                return;
+            }
+            
+            try {
+                showStatus('Kicking player...');
+                const result = await sessionManager.kickPlayer(playerId);
+                console.log('✅ [KICK] Player kicked:', result);
+                currentSession = result.sessionData;
+                updateLobbyPlayers();
+                showStatus(`${playerName} has been removed from the session`);
+            } catch (error) {
+                console.error('❌ [KICK] Kick error:', error);
+                showStatus('Failed to kick player: ' + error.message);
+            }
+        }
+
+        // Kick player from game mode (commander selection)
+        async function kickPlayerFromGame(playerId, playerName) {
+            console.log('👢 [KICK] Kick player from game clicked:', playerId, playerName);
+            
+            if (!confirm(`Kick ${playerName} from the session?\n\nThey will be able to rejoin if they want.`)) {
+                console.log('❌ [KICK] User cancelled');
+                return;
+            }
+            
+            try {
+                showStatus('Kicking player...');
+                const result = await sessionManager.kickPlayer(playerId);
+                console.log('✅ [KICK] Player kicked:', result);
+                currentSession = result.sessionData;
+                gameModeController.currentSession = currentSession;
+                renderPlayerGrid();
+                showStatus(`${playerName} has been removed from the session`);
+            } catch (error) {
+                console.error('❌ [KICK] Kick error:', error);
+                showStatus('Failed to kick player: ' + error.message);
+            }
+        }
+
         function enterLobby() {
             console.log('🚪 [LOBBY] Entering lobby...');
             joinCreateSection.classList.add('hidden');
@@ -1168,6 +1357,8 @@
             const lobbyPlayers = document.getElementById('lobby-players');
             lobbyPlayers.innerHTML = '';
             
+            const isHost = currentSession && currentSession.hostId === currentPlayerId;
+            
             for (let i = 0; i < 4; i++) {
                 const player = currentSession.players[i];
                 const div = document.createElement('div');
@@ -1175,11 +1366,26 @@
                 
                 if (player) {
                     const isYou = player.id === currentPlayerId;
-                    const isHost = player.id === currentSession.hostId;
+                    const isPlayerHost = player.id === currentSession.hostId;
+                    const isDisconnected = player.isConnected === false;
+                    
+                    if (isDisconnected) {
+                        div.classList.add('disconnected');
+                    }
+                    
+                    // Show kick button for host (not on their own card)
+                    const kickButton = (isHost && !isYou) 
+                        ? `<button class="kick-btn" onclick="kickPlayerFromLobby('${player.id}', '${player.name || 'Player ' + player.number}')">❌ Kick</button>`
+                        : '';
+                    
                     div.innerHTML = `
-                        <strong>${player.name || `Player ${player.number}`}</strong>
-                        ${isYou ? '<br>(You)' : ''}
-                        ${isHost ? '<br>👑 Host' : ''}
+                        <div style="flex: 1;">
+                            <strong>${player.name || `Player ${player.number}`}</strong>
+                            ${isYou ? '<br>(You)' : ''}
+                            ${isPlayerHost ? '<br>👑 Host' : ''}
+                            ${isDisconnected ? '<br>⚠️ Disconnected' : ''}
+                        </div>
+                        ${kickButton}
                     `;
                 } else {
                     div.innerHTML = '<em>Waiting...</em>';
@@ -1257,6 +1463,13 @@
                 playerGrid.appendChild(section);
             });
             
+            // Show/hide host controls
+            const hostControls = document.getElementById('host-controls');
+            const isHost = currentSession && currentSession.hostId === currentPlayerId;
+            if (hostControls) {
+                hostControls.classList.toggle('hidden', !isHost);
+            }
+            
             // Attach color filter event listeners
             attachColorFilterListeners();
         }
@@ -1269,7 +1482,17 @@
                 
                 const playerStatus = playerSection.querySelector('.player-status');
                 if (playerStatus) {
-                    playerStatus.textContent = player.commanderLocked ? '🔒 Locked' : 'Selecting...';
+                    const isDisconnected = player.isConnected === false;
+                    if (isDisconnected) {
+                        playerStatus.textContent = '⚠️ Disconnected';
+                        playerSection.classList.add('disconnected');
+                    } else if (player.commanderLocked) {
+                        playerStatus.textContent = '🔒 Locked';
+                        playerSection.classList.remove('disconnected');
+                    } else {
+                        playerStatus.textContent = 'Selecting...';
+                        playerSection.classList.remove('disconnected');
+                    }
                 }
                 
                 // Update locked class
@@ -1395,6 +1618,10 @@
                     <span class="player-number">${player.name || `Player ${player.number}`}${isCurrentPlayer ? ' (You)' : ''}</span>
                     <span class="player-status">${player.commanderLocked ? '🔒 Locked' : 'Selecting...'}</span>
                 </div>
+                
+                ${!isCurrentPlayer && currentSession.hostId === currentPlayerId ? `
+                    <button class="kick-btn" style="position: absolute; top: 8px; right: 8px; z-index: 5;" onclick="kickPlayerFromGame('${player.id}', '${player.name || 'Player ' + player.number}')">❌ Kick</button>
+                ` : ''}
                 
                 ${powerupsHTML}
                 
@@ -1864,6 +2091,24 @@
                 
                 try {
                     const session = await sessionManager.getSession(currentSession.sessionCode);
+                    
+                    // Check if current player was kicked from session
+                    const currentPlayerInSession = session.players.find(p => p.id === currentPlayerId);
+                    if (!currentPlayerInSession) {
+                        console.log('👢 [POLLING] Current player no longer in session - kicked!');
+                        showStatus('You have been removed from the session by the host. You can rejoin if you wish.');
+                        
+                        // Navigate back to join screen after 3 seconds
+                        setTimeout(() => {
+                            hideAllPages();
+                            joinCreateSection.classList.remove('hidden');
+                            sessionInfo.classList.add('hidden');
+                            // Keep session code in join input for easy rejoin
+                            joinCodeInput.value = currentSession.sessionCode;
+                        }, 3000);
+                        
+                        return; // Stop processing this update
+                    }
                     
                     const previousState = currentSession.state;
                     currentSession = session;

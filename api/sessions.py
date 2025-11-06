@@ -279,12 +279,26 @@ def cleanup_expired_sessions():
     for code in expired_packs:
         del PACK_CODES[code]
 
-def touch_session(session_code: str):
-    """Update session's last activity timestamp"""
+def touch_session(session_code: str, player_id: str = None):
+    """Update session's last activity timestamp and optionally mark player as connected"""
     session = get_session(session_code)
     if session:
         session['lastActivity'] = time.time()
         session['updated_at'] = time.time()
+        
+        # Update player connection status if player_id provided
+        if player_id:
+            player = next((p for p in session['players'] if p['id'] == player_id), None)
+            if player:
+                player['isConnected'] = True
+                player['lastSeen'] = time.time()
+        
+        # Check for disconnected players (no activity for 30 seconds)
+        current_time = time.time()
+        for player in session['players']:
+            if current_time - player.get('lastSeen', current_time) > 30:
+                player['isConnected'] = False
+        
         update_session(session_code, session)
 
 def cors_headers():
@@ -368,6 +382,22 @@ class handler(BaseHTTPRequestHandler):
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"📦 [REQ-{request_id}] Generating pack codes for session: {session_code}")
             self.handle_generate_pack_codes(data)
+        elif path == '/rejoin':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"🔄 [REQ-{request_id}] Player rejoining session: {session_code}")
+            self.handle_rejoin_session(data)
+        elif path == '/force-advance':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"⏭️ [REQ-{request_id}] Force advancing session: {session_code}")
+            self.handle_force_advance(data)
+        elif path == '/heartbeat':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"💓 [REQ-{request_id}] Heartbeat for session: {session_code}")
+            self.handle_heartbeat(data)
+        elif path == '/kick':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"👢 [REQ-{request_id}] Kicking player from session: {session_code}")
+            self.handle_kick_player(data)
         elif path == '/test-perks':
             print(f"🧪 [REQ-{request_id}] Testing perks.json loading")
             self.handle_test_perks()
@@ -453,7 +483,9 @@ class handler(BaseHTTPRequestHandler):
                     'commanderLocked': False,
                     'selectedCommanderIndex': None,
                     'packCode': None,
-                    'packConfig': None
+                    'packConfig': None,
+                    'isConnected': True,
+                    'lastSeen': time.time()
                 }
             ],
             'created_at': time.time(),
@@ -510,7 +542,9 @@ class handler(BaseHTTPRequestHandler):
             'commanderLocked': False,
             'selectedCommanderIndex': None,
             'packCode': None,
-            'packConfig': None
+            'packConfig': None,
+            'isConnected': True,
+            'lastSeen': time.time()
         })
         
         session['updated_at'] = time.time()
@@ -741,6 +775,156 @@ class handler(BaseHTTPRequestHandler):
         
         self.send_json_response(200, session)
 
+    def handle_rejoin_session(self, data):
+        """Allow a player to rejoin an existing session using their original player ID"""
+        session_code = data.get('sessionCode', '').upper()
+        player_id = data.get('playerId', '')
+        
+        session = get_session(session_code)
+        if not session_code or not session:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        # Find the player in the session
+        player = next((p for p in session['players'] if p['id'] == player_id), None)
+        if not player:
+            self.send_error_response(404, 'Player not found in this session')
+            return
+        
+        # Mark player as connected
+        player['isConnected'] = True
+        player['lastSeen'] = time.time()
+        
+        session['updated_at'] = time.time()
+        update_session(session_code, session)
+        
+        self.send_json_response(200, {
+            'playerId': player_id,
+            'sessionData': session,
+            'rejoined': True
+        })
+
+    def handle_force_advance(self, data):
+        """Force advance to pack codes page, generating random commanders for players who haven't locked in"""
+        session_code = data.get('sessionCode', '').upper()
+        player_id = data.get('playerId', '')
+        
+        session = get_session(session_code)
+        if not session_code or not session:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        # Verify host
+        if session['hostId'] != player_id:
+            self.send_error_response(403, 'Only host can force advance')
+            return
+        
+        touch_session(session_code, player_id)
+        
+        # For each player who hasn't locked in a commander, pick one randomly
+        for player in session['players']:
+            if not player['commanderLocked']:
+                # Check if player has generated commanders already
+                commanders = player.get('commanders', [])
+                
+                if commanders:
+                    # Pick a random one from their generated list
+                    import random
+                    selected_index = random.randint(0, len(commanders) - 1)
+                    selected_commander = commanders[selected_index]
+                    
+                    player['commanderUrl'] = selected_commander.get('url', '')
+                    player['commanderData'] = selected_commander
+                    player['selectedCommanderIndex'] = selected_index
+                else:
+                    # Generate a random commander based on their perks
+                    # For now, we'll just mark them with a placeholder
+                    # In a full implementation, this would call the commander generation logic
+                    player['commanderUrl'] = ''
+                    player['commanderData'] = {
+                        'name': 'Random Commander',
+                        'colors': [],
+                        'auto_generated': True
+                    }
+                    player['selectedCommanderIndex'] = 0
+                
+                player['commanderLocked'] = True
+        
+        # Generate pack codes for all players
+        self.generate_pack_codes_internal(session)
+        session['state'] = 'complete'
+        session['updated_at'] = time.time()
+        update_session(session_code, session)
+        
+        self.send_json_response(200, session)
+
+    def handle_heartbeat(self, data):
+        """Update player's last seen timestamp to mark them as connected"""
+        session_code = data.get('sessionCode', '').upper()
+        player_id = data.get('playerId', '')
+        
+        session = get_session(session_code)
+        if not session_code or not session:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        # Find player and update their lastSeen
+        player = next((p for p in session['players'] if p['id'] == player_id), None)
+        if player:
+            player['isConnected'] = True
+            player['lastSeen'] = time.time()
+            session['updated_at'] = time.time()
+            update_session(session_code, session)
+        
+        self.send_json_response(200, {'ok': True})
+
+    def handle_kick_player(self, data):
+        """Remove a player from the session (host only). Player can rejoin later."""
+        session_code = data.get('sessionCode', '').upper()
+        host_player_id = data.get('playerId', '')
+        kick_player_id = data.get('kickPlayerId', '')
+        
+        session = get_session(session_code)
+        if not session_code or not session:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        # Verify host
+        if session['hostId'] != host_player_id:
+            self.send_error_response(403, 'Only host can kick players')
+            return
+        
+        # Can't kick yourself
+        if host_player_id == kick_player_id:
+            self.send_error_response(400, 'Cannot kick yourself')
+            return
+        
+        # Find the player to kick
+        player_to_kick = next((p for p in session['players'] if p['id'] == kick_player_id), None)
+        if not player_to_kick:
+            self.send_error_response(404, 'Player not found')
+            return
+        
+        # Remove player from session
+        session['players'] = [p for p in session['players'] if p['id'] != kick_player_id]
+        
+        # Renumber remaining players
+        for i, player in enumerate(session['players']):
+            player['number'] = i + 1
+        
+        session['updated_at'] = time.time()
+        update_session(session_code, session)
+        
+        print(f"👢 Kicked player {kick_player_id} from session {session_code}")
+        
+        self.send_json_response(200, {
+            'sessionData': session,
+            'kickedPlayer': {
+                'id': kick_player_id,
+                'name': player_to_kick.get('name', 'Unknown')
+            }
+        })
+
     def handle_get_session(self, session_code):
         """Get current session data"""
         session = get_session(session_code)
@@ -748,6 +932,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_error_response(404, 'Session not found')
             return
         
+        # Touch session without specific player (will still check for disconnections)
         touch_session(session_code)
         self.send_json_response(200, session)
 
