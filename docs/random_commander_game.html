@@ -1631,6 +1631,12 @@
                 if (player.commanders && player.commanders.length > 0) {
                     // Normalize commander data to ensure consistent field names
                     gameModeController.playerCommanderData[player.number] = player.commanders.map(normalizeCommanderData);
+                    
+                    // Restore selected commander index if player was selecting
+                    if (player.selectedCommanderIndex !== undefined && player.selectedCommanderIndex !== null) {
+                        gameModeController.playerSelectedCommander[player.number] = player.selectedCommanderIndex;
+                        console.log(`🔄 [RENDER] Restored selection for P${player.number}: index ${player.selectedCommanderIndex}`);
+                    }
                 }
                 
                 const isCurrentPlayer = player.id === currentPlayerId;
@@ -1650,6 +1656,16 @@
         }
 
         function updatePlayerStatuses() {
+            // Check if all active players have sections - if not, force full re-render
+            const activePlayers = currentSession.players.filter(p => !p.isKicked);
+            const missingSections = activePlayers.some(player => !document.getElementById(`player-${player.number}`));
+            
+            if (missingSections) {
+                console.log('🔄 [UPDATE] Missing player sections detected - forcing full re-render');
+                renderPlayerGrid();
+                return;
+            }
+            
             // Update only the status indicators without re-rendering the entire grid
             currentSession.players.forEach(player => {
                 const playerSection = document.getElementById(`player-${player.number}`);
@@ -1695,19 +1711,31 @@
                     
                     // If player is locked, show only locked commander
                     if (player.commanderLocked) {
-                        const alreadyShowingLocked = commandersGrid.querySelector('.commander-card.locked') || 
-                                                    commandersGrid.querySelector('.commander-item-small.locked');
+                        const alreadyShowingLocked = commandersGrid.querySelector('.commander-item-small.locked');
                         if (!alreadyShowingLocked) {
                             console.log(`🔒 [UPDATE] Player ${player.number} is locked - showing locked commander`);
                             commandersGrid.innerHTML = renderExistingCommanders(player);
                         }
                     }
-                    // If not locked and grid is empty or showing "waiting", render commanders
+                    // If not locked, check if we need to render commanders
                     else {
                         const isEmpty = commandersGrid.querySelector('em') || commandersGrid.children.length === 0;
-                        if (isEmpty) {
-                            console.log(`🔄 [UPDATE] Player ${player.number} generated commanders - rendering them`);
+                        const hasWrongPlayerCommanders = !commandersGrid.querySelector(`#commander-${player.number}-0`);
+                        
+                        // Render if empty OR if showing wrong player's commanders (after rejoin)
+                        if (isEmpty || hasWrongPlayerCommanders) {
+                            console.log(`🔄 [UPDATE] Player ${player.number} commanders need rendering (empty: ${isEmpty}, wrong: ${hasWrongPlayerCommanders})`);
                             commandersGrid.innerHTML = renderExistingCommanders(player);
+                            
+                            // Restore checkbox state if there was a selection
+                            if (player.selectedCommanderIndex !== undefined && player.selectedCommanderIndex !== null) {
+                                const checkbox = commandersGrid.querySelector(`input[name="commander-select-${player.number}"]:nth-of-type(${player.selectedCommanderIndex + 1})`);
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    const item = document.getElementById(`commander-${player.number}-${player.selectedCommanderIndex}`);
+                                    if (item) item.classList.add('selected');
+                                }
+                            }
                         }
                     }
                 }
@@ -1833,37 +1861,55 @@
                 return '<em>Waiting for commanders...</em>';
             }
             
+            // Normalize commander data
+            const normalizedCommanders = commanders.map(normalizeCommanderData);
+            
             // If player is locked, show only selected commander
             if (player.commanderLocked && player.selectedCommanderIndex !== undefined) {
-                const selectedCommander = commanders[player.selectedCommanderIndex];
+                const selectedCommander = normalizedCommanders[player.selectedCommanderIndex];
                 if (selectedCommander) {
                     return `
-                        <div class="commander-card locked">
-                            <img src="${selectedCommander.image || selectedCommander.imageUrl}" 
+                        <div class="commander-item-small selected locked" id="commander-${player.number}-${player.selectedCommanderIndex}">
+                            <img src="${selectedCommander.image_url || 'images/card-back.png'}" 
                                  alt="${selectedCommander.name}" 
-                                 loading="lazy"
+                                 class="commander-img-small"
+                                 data-edhrec-url="${selectedCommander.edhrec_url || ''}"
+                                 onclick="openCommanderLink('${selectedCommander.edhrec_url || ''}')"
                                  title="${selectedCommander.name} - LOCKED">
-                            <div class="commander-name">🔒 ${selectedCommander.name}</div>
+                            <div class="commander-checkbox-container">
+                                <label class="commander-checkbox-label">
+                                    <input type="checkbox" 
+                                           class="commander-checkbox" 
+                                           checked 
+                                           disabled>
+                                    <span class="commander-name-label" title="${selectedCommander.name}">🔒 ${selectedCommander.name}</span>
+                                </label>
+                            </div>
                         </div>
                     `;
                 }
             }
             
-            // Show all commanders with checkboxes for current player
-            return commanders.map((cmd, index) => {
+            // Show all commanders with same structure as fresh generation
+            return normalizedCommanders.map((cmd, index) => {
                 return `
-                    <div class="commander-card">
-                        <label>
-                            <input type="checkbox" 
-                                   name="commander-select-${player.number}" 
-                                   ${isCurrentPlayer ? '' : 'disabled'}
-                                   onchange="selectCommander(${player.number}, ${index}, this)">
-                            <img src="${cmd.image || cmd.imageUrl}" 
-                                 alt="${cmd.name}" 
-                                 loading="lazy"
-                                 onerror="this.src='https://via.placeholder.com/200x280?text=Image+Not+Found'">
-                            <div class="commander-name">${cmd.name}</div>
-                        </label>
+                    <div class="commander-item-small" id="commander-${player.number}-${index}">
+                        <img src="${cmd.image_url || 'images/card-back.png'}" 
+                             alt="${cmd.name}" 
+                             class="commander-img-small"
+                             data-edhrec-url="${cmd.edhrec_url || ''}"
+                             onclick="openCommanderLink('${cmd.edhrec_url || ''}')"
+                             title="${cmd.name} (Rank: ${cmd.rank})">
+                        <div class="commander-checkbox-container">
+                            <label class="commander-checkbox-label">
+                                <input type="checkbox" 
+                                       class="commander-checkbox" 
+                                       name="commander-select-${player.number}" 
+                                       ${isCurrentPlayer ? '' : 'disabled'}
+                                       onchange="selectCommander(${player.number}, ${index}, this)">
+                                <span class="commander-name-label" title="${cmd.name}">${cmd.name}</span>
+                            </label>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -2453,6 +2499,11 @@
                     session.players.forEach(player => {
                         if (player.commanders && player.commanders.length > 0 && !player.isKicked) {
                             gameModeController.playerCommanderData[player.number] = player.commanders.map(normalizeCommanderData);
+                            
+                            // Restore selected commander index
+                            if (player.selectedCommanderIndex !== undefined && player.selectedCommanderIndex !== null) {
+                                gameModeController.playerSelectedCommander[player.number] = player.selectedCommanderIndex;
+                            }
                         }
                     });
                     
