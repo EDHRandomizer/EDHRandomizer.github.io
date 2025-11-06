@@ -1707,13 +1707,16 @@
                 const commandersGrid = document.getElementById(`commanders-${player.number}`);
                 if (commandersGrid && player.commanders && player.commanders.length > 0) {
                     // Mark this player as having generated commanders
+                    const wasGenerated = playerCommandersGenerated[player.number];
                     playerCommandersGenerated[player.number] = true;
                     
                     // If player is locked, show only locked commander
                     if (player.commanderLocked) {
                         const alreadyShowingLocked = commandersGrid.querySelector('.commander-item-small.locked');
-                        if (!alreadyShowingLocked) {
-                            console.log(`🔒 [UPDATE] Player ${player.number} is locked - showing locked commander`);
+                        const alreadyShowingCorrectLocked = commandersGrid.querySelector(`#commander-${player.number}-${player.selectedCommanderIndex}.locked`);
+                        
+                        if (!alreadyShowingCorrectLocked) {
+                            console.log(`🔒 [UPDATE] Player ${player.number} is locked - showing locked commander (had locked: ${!!alreadyShowingLocked}, correct: ${!!alreadyShowingCorrectLocked})`);
                             commandersGrid.innerHTML = renderExistingCommanders(player);
                         }
                     }
@@ -1721,10 +1724,11 @@
                     else {
                         const isEmpty = commandersGrid.querySelector('em') || commandersGrid.children.length === 0;
                         const hasWrongPlayerCommanders = !commandersGrid.querySelector(`#commander-${player.number}-0`);
+                        const justGenerated = !wasGenerated && playerCommandersGenerated[player.number];
                         
-                        // Render if empty OR if showing wrong player's commanders (after rejoin)
-                        if (isEmpty || hasWrongPlayerCommanders) {
-                            console.log(`🔄 [UPDATE] Player ${player.number} commanders need rendering (empty: ${isEmpty}, wrong: ${hasWrongPlayerCommanders})`);
+                        // Render if empty OR if showing wrong player's commanders (after rejoin) OR just generated
+                        if (isEmpty || hasWrongPlayerCommanders || justGenerated) {
+                            console.log(`🔄 [UPDATE] Player ${player.number} commanders need rendering (empty: ${isEmpty}, wrong: ${hasWrongPlayerCommanders}, justGenerated: ${justGenerated})`);
                             commandersGrid.innerHTML = renderExistingCommanders(player);
                             
                             // Restore checkbox state if there was a selection
@@ -2545,13 +2549,15 @@
                         enterGameMode();
                     }
                     
-                    // Update player grid if in selecting state (but only update changed parts)
-                    if (session.state === 'selecting' && !playerGridSection.classList.contains('hidden')) {
+                    // Update player grid if visible (regardless of state - other players might lock/generate)
+                    if (!playerGridSection.classList.contains('hidden')) {
                         updatePlayerStatuses();
                     }
                     
                     // Check if all locked - only show pack codes ONCE
                     const allLocked = gameModeController.allPlayersLocked();
+                    console.log(`🔍 [POLLING] Lock check - allLocked: ${allLocked}, state: ${session.state}, alreadyShown: ${packCodesAlreadyShown}, gridHidden: ${playerGridSection.classList.contains('hidden')}`);
+                    
                     if (allLocked && session.state === 'complete' && !packCodesAlreadyShown) {
                         console.log('🎉 [POLLING] All players locked - showing pack codes');
                         packCodesAlreadyShown = true;
