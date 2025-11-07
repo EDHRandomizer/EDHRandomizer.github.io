@@ -5,7 +5,7 @@
     "common": 44,
     "uncommon": 29,
     "rare": 17,
-    "mythic": 9
+    "mythic": 8
   },
   "perkTypes": [
     {
@@ -18,7 +18,7 @@
           "rarity": "common",
           "perkPhase": "commander_selection",
           "effects": {
-            "distributionShift": -100
+            "distributionShift": -50
           },
           "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
           "emoji": "📈",
@@ -30,7 +30,7 @@
           "rarity": "uncommon",
           "perkPhase": "commander_selection",
           "effects": {
-            "distributionShift": -200
+            "distributionShift": -100
           },
           "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
           "emoji": "📊",
@@ -43,24 +43,11 @@
           "weightMultiplier": 0.7,
           "perkPhase": "commander_selection",
           "effects": {
-            "distributionShift": -300
+            "distributionShift": -200
           },
           "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
           "emoji": "🔥",
           "description": "Much more popular commanders"
-        },
-        {
-          "id": "popular_elite",
-          "name": "Extremely Popular Commander",
-          "rarity": "mythic",
-          "weightMultiplier": 0.7,
-          "perkPhase": "commander_selection",
-          "effects": {
-            "distributionShift": -500
-          },
-          "extended_description": "The pool of commanders you are offered will be of lower average EDHRec rank, so more popular.",
-          "emoji": "⭐",
-          "description": "Your pool will include Popular 'well-known' Commanders"
         }
       ]
     },
@@ -71,7 +58,7 @@
         {
           "id": "salty_pool",
           "name": "Salty Commander",
-          "weightMultiplier": 1.2,
+          "weightMultiplier": 1,
           "rarity": "rare",
           "perkPhase": "commander_selection",
           "effects": {
@@ -153,7 +140,7 @@
           "weightMultiplier": 1.1,
           "perkPhase": "commander_selection",
           "effects": {
-            "commanderQuantity": 3
+            "commanderQuantity": 2
           },
           "extended_description": "You will be shown 3 additional random commander options to choose from.",
           "emoji": "✨",
@@ -165,7 +152,7 @@
           "rarity": "rare",
           "perkPhase": "commander_selection",
           "effects": {
-            "commanderQuantity": 5
+            "commanderQuantity": 3
           },
           "extended_description": "You will be shown 5 additional random commander options to choose from.",
           "emoji": "🌟",
