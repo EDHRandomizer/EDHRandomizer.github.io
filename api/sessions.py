@@ -10,6 +10,9 @@ import string
 import os
 from typing import Dict, List, Optional
 
+# Import perk rolling logic
+from api.perk_roller import handle_roll_perks_request
+
 # Vercel KV (Redis) for pack code persistence
 try:
     import redis
@@ -588,7 +591,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_json_response(200, session)
 
     def handle_roll_perks(self, data):
-        """Roll perks for all players (host only)"""
+        """Roll perks for all players (host only) - Delegated to perk_roller module"""
         session_code = data.get('sessionCode', '').upper()
         player_id = data.get('playerId', '')
         
@@ -601,85 +604,18 @@ class handler(BaseHTTPRequestHandler):
         
         touch_session(session_code)
         
-        # Verify host
-        if session['hostId'] != player_id:
-            self.send_error_response(403, 'Only host can Roll perks')
+        # Use the new perk roller module
+        success, error_code, error_message, updated_session = handle_roll_perks_request(session, player_id)
+        
+        if not success:
+            self.send_error_response(error_code, error_message)
             return
         
-        # Get perks count from session settings
-        perks_count = session.get('settings', {}).get('perksCount', 3)
-        print(f"🎲 Rolling {perks_count} perks per player")
+        # Update session in storage
+        update_session(session_code, updated_session)
         
-        # Roll perks for each player
-        # Load perks data from single source of truth: docs/data/perks.json
-        import os
-        import sys
-        
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        # Single source of truth: docs/data/perks.json
-        perks_path = os.path.join(current_dir, '..', 'docs', 'data', 'perks.json')
-        
-        print(f"🎲 Looking for perks.json at: {perks_path}")
-        print(f"🎲 Current dir: {current_dir}")
-        print(f"🎲 File exists: {os.path.exists(perks_path)}")
-        
-        try:
-            with open(perks_path, 'r', encoding='utf-8') as f:
-                perks_data = json.load(f)
-            print(f"🎲 Loaded perks.json successfully, version: {perks_data.get('version', 'unknown')}")
-        except FileNotFoundError:
-            print(f"⚠️ perks.json not found at {perks_path}, using fallback")
-            # Fallback: use hardcoded perk selection
-            perks_data = {
-                'rarityWeights': {'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3},
-                'perks': []  # Will be loaded from file in production
-            }
-        except Exception as e:
-            print(f"❌ Error loading perks.json: {str(e)}")
-            raise
-        
-        # Generate multiple perks for each player with type-based deduplication
-        for player in session['players']:
-            print(f"🎲 Rolling perks for player {player.get('name', 'unknown')}")
-            player_perks = []
-            used_types = set()  # Track perk types to prevent duplicates
-            
-            attempts = 0
-            max_attempts = perks_count * 10  # Prevent infinite loop
-            
-            while len(player_perks) < perks_count and attempts < max_attempts:
-                perk = self.get_random_perk(perks_data)
-                print(f"🎲   Rolled perk: {perk.get('name', 'unknown')} (attempt {attempts + 1})")
-                perk_type = self.get_perk_type(perk, perks_data)
-                print(f"🎲   Perk type: {perk_type}")
-                
-                # Check if this type is already used
-                if perk_type not in used_types:
-                    player_perks.append({
-                        'id': perk['id'],
-                        'name': perk['name'],
-                        'rarity': perk['rarity'],
-                        'description': perk.get('description', ''),
-                        'perkPhase': perk.get('perkPhase', 'drafting'),
-                        'effects': perk.get('effects', {})
-                    })
-                    used_types.add(perk_type)
-                    print(f"🎲   ✅ Added perk (total: {len(player_perks)}/{perks_count})")
-                else:
-                    print(f"🎲   ⏭️ Skipped duplicate type")
-                
-                attempts += 1
-            
-            player['perks'] = player_perks
-            print(f"🎲 Final perks for {player.get('name', 'unknown')}: {len(player_perks)}")
-        
-        session['state'] = 'selecting'
-        session['updated_at'] = time.time()
-        print(f"🎲 Updating session with new state: selecting")
-        update_session(session_code, session)
-        
-        print(f"🎲 Sending response with {len(session['players'])} players")
-        self.send_json_response(200, session)
+        print(f"🎲 Sending response with {len(updated_session['players'])} players")
+        self.send_json_response(200, updated_session)
 
     def handle_lock_commander(self, data):
         """Lock in commander selection for a player"""
@@ -1313,88 +1249,6 @@ class handler(BaseHTTPRequestHandler):
                 bundle_config['packTypes'].append(pack)
         
         return bundle_config
-
-    def get_random_perk(self, perks_data):
-        """Get random perk based on rarity weights with optional per-perk weight multipliers"""
-        base_weights = perks_data.get('rarityWeights', {
-            'common': 44, 'uncommon': 30, 'rare': 17, 'mythic': 9
-        })
-        
-        # Get all perks - support both formats
-        if 'perkTypes' in perks_data:
-            # V2 format - flatten perkTypes
-            perks = []
-            for ptype in perks_data.get('perkTypes', []):
-                perks.extend(ptype.get('perks', []))
-        else:
-            # V1 format - direct perks array
-            perks = perks_data.get('perks', [])
-        
-        if not perks:
-            # Fallback perk
-            return {
-                'id': 'default',
-                'name': 'Standard Pack',
-                'rarity': 'common',
-                'description': 'No special effects',
-                'effects': {}
-            }
-        
-        # Calculate effective weight for each perk (base_weight * multiplier)
-        perk_weights = []
-        for perk in perks:
-            base_weight = base_weights.get(perk['rarity'], 1)
-            multiplier = perk.get('weightMultiplier', 1.0)
-            effective_weight = base_weight * multiplier
-            perk_weights.append(effective_weight)
-        
-        # Select perk based on weighted random
-        total_weight = sum(perk_weights)
-        rand = random.random() * total_weight
-        
-        cumulative = 0
-        for i, weight in enumerate(perk_weights):
-            cumulative += weight
-            if rand <= cumulative:
-                return perks[i]
-        
-        # Fallback (should never reach here)
-        return perks[-1]
-
-    def get_perk_type(self, perk, perks_data):
-        """Get the type category for a perk (for deduplication)"""
-        # V2 format - explicit types
-        if 'perkTypes' in perks_data:
-            for ptype in perks_data.get('perkTypes', []):
-                for p in ptype.get('perks', []):
-                    if p['id'] == perk['id']:
-                        return ptype['type']
-        
-        # V1 format - infer type from ID prefix
-        perk_id = perk['id']
-        if perk_id.startswith('commander_options_') or perk_id.startswith('reroll_'):
-            return 'commander_quantity'
-        elif perk_id.startswith('color_'):
-            return 'color_filter'
-        elif perk_id.startswith('budget_upgrade_'):
-            return 'budget_upgrade'
-        elif perk_id.startswith('budget_full_expensive_'):
-            return 'expensive_packs'
-        elif perk_id.startswith('extra_pack'):
-            return 'extra_packs'
-        elif perk_id.startswith('upgrade_bracket_'):
-            return 'bracket_upgrade'
-        elif 'gamechanger' in perk_id:
-            return 'gamechanger_cards'
-        elif 'conspiracy' in perk_id:
-            return 'conspiracy_cards'
-        elif 'banned' in perk_id:
-            return 'banned_cards'
-        elif 'manabase' in perk_id:
-            return 'manabase'
-        
-        # Default: use the perk ID itself as the type (unique)
-        return perk_id
 
     def handle_test_perks(self):
         """Test endpoint to verify perks.json can be loaded"""
