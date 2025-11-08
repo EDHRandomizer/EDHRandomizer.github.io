@@ -1070,6 +1070,11 @@ class handler(BaseHTTPRequestHandler):
                 'count': 1,
                 'slots': [{'cardType': 'gamechangers', 'budget': 'any', 'bracket': 'any', 'count': 1}]
             },
+            'high_synergy': {
+                'name': 'High Synergy Picks',
+                'count': 1,
+                'slots': [{'cardType': 'highsynergy', 'budget': 'any', 'bracket': 'any', 'count': 1}]
+            },
             'conspiracy': {
                 'name': 'Conspiracy',
                 'source': 'scryfall',

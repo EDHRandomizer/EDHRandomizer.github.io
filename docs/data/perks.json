@@ -257,6 +257,51 @@
       ]
     },
     {
+      "type": "high_synergy_cards",
+      "name": "High Synergy Packs",
+      "perks": [
+        {
+          "id": "high_synergy_1",
+          "name": "High Synergy Spotlight",
+          "rarity": "common",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "high_synergy",
+            "specialPackCount": 1
+          },
+          "extended_description": "Add a pack that pulls the single highest synergy card from EDHRec for your commander.",
+          "emoji": "🎯",
+          "description": "Get 1 top-synergy EDHRec card"
+        },
+        {
+          "id": "high_synergy_2",
+          "name": "High Synergy Duo",
+          "rarity": "uncommon",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "high_synergy",
+            "specialPackCount": 2
+          },
+          "extended_description": "Add a pack that contains the top two highest synergy cards from EDHRec for your commander.",
+          "emoji": "🎯",
+          "description": "Get 2 top-synergy EDHRec cards"
+        },
+        {
+          "id": "high_synergy_3",
+          "name": "High Synergy Showcase",
+          "rarity": "rare",
+          "perkPhase": "drafting",
+          "effects": {
+            "specialPack": "high_synergy",
+            "specialPackCount": 3
+          },
+          "extended_description": "Add a pack that contains the top three highest synergy cards from EDHRec for your commander.",
+          "emoji": "🏆",
+          "description": "Get 3 top-synergy EDHRec cards"
+        }
+      ]
+    },
+    {
       "type": "conspiracy_cards",
       "name": "Conspiracy Cards",
       "perks": [

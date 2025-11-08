@@ -1,7 +1,7 @@
 # EDH Pack Generator - Complete JSON Configuration Guide
 
 **Version:** 2.0  
-**Last Updated:** October 31, 2025  
+**Last Updated:** November 7, 2025  
 **API Endpoint:** `https://edhrandomizer-api.vercel.app/api/index`
 
 This is the master reference for creating custom JSON pack configurations for the EDH Pack Generator system. Use this guide to create unique, fun pack configurations for your playgroup.
@@ -188,6 +188,7 @@ The EDH Pack Generator creates randomized booster packs for Commander gameplay. 
 |----------|-------------|
 | `newcards` | Recently released cards for this commander |
 | `highsynergycards` | Cards with high synergy rating |
+| `highsynergy` | Deterministic highest synergy picks (no randomness; always takes the top synergy scores first) |
 | `topcards` | Most popular cards for this commander |
 | `gamechangers` | High-impact, game-changing cards (use bracket 4) |
 

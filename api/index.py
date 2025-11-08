@@ -856,6 +856,38 @@ def select_weighted_cards(cards: List[Dict], count: int, type_weights: Dict[str,
     return selected
 
 
+def select_high_synergy_cards(cards: List[Dict], count: int, used_cards: set) -> List[str]:
+    """Select the highest synergy cards from the available EDHRec pool"""
+    available = []
+
+    for card in cards:
+        name = card.get('name')
+        if not name or name in used_cards:
+            continue
+
+        synergy = card.get('synergy')
+
+        # Normalize synergy to a float; skip cards without a numeric value
+        if synergy is None:
+            continue
+
+        try:
+            synergy_value = float(synergy)
+        except (TypeError, ValueError):
+            continue
+
+        available.append((synergy_value, name))
+
+    if not available:
+        return []
+
+    # Sort by synergy descending and take requested count
+    available.sort(key=lambda item: item[0], reverse=True)
+    top_cards = [name for _, name in available[:count]]
+
+    return top_cards
+
+
 def select_cards_from_category(cards: List[Dict], category: str, count: int, used_cards: set, commander_colors: Optional[List[str]] = None) -> List[str]:
     """Select cards from a specific EDHRec category/tag
     
@@ -1105,6 +1137,9 @@ def generate_packs(commander_slug: str, config: Dict[str, Any], bracket: int = 2
                     elif card_type == 'random':
                         selected = select_random_cards(cards, card_count, pack_used_cards | global_used_cards)
                     
+                    elif card_type == 'highsynergy':
+                        selected = select_high_synergy_cards(cards, card_count, pack_used_cards | global_used_cards)
+
                     elif card_type in ['creatures', 'instants', 'sorceries', 'enchantments', 'planeswalkers', 
                                        'battles', 'lands', 'utilityartifacts', 'manaartifacts', 
                                        'newcards', 'highsynergycards', 'topcards', 'gamechangers']:
