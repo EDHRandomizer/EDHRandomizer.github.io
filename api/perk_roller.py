@@ -170,7 +170,9 @@ class PerkRoller:
         # If preferred rarity specified, try that first
         if preferred_rarity and preferred_rarity in perks_by_rarity:
             if perks_by_rarity[preferred_rarity]:
-                return random.choice(perks_by_rarity[preferred_rarity])
+                available_perks = perks_by_rarity[preferred_rarity]
+                perk_weights = [p.get('weightMultiplier', 1.0) for p in available_perks]
+                return random.choices(available_perks, weights=perk_weights, k=1)[0]
             elif not fallback_allowed:
                 return None
         
@@ -179,9 +181,11 @@ class PerkRoller:
         rarity_weights = [weights[r] for r in rarities]
         selected_rarity = random.choices(rarities, weights=rarity_weights, k=1)[0]
         
-        # Select random perk from that rarity
+        # Select random perk from that rarity using weightMultiplier
         if selected_rarity in perks_by_rarity and perks_by_rarity[selected_rarity]:
-            return random.choice(perks_by_rarity[selected_rarity])
+            available_perks = perks_by_rarity[selected_rarity]
+            perk_weights = [p.get('weightMultiplier', 1.0) for p in available_perks]
+            return random.choices(available_perks, weights=perk_weights, k=1)[0]
         else:
             # Fallback to any perk if selected rarity has no perks
             return random.choice(all_perks)
