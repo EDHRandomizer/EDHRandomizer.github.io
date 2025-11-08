@@ -47,7 +47,10 @@ class PerkRoller:
         self.perks_data = perks_data
         if self.perks_data is None:
             self.perks_data = self._load_perks_data()
-        
+
+        # Pre-calculate perk metadata to support deduplication rules
+        self._initialize_perk_cache()
+
         # Calculate rarity values based on inverse probability
         self.rarity_values = self._calculate_rarity_values()
         self.expected_value_per_perk = self._calculate_expected_value_per_perk()
@@ -127,30 +130,64 @@ class PerkRoller:
         except Exception as e:
             print(f"Γ¥î Error loading perks.json: {str(e)}")
             raise
+
+    def _initialize_perk_cache(self):
+        """Flatten perks data and capture metadata for deduplication"""
+        self.perk_entries = []
+        self.perk_type_by_id = {}
+
+        if 'perkTypes' in self.perks_data:
+            for perk_group in self.perks_data.get('perkTypes', []):
+                group_type = perk_group.get('type') or perk_group.get('name')
+                for perk in perk_group.get('perks', []):
+                    inferred_type = group_type or self._infer_perk_type(perk)
+                    self.perk_entries.append({
+                        'perk': perk,
+                        'type': inferred_type,
+                        'rarity': perk.get('rarity', 'common'),
+                        'weight': perk.get('weightMultiplier', 1.0)
+                    })
+                    self.perk_type_by_id[perk['id']] = inferred_type
+        else:
+            for perk in self.perks_data.get('perks', []):
+                inferred_type = perk.get('type') or self._infer_perk_type(perk)
+                self.perk_entries.append({
+                    'perk': perk,
+                    'type': inferred_type,
+                    'rarity': perk.get('rarity', 'common'),
+                    'weight': perk.get('weightMultiplier', 1.0)
+                })
+                self.perk_type_by_id[perk['id']] = inferred_type
+
+        self.unique_perk_ids = {entry['perk']['id'] for entry in self.perk_entries}
+        self.unique_perk_types = {entry['type'] for entry in self.perk_entries}
+
+        if not self.perk_entries:
+            raise ValueError("No perks available after initializing cache")
     
-    def get_random_perk(self, preferred_rarity=None, fallback_allowed=True):
+    def get_random_perk(self, preferred_rarity=None, fallback_allowed=True, exclude_ids=None, exclude_types=None):
         """
         Select a random perk based on rarity weights.
         
         Args:
             preferred_rarity: If specified, try to get this rarity first
             fallback_allowed: If True and preferred_rarity not available, use weights
+            exclude_ids: Optional set of perk IDs that cannot be selected
+            exclude_types: Optional set of perk types that cannot be selected
         
         Returns:
-            dict: Random perk
+            dict or None: Random perk respecting the supplied constraints
         """
-        # Get all perks (handle both V1 and V2 format)
-        if 'perkTypes' in self.perks_data:
-            # V2 format - flatten perkTypes
-            all_perks = []
-            for ptype in self.perks_data.get('perkTypes', []):
-                all_perks.extend(ptype.get('perks', []))
-        else:
-            # V1 format - direct perks array
-            all_perks = self.perks_data.get('perks', [])
-        
-        if not all_perks:
-            raise ValueError("No perks available in perks data")
+        exclude_ids = set(exclude_ids or [])
+        exclude_types = set(exclude_types or [])
+
+        available_entries = [
+            entry for entry in self.perk_entries
+            if entry['perk']['id'] not in exclude_ids and entry['type'] not in exclude_types
+        ]
+
+        if not available_entries:
+            return None
         
         weights = self.perks_data.get('rarityWeights', {
             'common': 44,
@@ -161,74 +198,69 @@ class PerkRoller:
         
         # Group perks by rarity
         perks_by_rarity = {}
-        for perk in all_perks:
-            rarity = perk.get('rarity', 'common')
+        for entry in available_entries:
+            rarity = entry['rarity']
             if rarity not in perks_by_rarity:
                 perks_by_rarity[rarity] = []
-            perks_by_rarity[rarity].append(perk)
+            perks_by_rarity[rarity].append(entry)
         
         # If preferred rarity specified, try that first
         if preferred_rarity and preferred_rarity in perks_by_rarity:
             if perks_by_rarity[preferred_rarity]:
                 available_perks = perks_by_rarity[preferred_rarity]
-                perk_weights = [p.get('weightMultiplier', 1.0) for p in available_perks]
-                return random.choices(available_perks, weights=perk_weights, k=1)[0]
+                perk_weights = [entry['weight'] for entry in available_perks]
+                selected_entry = random.choices(available_perks, weights=perk_weights, k=1)[0]
+                return selected_entry['perk']
             elif not fallback_allowed:
                 return None
         
         # Otherwise, select rarity based on weights
-        rarities = list(weights.keys())
-        rarity_weights = [weights[r] for r in rarities]
-        selected_rarity = random.choices(rarities, weights=rarity_weights, k=1)[0]
+        available_rarities = [rarity for rarity in weights.keys() if rarity in perks_by_rarity and perks_by_rarity[rarity]]
+        if not available_rarities:
+            return None
+        rarity_weights = [weights[r] for r in available_rarities]
+        selected_rarity = random.choices(available_rarities, weights=rarity_weights, k=1)[0]
         
         # Select random perk from that rarity using weightMultiplier
         if selected_rarity in perks_by_rarity and perks_by_rarity[selected_rarity]:
             available_perks = perks_by_rarity[selected_rarity]
-            perk_weights = [p.get('weightMultiplier', 1.0) for p in available_perks]
-            return random.choices(available_perks, weights=perk_weights, k=1)[0]
-        else:
-            # Fallback to any perk if selected rarity has no perks
-            return random.choice(all_perks)
+            perk_weights = [entry['weight'] for entry in available_perks]
+            selected_entry = random.choices(available_perks, weights=perk_weights, k=1)[0]
+            return selected_entry['perk']
+
+        return None
     
 
     
     def get_perk_type(self, perk):
-        """
-        Get the type/category of a perk for deduplication purposes
-        
-        For example: all "extra commander" perks are the same type,
-        all "color filter" perks are the same type, etc.
-        """
-        # If perk has explicit type, use it
+        """Return the configured type/category for a perk"""
+        if hasattr(self, 'perk_type_by_id') and perk.get('id') in self.perk_type_by_id:
+            return self.perk_type_by_id[perk['id']]
+        return self._infer_perk_type(perk)
+
+    def _infer_perk_type(self, perk):
+        """Infer a perk type when it is not explicitly defined"""
         if 'type' in perk:
             return perk['type']
-        
-        # Infer type from effects
+
         effects = perk.get('effects', {})
-        
-        # Commander quantity perks
+
         if effects.get('commanderQuantity'):
             return 'commander_quantity'
-        
-        # Color filter perks
+
         if effects.get('colorFilterMode'):
             return 'color_filter'
-        
-        # Distribution shift perks
+
         if effects.get('distributionShift'):
             return 'distribution_shift'
-        
-        # Salt mode perks
+
         if effects.get('saltMode'):
             return 'salt_mode'
-        
-        # Pack-related perks (drafting phase)
+
         if perk.get('perkPhase') == 'drafting':
-            # Group by pack type if available
             pack_type = effects.get('packType', 'generic_pack')
             return f'pack_{pack_type}'
-        
-        # Default: use perk ID as unique type (no deduplication)
+
         return f'unique_{perk["id"]}'
     
     def roll_perks_for_player(self, player_name, perks_count, max_attempts_multiplier=10):
@@ -282,28 +314,21 @@ class PerkRoller:
         max_attempts = perks_count * max_attempts_multiplier * 10  # More attempts for rejection sampling
         
         for attempt in range(max_attempts):
-            # Roll perks using standard weights (44/29/17/8)
             candidate_perks = []
             used_types = set()
-            
-            # Roll each perk slot
-            for slot in range(perks_count):
-                sub_attempts = 0
-                while sub_attempts < 50:  # Try to avoid duplicate types
-                    perk = self.get_random_perk()  # Uses 44/29/17/8 weights
-                    perk_type = self.get_perk_type(perk)
-                    
-                    if perk_type not in used_types:
-                        candidate_perks.append(perk)
-                        used_types.add(perk_type)
-                        break
-                    
-                    sub_attempts += 1
-                
-                # Fallback: if we can't find unique type, just add it anyway
-                if len(candidate_perks) < slot + 1:
-                    candidate_perks.append(perk)
-                    used_types.add(self.get_perk_type(perk))
+            used_ids = set()
+
+            for _ in range(perks_count):
+                perk = self.get_random_perk(exclude_ids=used_ids, exclude_types=used_types)
+                if perk is None:
+                    candidate_perks = []
+                    break
+                candidate_perks.append(perk)
+                used_ids.add(perk['id'])
+                used_types.add(self.get_perk_type(perk))
+
+            if len(candidate_perks) != perks_count:
+                continue
             
             # Calculate total value of this roll
             total_value = sum(self.rarity_values.get(p.get('rarity', 'common'), 1.0) for p in candidate_perks)
@@ -326,10 +351,12 @@ class PerkRoller:
         
         if best_perks is None:
             print(f"ΓÜá∩╕Å Warning: No perks found after {max_attempts} attempts!")
-            # Emergency fallback: just roll normally without constraints
-            best_perks = []
-            for _ in range(perks_count):
-                best_perks.append(self.get_random_perk())
+            best_perks = self._build_unique_perk_set(perks_count)
+            if best_perks is None:
+                raise RuntimeError(
+                    "Unable to roll unique perks that satisfy deduplication rules "
+                    f"(requested {perks_count}, available {len(self.unique_perk_types)})"
+                )
         
         # Convert to output format
         player_perks = []
@@ -348,6 +375,22 @@ class PerkRoller:
         print(f"≡ƒÄ▓ Final perks for {player_name}: {len(player_perks)} (value: {actual_value:.2f} vs target: {luck_target:.2f})")
         
         return player_perks, luck_target
+
+    def _build_unique_perk_set(self, perks_count, exclude_ids=None, exclude_types=None):
+        """Greedy helper to assemble a deduplicated perk selection"""
+        used_ids = set(exclude_ids or [])
+        used_types = set(exclude_types or [])
+        selected = []
+
+        for _ in range(perks_count):
+            perk = self.get_random_perk(exclude_ids=used_ids, exclude_types=used_types)
+            if perk is None:
+                return None
+            selected.append(perk)
+            used_ids.add(perk['id'])
+            used_types.add(self.get_perk_type(perk))
+
+        return selected
     
     def roll_perks_for_session(self, session, perks_count):
         """
