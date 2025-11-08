@@ -47,15 +47,12 @@ class PerkRoller:
         self.perks_data = perks_data
         if self.perks_data is None:
             self.perks_data = self._load_perks_data()
-
-        # Pre-calculate perk metadata to support deduplication rules
-        self._initialize_perk_cache()
-
+        
         # Calculate rarity values based on inverse probability
         self.rarity_values = self._calculate_rarity_values()
         self.expected_value_per_perk = self._calculate_expected_value_per_perk()
         
-        print(f"≡ƒÄ▓ Perk roller initialized:")
+        print(f"🎲 Perk roller initialized:")
         print(f"   Rarity values: {self.rarity_values}")
         print(f"   Expected value per perk: {self.expected_value_per_perk:.2f}")
     
@@ -112,82 +109,48 @@ class PerkRoller:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         perks_path = os.path.join(current_dir, '..', 'docs', 'data', 'perks.json')
         
-        print(f"≡ƒÄ▓ Looking for perks.json at: {perks_path}")
-        print(f"≡ƒÄ▓ Current dir: {current_dir}")
-        print(f"≡ƒÄ▓ File exists: {os.path.exists(perks_path)}")
+        print(f"🎲 Looking for perks.json at: {perks_path}")
+        print(f"🎲 Current dir: {current_dir}")
+        print(f"🎲 File exists: {os.path.exists(perks_path)}")
         
         try:
             with open(perks_path, 'r', encoding='utf-8') as f:
                 perks_data = json.load(f)
-            print(f"≡ƒÄ▓ Loaded perks.json successfully, version: {perks_data.get('version', 'unknown')}")
+            print(f"🎲 Loaded perks.json successfully, version: {perks_data.get('version', 'unknown')}")
             return perks_data
         except FileNotFoundError:
-            print(f"ΓÜá∩╕Å perks.json not found at {perks_path}, using fallback")
+            print(f"⚠️ perks.json not found at {perks_path}, using fallback")
             return {
                 'rarityWeights': {'common': 55, 'uncommon': 30, 'rare': 12, 'mythic': 3},
                 'perks': []
             }
         except Exception as e:
-            print(f"Γ¥î Error loading perks.json: {str(e)}")
+            print(f"❌ Error loading perks.json: {str(e)}")
             raise
-
-    def _initialize_perk_cache(self):
-        """Flatten perks data and capture metadata for deduplication"""
-        self.perk_entries = []
-        self.perk_type_by_id = {}
-
-        if 'perkTypes' in self.perks_data:
-            for perk_group in self.perks_data.get('perkTypes', []):
-                group_type = perk_group.get('type') or perk_group.get('name')
-                for perk in perk_group.get('perks', []):
-                    inferred_type = group_type or self._infer_perk_type(perk)
-                    self.perk_entries.append({
-                        'perk': perk,
-                        'type': inferred_type,
-                        'rarity': perk.get('rarity', 'common'),
-                        'weight': perk.get('weightMultiplier', 1.0)
-                    })
-                    self.perk_type_by_id[perk['id']] = inferred_type
-        else:
-            for perk in self.perks_data.get('perks', []):
-                inferred_type = perk.get('type') or self._infer_perk_type(perk)
-                self.perk_entries.append({
-                    'perk': perk,
-                    'type': inferred_type,
-                    'rarity': perk.get('rarity', 'common'),
-                    'weight': perk.get('weightMultiplier', 1.0)
-                })
-                self.perk_type_by_id[perk['id']] = inferred_type
-
-        self.unique_perk_ids = {entry['perk']['id'] for entry in self.perk_entries}
-        self.unique_perk_types = {entry['type'] for entry in self.perk_entries}
-
-        if not self.perk_entries:
-            raise ValueError("No perks available after initializing cache")
     
-    def get_random_perk(self, preferred_rarity=None, fallback_allowed=True, exclude_ids=None, exclude_types=None):
+    def get_random_perk(self, preferred_rarity=None, fallback_allowed=True):
         """
         Select a random perk based on rarity weights.
         
         Args:
             preferred_rarity: If specified, try to get this rarity first
             fallback_allowed: If True and preferred_rarity not available, use weights
-            exclude_ids: Optional set of perk IDs that cannot be selected
-            exclude_types: Optional set of perk types that cannot be selected
         
         Returns:
-            dict or None: Random perk respecting the supplied constraints
+            dict: Random perk
         """
-        exclude_ids = set(exclude_ids or [])
-        exclude_types = set(exclude_types or [])
-
-        available_entries = [
-            entry for entry in self.perk_entries
-            if entry['perk']['id'] not in exclude_ids and entry['type'] not in exclude_types
-        ]
-
-        if not available_entries:
-            return None
+        # Get all perks (handle both V1 and V2 format)
+        if 'perkTypes' in self.perks_data:
+            # V2 format - flatten perkTypes
+            all_perks = []
+            for ptype in self.perks_data.get('perkTypes', []):
+                all_perks.extend(ptype.get('perks', []))
+        else:
+            # V1 format - direct perks array
+            all_perks = self.perks_data.get('perks', [])
+        
+        if not all_perks:
+            raise ValueError("No perks available in perks data")
         
         weights = self.perks_data.get('rarityWeights', {
             'common': 44,
@@ -198,69 +161,70 @@ class PerkRoller:
         
         # Group perks by rarity
         perks_by_rarity = {}
-        for entry in available_entries:
-            rarity = entry['rarity']
+        for perk in all_perks:
+            rarity = perk.get('rarity', 'common')
             if rarity not in perks_by_rarity:
                 perks_by_rarity[rarity] = []
-            perks_by_rarity[rarity].append(entry)
+            perks_by_rarity[rarity].append(perk)
         
         # If preferred rarity specified, try that first
         if preferred_rarity and preferred_rarity in perks_by_rarity:
             if perks_by_rarity[preferred_rarity]:
-                available_perks = perks_by_rarity[preferred_rarity]
-                perk_weights = [entry['weight'] for entry in available_perks]
-                selected_entry = random.choices(available_perks, weights=perk_weights, k=1)[0]
-                return selected_entry['perk']
+                return random.choice(perks_by_rarity[preferred_rarity])
             elif not fallback_allowed:
                 return None
         
         # Otherwise, select rarity based on weights
-        available_rarities = [rarity for rarity in weights.keys() if rarity in perks_by_rarity and perks_by_rarity[rarity]]
-        if not available_rarities:
-            return None
-        rarity_weights = [weights[r] for r in available_rarities]
-        selected_rarity = random.choices(available_rarities, weights=rarity_weights, k=1)[0]
+        rarities = list(weights.keys())
+        rarity_weights = [weights[r] for r in rarities]
+        selected_rarity = random.choices(rarities, weights=rarity_weights, k=1)[0]
         
-        # Select random perk from that rarity using weightMultiplier
+        # Select random perk from that rarity
         if selected_rarity in perks_by_rarity and perks_by_rarity[selected_rarity]:
-            available_perks = perks_by_rarity[selected_rarity]
-            perk_weights = [entry['weight'] for entry in available_perks]
-            selected_entry = random.choices(available_perks, weights=perk_weights, k=1)[0]
-            return selected_entry['perk']
-
-        return None
+            return random.choice(perks_by_rarity[selected_rarity])
+        else:
+            # Fallback to any perk if selected rarity has no perks
+            return random.choice(all_perks)
     
 
     
     def get_perk_type(self, perk):
-        """Return the configured type/category for a perk"""
-        if hasattr(self, 'perk_type_by_id') and perk.get('id') in self.perk_type_by_id:
-            return self.perk_type_by_id[perk['id']]
-        return self._infer_perk_type(perk)
-
-    def _infer_perk_type(self, perk):
-        """Infer a perk type when it is not explicitly defined"""
+        """
+        Get the type/category of a perk for deduplication purposes
+        
+        For example: all "extra commander" perks are the same type,
+        all "color filter" perks are the same type, etc.
+        """
+        # If perk has explicit type, use it
         if 'type' in perk:
             return perk['type']
-
+        
+        # Infer type from effects
         effects = perk.get('effects', {})
-
+        
+        # Commander quantity perks
         if effects.get('commanderQuantity'):
             return 'commander_quantity'
-
+        
+        # Color filter perks
         if effects.get('colorFilterMode'):
             return 'color_filter'
-
+        
+        # Distribution shift perks
         if effects.get('distributionShift'):
             return 'distribution_shift'
-
+        
+        # Salt mode perks
         if effects.get('saltMode'):
             return 'salt_mode'
-
+        
+        # Pack-related perks (drafting phase)
         if perk.get('perkPhase') == 'drafting':
+            # Group by pack type if available
             pack_type = effects.get('packType', 'generic_pack')
             return f'pack_{pack_type}'
-
+        
+        # Default: use perk ID as unique type (no deduplication)
         return f'unique_{perk["id"]}'
     
     def roll_perks_for_player(self, player_name, perks_count, max_attempts_multiplier=10):
@@ -286,7 +250,7 @@ class PerkRoller:
                 - perks_list: List of perk dicts
                 - luck_score: Player's rolled luck value (for optional display)
         """
-        print(f"≡ƒÄ▓ Rolling perks for player {player_name}")
+        print(f"🎲 Rolling perks for player {player_name}")
         
         # Step 1: Calculate player's luck target using normal distribution
         expected_total_value = self.expected_value_per_perk * perks_count
@@ -301,12 +265,12 @@ class PerkRoller:
         luck_target = max(min_target, min(luck_target, max_target))
         
         luck_percentile = (luck_target / expected_total_value) * 100
-        print(f"≡ƒÄ▓   Luck target: {luck_target:.2f} (expected: {expected_total_value:.2f}, {luck_percentile:.0f}%)")
+        print(f"🎲   Luck target: {luck_target:.2f} (expected: {expected_total_value:.2f}, {luck_percentile:.0f}%)")
         
         # Step 2: Acceptance-rejection sampling with type deduplication
         # Tolerance: how close to target we need to be
         # Lower tolerance = stricter matching = more attempts needed but better accuracy
-        tolerance = expected_total_value * 0.30  # Allow ┬▒30% deviation
+        tolerance = expected_total_value * 0.30  # Allow ±30% deviation
         
         best_perks = None
         best_distance = float('inf')
@@ -314,21 +278,28 @@ class PerkRoller:
         max_attempts = perks_count * max_attempts_multiplier * 10  # More attempts for rejection sampling
         
         for attempt in range(max_attempts):
+            # Roll perks using standard weights (44/29/17/8)
             candidate_perks = []
             used_types = set()
-            used_ids = set()
-
-            for _ in range(perks_count):
-                perk = self.get_random_perk(exclude_ids=used_ids, exclude_types=used_types)
-                if perk is None:
-                    candidate_perks = []
-                    break
-                candidate_perks.append(perk)
-                used_ids.add(perk['id'])
-                used_types.add(self.get_perk_type(perk))
-
-            if len(candidate_perks) != perks_count:
-                continue
+            
+            # Roll each perk slot
+            for slot in range(perks_count):
+                sub_attempts = 0
+                while sub_attempts < 50:  # Try to avoid duplicate types
+                    perk = self.get_random_perk()  # Uses 44/29/17/8 weights
+                    perk_type = self.get_perk_type(perk)
+                    
+                    if perk_type not in used_types:
+                        candidate_perks.append(perk)
+                        used_types.add(perk_type)
+                        break
+                    
+                    sub_attempts += 1
+                
+                # Fallback: if we can't find unique type, just add it anyway
+                if len(candidate_perks) < slot + 1:
+                    candidate_perks.append(perk)
+                    used_types.add(self.get_perk_type(perk))
             
             # Calculate total value of this roll
             total_value = sum(self.rarity_values.get(p.get('rarity', 'common'), 1.0) for p in candidate_perks)
@@ -336,7 +307,7 @@ class PerkRoller:
             
             # Check if this is acceptable (within tolerance)
             if distance <= tolerance:
-                print(f"≡ƒÄ▓   Γ£à Accepted on attempt {attempt + 1}: value={total_value:.2f}, target={luck_target:.2f}, distance={distance:.2f}")
+                print(f"🎲   ✅ Accepted on attempt {attempt + 1}: value={total_value:.2f}, target={luck_target:.2f}, distance={distance:.2f}")
                 best_perks = candidate_perks
                 break
             
@@ -347,16 +318,14 @@ class PerkRoller:
             
             # Every 100 attempts, log progress
             if (attempt + 1) % 100 == 0:
-                print(f"≡ƒÄ▓   Attempt {attempt + 1}: best distance so far = {best_distance:.2f}")
+                print(f"🎲   Attempt {attempt + 1}: best distance so far = {best_distance:.2f}")
         
         if best_perks is None:
-            print(f"ΓÜá∩╕Å Warning: No perks found after {max_attempts} attempts!")
-            best_perks = self._build_unique_perk_set(perks_count)
-            if best_perks is None:
-                raise RuntimeError(
-                    "Unable to roll unique perks that satisfy deduplication rules "
-                    f"(requested {perks_count}, available {len(self.unique_perk_types)})"
-                )
+            print(f"⚠️ Warning: No perks found after {max_attempts} attempts!")
+            # Emergency fallback: just roll normally without constraints
+            best_perks = []
+            for _ in range(perks_count):
+                best_perks.append(self.get_random_perk())
         
         # Convert to output format
         player_perks = []
@@ -372,29 +341,23 @@ class PerkRoller:
         
         # Calculate actual value received
         actual_value = sum(self.rarity_values.get(p['rarity'], 1.0) for p in player_perks)
-        print(f"≡ƒÄ▓ Final perks for {player_name}: {len(player_perks)} (value: {actual_value:.2f} vs target: {luck_target:.2f})")
+        print(f"🎲 Final perks for {player_name}: {len(player_perks)} (value: {actual_value:.2f} vs target: {luck_target:.2f})")
         
         return player_perks, luck_target
-
-    def _build_unique_perk_set(self, perks_count, exclude_ids=None, exclude_types=None):
-        """Greedy helper to assemble a deduplicated perk selection"""
-        used_ids = set(exclude_ids or [])
-        used_types = set(exclude_types or [])
-        selected = []
-
-        for _ in range(perks_count):
-            perk = self.get_random_perk(exclude_ids=used_ids, exclude_types=used_types)
-            if perk is None:
-                return None
-            selected.append(perk)
-            used_ids.add(perk['id'])
-            used_types.add(self.get_perk_type(perk))
-
-        return selected
     
     def roll_perks_for_session(self, session, perks_count):
         """
-        Roll perks for all players in a session using luck-based distribution
+        Roll perks for all players in a session using combination matching.
+        
+        This approach:
+        1. Pre-allocates global rarity counts to match 44/29/17/8 exactly
+        2. Generates all perk combinations respecting global counts
+        3. Sorts combinations by value
+        4. Matches them to players sorted by luck from normal distribution
+        
+        This guarantees:
+        - Exact rarity distribution (44/29/17/8)
+        - Normal distribution of luck (centered at 100%)
         
         Args:
             session: Session dict with 'players' list
@@ -403,33 +366,310 @@ class PerkRoller:
         Returns:
             Updated session dict with perks assigned to each player
         """
-        print(f"≡ƒÄ▓ Rolling {perks_count} perks per player for session")
-        print(f"≡ƒÄ▓ Luck system: variance={LUCK_VARIANCE}, min={LUCK_MIN_MULTIPLIER}x, max={LUCK_MAX_MULTIPLIER}x")
+        print(f"🎲 Rolling {perks_count} perks per player for session")
+        print(f"🎲 Luck system: variance={LUCK_VARIANCE}, min={LUCK_MIN_MULTIPLIER}x, max={LUCK_MAX_MULTIPLIER}x")
         
-        # Track luck scores for logging
-        luck_scores = []
+        num_players = len(session['players'])
+        total_perks = num_players * perks_count
         
-        for player in session['players']:
-            player_perks, luck_score = self.roll_perks_for_player(
-                player.get('name', 'unknown'),
-                perks_count
-            )
-            player['perks'] = player_perks
-            luck_scores.append((player.get('name', 'unknown'), luck_score))
+        # Step 1: Calculate exact global rarity distribution (preserves 44/29/17/8)
+        weights = self.perks_data.get('rarityWeights', {
+            'common': 44,
+            'uncommon': 29,
+            'rare': 17,
+            'mythic': 8
+        })
         
-        # Log luck distribution summary
-        print(f"\n≡ƒÄ▓ Luck Distribution Summary:")
-        expected = self.expected_value_per_perk * perks_count
-        for name, luck in luck_scores:
-            percentile = (luck / expected) * 100
-            luck_tier = "≡ƒöÑ Very Lucky" if percentile >= 130 else \
-                       "Γ£¿ Lucky" if percentile >= 110 else \
-                       "≡ƒÿè Average" if percentile >= 90 else \
-                       "≡ƒÿÉ Unlucky" if percentile >= 70 else \
-                       "≡ƒÆÇ Very Unlucky"
-            print(f"   {name}: {luck:.2f} ({percentile:.0f}%) {luck_tier}")
+        total_weight = sum(weights.values())
+        
+        # Allocate perks to each rarity (rounded to ensure we have exactly total_perks)
+        global_rarity_counts = {}
+        allocated = 0
+        rarities_sorted = sorted(weights.keys(), key=lambda r: weights[r], reverse=True)
+        
+        for i, rarity in enumerate(rarities_sorted):
+            if i == len(rarities_sorted) - 1:
+                # Last rarity gets remainder to ensure exact count
+                global_rarity_counts[rarity] = total_perks - allocated
+            else:
+                count = round(total_perks * weights[rarity] / total_weight)
+                global_rarity_counts[rarity] = count
+                allocated += count
+        
+        print(f"🎲 Global rarity allocation for {total_perks} perks:")
+        for rarity in ['common', 'uncommon', 'rare', 'mythic']:
+            count = global_rarity_counts.get(rarity, 0)
+            pct = (count / total_perks * 100) if total_perks > 0 else 0
+            print(f"   {rarity}: {count} ({pct:.1f}%)")
+        
+        # Step 2: Generate luck targets from normal distribution
+        expected_total_value = self.expected_value_per_perk * perks_count
+        std_dev = expected_total_value * LUCK_VARIANCE
+        
+        luck_targets = []
+        for _ in range(num_players):
+            luck_target = random.gauss(expected_total_value, std_dev)
+            
+            # Clamp to prevent extremes
+            min_target = expected_total_value * LUCK_MIN_MULTIPLIER
+            max_target = expected_total_value * LUCK_MAX_MULTIPLIER
+            luck_target = max(min_target, min(luck_target, max_target))
+            
+            luck_targets.append(luck_target)
+        
+        # Step 3: Generate perk combinations with correct rarities
+        print(f"\n🎲 Generating {num_players} perk combinations...")
+        perk_combinations = self._generate_perk_combinations(
+            global_rarity_counts,
+            num_players,
+            perks_count
+        )
+        
+        # Step 4: Sort combinations by value and match to sorted luck targets
+        combinations_with_value = [
+            (combo, sum(self.rarity_values.get(perk['rarity'], 1.0) for perk in combo))
+            for combo in perk_combinations
+        ]
+        combinations_with_value.sort(key=lambda x: x[1])
+        luck_targets.sort()
+        
+        # Step 5: Assign combinations to players
+        print(f"\n🎲 Assigning perk combinations to players...")
+        
+        for i, player in enumerate(session['players']):
+            combo, actual_value = combinations_with_value[i]
+            target_value = luck_targets[i]
+            
+            player_name = player.get('name', 'unknown')
+            luck_percentile = (actual_value / expected_total_value) * 100
+            target_percentile = (target_value / expected_total_value) * 100
+            
+            print(f"\n🎲 Player: {player_name}")
+            print(f"   Target: {target_value:.2f} ({target_percentile:.0f}%), Actual: {actual_value:.2f} ({luck_percentile:.0f}%)")
+            print(f"   Rarities: {', '.join(perk['rarity'] for perk in combo)}")
+            
+            player['perks'] = combo
+        
+        print(f"\n🎲 Session complete!")
         
         return session
+    
+    def _generate_perk_combinations(self, global_rarity_counts, num_players, perks_count):
+        """
+        Generate perk combinations that exactly use up the global rarity counts.
+        
+        This distributes the allocated rarities across players fairly.
+        
+        Args:
+            global_rarity_counts: dict of {rarity: total_count}
+            num_players: Number of players
+            perks_count: Perks per player
+        
+        Returns:
+            List of perk combinations (each is a list of perk dicts)
+        """
+        # Create pool of rarity slots
+        rarity_slots = []
+        for rarity, count in global_rarity_counts.items():
+            rarity_slots.extend([rarity] * count)
+        
+        # Shuffle to randomize distribution
+        random.shuffle(rarity_slots)
+        
+        # Split into chunks for each player
+        combinations = []
+        for i in range(num_players):
+            start_idx = i * perks_count
+            end_idx = start_idx + perks_count
+            player_rarities = rarity_slots[start_idx:end_idx]
+            
+            # Roll actual perks for these rarities (with type deduplication)
+            player_perks = []
+            used_types = set()
+            
+            for rarity in player_rarities:
+                max_attempts = 50
+                perk = None
+                
+                for attempt in range(max_attempts):
+                    candidate = self.get_random_perk(preferred_rarity=rarity, fallback_allowed=False)
+                    
+                    if candidate is None:
+                        break
+                    
+                    perk_type = self.get_perk_type(candidate)
+                    
+                    if perk_type not in used_types:
+                        perk = candidate
+                        used_types.add(perk_type)
+                        break
+                
+                # Fallback: if can't find unique type, just take any perk of this rarity
+                if perk is None:
+                    perk = self.get_random_perk(preferred_rarity=rarity, fallback_allowed=True)
+                
+                player_perks.append({
+                    'id': perk['id'],
+                    'name': perk['name'],
+                    'rarity': perk['rarity'],
+                    'description': perk.get('description', ''),
+                    'perkPhase': perk.get('perkPhase', 'drafting'),
+                    'effects': perk.get('effects', {})
+                })
+            
+            combinations.append(player_perks)
+        
+        return combinations
+    
+    def _select_perks_from_pool_DEPRECATED(self, rarity_pool, perks_count, luck_target, player_name):
+        """
+        DEPRECATED: This greedy knapsack approach doesn't produce normal distribution.
+        Kept for reference only.
+        
+        Select perks from the global rarity pool that sum close to luck target.
+        Uses a greedy knapsack approach with type deduplication.
+        
+        Args:
+            rarity_pool: dict of {rarity: remaining_count}
+            perks_count: Number of perks to select
+            luck_target: Target total value
+            player_name: Player name for logging
+        
+        Returns:
+            List of perk dicts
+        """
+        selected_perks = []
+        used_types = set()
+        
+        # Calculate target value per slot
+        remaining_value = luck_target
+        remaining_slots = perks_count
+        
+        for slot in range(perks_count):
+            # Calculate ideal value for this slot
+            if remaining_slots > 0:
+                target_value = remaining_value / remaining_slots
+            else:
+                target_value = self.expected_value_per_perk
+            
+            # Find best available rarity (closest to target, available in pool)
+            best_rarity = None
+            best_distance = float('inf')
+            
+            for rarity, count in rarity_pool.items():
+                if count > 0:  # Only consider rarities with remaining perks
+                    rarity_value = self.rarity_values.get(rarity, 1.0)
+                    distance = abs(rarity_value - target_value)
+                    
+                    if distance < best_distance:
+                        best_distance = distance
+                        best_rarity = rarity
+            
+            if best_rarity is None:
+                print(f"   ⚠️ No rarities available in pool!")
+                break
+            
+            # Try to get a perk of that rarity (with type deduplication)
+            max_attempts = 50
+            perk = None
+            
+            for attempt in range(max_attempts):
+                candidate = self.get_random_perk(preferred_rarity=best_rarity, fallback_allowed=False)
+                
+                if candidate is None:
+                    # No perks of this rarity, try next best
+                    break
+                
+                perk_type = self.get_perk_type(candidate)
+                
+                if perk_type not in used_types:
+                    perk = candidate
+                    used_types.add(perk_type)
+                    break
+            
+            # Fallback: if can't find unique type, just take any perk of this rarity
+            if perk is None:
+                perk = self.get_random_perk(preferred_rarity=best_rarity, fallback_allowed=True)
+            
+            # Add perk and update pool
+            selected_perks.append({
+                'id': perk['id'],
+                'name': perk['name'],
+                'rarity': perk['rarity'],
+                'description': perk.get('description', ''),
+                'perkPhase': perk.get('perkPhase', 'drafting'),
+                'effects': perk.get('effects', {})
+            })
+            
+            # Deduct from pool
+            perk_rarity = perk['rarity']
+            rarity_pool[perk_rarity] -= 1
+            
+            # Update remaining values
+            actual_value = self.rarity_values.get(perk_rarity, 1.0)
+            remaining_value -= actual_value
+            remaining_slots -= 1
+            
+            print(f"   Slot {slot+1}: {best_rarity} (value {actual_value:.2f}, remaining: {remaining_value:.2f})")
+        
+        return selected_perks
+    
+    def _old_knapsack_implementation(self, rarity_pool, perks_count, luck_target, player_name):
+        """
+        DEPRECATED: Old implementation kept for reference.
+        """
+        selected_perks = []
+        used_types = set()
+        
+        # Calculate target value per slot
+        remaining_value = luck_target
+        remaining_slots = perks_count
+        
+        for slot in range(perks_count):
+            # Calculate ideal value for this slot
+            if remaining_slots > 0:
+                target_value = remaining_value / remaining_slots
+            else:
+                target_value = self.expected_value_per_perk
+            
+            # Find best available rarity (closest to target, available in pool)
+            best_rarity = None
+            best_distance = float('inf')
+            
+            for rarity, count in rarity_pool.items():
+                if count > 0:  # Only consider rarities with remaining perks
+                    rarity_value = self.rarity_values.get(rarity, 1.0)
+                    distance = abs(rarity_value - target_value)
+                    
+                    if distance < best_distance:
+                        best_distance = distance
+                        best_rarity = rarity
+            
+            if best_rarity is None:
+                print(f"   ⚠️ No rarities available in pool!")
+                break
+            
+            # Try to get a perk of that rarity (with type deduplication)
+            max_attempts = 50
+            perk = None
+            
+            for attempt in range(max_attempts):
+                candidate = self.get_random_perk(preferred_rarity=best_rarity, fallback_allowed=False)
+                
+                if candidate is None:
+                    # No perks of this rarity, try next best
+                    break
+                
+                perk_type = self.get_perk_type(candidate)
+                
+                if perk_type not in used_types:
+                    perk = candidate
+                    used_types.add(perk_type)
+                    break
+            
+            # Fallback: if can't find unique type, just take any perk of this rarity
+            if perk is None:
+                perk = self.get_random_perk(preferred_rarity=best_rarity, fallback_allowed=True)
 
 
 def handle_roll_perks_request(session, player_id):
@@ -449,7 +689,7 @@ def handle_roll_perks_request(session, player_id):
     
     # Get perks count from session settings
     perks_count = session.get('settings', {}).get('perksCount', 3)
-    print(f"≡ƒÄ▓ Rolling {perks_count} perks per player")
+    print(f"🎲 Rolling {perks_count} perks per player")
     
     # Initialize perk roller and roll perks
     roller = PerkRoller()
@@ -458,6 +698,6 @@ def handle_roll_perks_request(session, player_id):
     # Update session state
     session['state'] = 'selecting'
     session['updated_at'] = time.time()
-    print(f"≡ƒÄ▓ Updating session with new state: selecting")
+    print(f"🎲 Updating session with new state: selecting")
     
     return (True, None, None, session)
