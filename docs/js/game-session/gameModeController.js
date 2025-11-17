@@ -50,10 +50,10 @@ export class GameModeController {
         // Lower distributionCenter = stronger commanders (lower rank numbers)
         // Higher distributionCenter = weaker commanders (higher rank numbers)
         // Avatar Mode uses flatter distribution (larger sigma) for more uniform selection
-        const baseDistributionCenter = 1000;
+        const baseDistributionCenter = 600;
         const distributionShift = perkEffects.distributionShift || 0; // Negative = stronger, Positive = weaker
         const distributionCenter = baseDistributionCenter + distributionShift;
-        const distributionWidth = avatarMode ? 500 : 350; // Avatar Mode: wider/flatter distribution, slightly flatter base
+        const distributionWidth = avatarMode ? 500 : 300; // Avatar Mode: wider/flatter distribution, slightly flatter base
         
         // Normal distribution: exp(-((rank - mean)^2) / (2 * sigma^2))
         const distributionFunc = (rank, min, max) => {
