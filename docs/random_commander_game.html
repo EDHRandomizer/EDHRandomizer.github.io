@@ -890,6 +890,17 @@
                                 Weekly commanders from TLA and TLE sets only
                             </p>
                         </div>
+                        
+                        <!-- Perk Choice Mode Checkbox -->
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <label style="display: flex; align-items: center; cursor: pointer; font-weight: 500;">
+                                <input type="checkbox" id="create-perk-choice-mode" style="margin-right: 0.5rem; width: 18px; height: 18px; cursor: pointer;">
+                                <span>Perk Choice Mode</span>
+                            </label>
+                            <p style="opacity: 0.7; font-size: 0.85rem; margin: 0.5rem 0 0 0;">
+                                Choose between 2 perks for each slot instead of random assignment
+                            </p>
+                        </div>
                     </div>
                     
                     <button class="btn btn-primary" id="create-session-btn">Create Session</button>
@@ -1152,9 +1163,13 @@
                 const avatarModeCheckbox = document.getElementById('create-avatar-mode');
                 const avatarMode = avatarModeCheckbox ? avatarModeCheckbox.checked : false;
                 
+                // Get Perk Choice Mode checkbox
+                const perkChoiceModeCheckbox = document.getElementById('create-perk-choice-mode');
+                const perkChoiceMode = perkChoiceModeCheckbox ? perkChoiceModeCheckbox.checked : false;
+                
                 console.log('📡 [CREATE] Calling sessionManager.createSession()...');
-                console.log('🎮 [CREATE] Perks count:', perksCount, '| Avatar Mode:', avatarMode);
-                const result = await sessionManager.createSession('', perksCount, avatarMode); // Empty name initially, pass perks count and avatar mode
+                console.log('🎮 [CREATE] Perks count:', perksCount, '| Avatar Mode:', avatarMode, '| Perk Choice Mode:', perkChoiceMode);
+                const result = await sessionManager.createSession('', perksCount, avatarMode, perkChoiceMode); // Pass all settings
                 console.log('✅ [CREATE] Session created:', result);
                 
                 currentSession = result.sessionData;
@@ -1586,7 +1601,30 @@
             console.log('✨ [REVEAL] Showing perk reveal page');
             const currentPlayer = session.players.find(p => p.id === currentPlayerId);
             
-            if (!currentPlayer || !currentPlayer.perks) {
+            if (!currentPlayer) {
+                console.log('⚠️ [REVEAL] Player not found, proceeding to commander selection');
+                proceedToCommanderSelection(session);
+                return;
+            }
+            
+            // Check if perkChoiceMode is enabled
+            const perkChoiceMode = session.settings?.perkChoiceMode || false;
+            
+            if (perkChoiceMode) {
+                // Perk Choice Mode: Show choices for selection
+                if (!currentPlayer.perkChoices || currentPlayer.perkChoices.length === 0) {
+                    console.log('⚠️ [REVEAL] No perk choices found, proceeding to commander selection');
+                    proceedToCommanderSelection(session);
+                    return;
+                }
+                
+                console.log('🎴 [CHOICE] Starting perk choice mode with', currentPlayer.perkChoices.length, 'choice slots');
+                showPerkChoices(session, currentPlayer);
+                return;
+            }
+            
+            // Normal Mode: Show perks reveal
+            if (!currentPlayer.perks) {
                 console.log('⚠️ [REVEAL] No perks found, proceeding to commander selection');
                 proceedToCommanderSelection(session);
                 return;
@@ -1628,6 +1666,117 @@
                 }
                 
                 proceedToCommanderSelection(session);
+            });
+        }
+        
+        function showPerkChoices(session, currentPlayer) {
+            console.log('🎴 [CHOICE] Showing perk choices');
+            hideAllPages();
+            document.getElementById('perk-reveal-page').classList.add('active');
+            
+            const container = document.getElementById('perk-cards-container');
+            const title = document.querySelector('.perk-reveal-title');
+            const subtitle = document.querySelector('.perk-reveal-subtitle');
+            
+            // Calculate progress
+            const totalChoices = currentPlayer.perkChoices.length;
+            const selectedCount = currentPlayer.perkChoices.filter(cs => cs.selected !== null).length;
+            
+            title.textContent = '🎯 Choose Your Perks';
+            subtitle.innerHTML = `
+                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+                    Select one perk from each pair
+                </div>
+                <div style="font-size: 1.3rem; font-weight: bold; color: ${selectedCount === totalChoices ? '#4CAF50' : '#FFA500'};">
+                    Selected: ${selectedCount} / ${totalChoices}
+                </div>
+            `;
+            
+            container.innerHTML = '';
+            
+            currentPlayer.perkChoices.forEach((choiceSet, slotIndex) => {
+                const choiceDiv = document.createElement('div');
+                choiceDiv.style.cssText = 'margin: 2rem 0; text-align: center;';
+                
+                const slotTitle = document.createElement('h3');
+                slotTitle.textContent = `Choice ${slotIndex + 1} - ${choiceSet.rarity}`;
+                slotTitle.style.cssText = 'margin-bottom: 1rem; color: #fff; text-transform: capitalize;';
+                choiceDiv.appendChild(slotTitle);
+                
+                const optionsDiv = document.createElement('div');
+                optionsDiv.style.cssText = 'display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;';
+                
+                choiceSet.options.forEach((option, optionIndex) => {
+                    const isSelected = choiceSet.selected === optionIndex;
+                    const isDisabled = choiceSet.selected !== null && !isSelected;
+                    
+                    const card = document.createElement('div');
+                    card.className = `perk-card perk-card-${option.rarity}`;
+                    card.style.cssText = `
+                        width: 300px;
+                        padding: 1.5rem;
+                        cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
+                        opacity: ${isDisabled ? '0.4' : (isSelected ? '1' : '0.9')};
+                        border: ${isSelected ? '3px solid #4CAF50' : '2px solid rgba(255,255,255,0.2)'};
+                        transition: all 0.3s;
+                    `;
+                    
+                    card.innerHTML = `
+                        <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 0.5rem;">
+                            ${option.name} ${isSelected ? '✅' : ''}
+                        </div>
+                        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-bottom: 0.5rem;">
+                            ${option.rarity}
+                        </div>
+                        <div style="font-size: 0.95rem; line-height: 1.4;">
+                            ${option.description || 'No description available'}
+                        </div>
+                    `;
+                    
+                    if (!isDisabled) {
+                        card.addEventListener('click', async () => {
+                            if (isSelected) return; // Already selected
+                            
+                            try {
+                                showStatus('Selecting perk...');
+                                const result = await sessionManager.selectPerk(slotIndex, optionIndex);
+                                
+                                if (result.allSelected) {
+                                    showStatus('All perks selected! Proceeding...');
+                                    // Mark as seen and proceed
+                                    await sessionManager.markPerksSeen();
+                                    proceedToCommanderSelection(result.sessionData);
+                                } else {
+                                    // Refresh display
+                                    showPerkChoices(result.sessionData, result.sessionData.players.find(p => p.id === currentPlayerId));
+                                    showStatus('Perk selected!');
+                                }
+                            } catch (error) {
+                                console.error('Error selecting perk:', error);
+                                showStatus('Failed to select perk: ' + error.message);
+                            }
+                        });
+                        
+                        card.addEventListener('mouseenter', () => {
+                            if (!isSelected) {
+                                card.style.transform = 'scale(1.05)';
+                                card.style.borderColor = 'rgba(255,255,255,0.5)';
+                            }
+                        });
+                        
+                        card.addEventListener('mouseleave', () => {
+                            if (!isSelected) {
+                                card.style.transform = 'scale(1)';
+                                card.style.borderColor = 'rgba(255,255,255,0.2)';
+                            }
+                        });
+                    }
+                    
+                    optionsDiv.appendChild(card);
+                });
+                
+                choiceDiv.appendChild(optionsDiv);
+                container.appendChild(choiceDiv);
             });
         }
 
@@ -1929,10 +2078,16 @@
                     </div>
                 ` : ''}
                 
-                ${isCurrentPlayer && !player.commanderLocked && !player.commandersGenerated ? `
+                ${isCurrentPlayer && !player.commanderLocked && !player.commandersGenerated && canGenerateCommanders(player, currentSession) ? `
                     <button class="btn btn-primary" id="generate-btn-${player.number}" onclick="generateCommanders(${player.number}, ${totalQuantity}, ${JSON.stringify(allEffects).replace(/"/g, '&quot;')})">
                         🎲 Generate ${totalQuantity} Commander${totalQuantity > 1 ? 's' : ''}
                     </button>
+                ` : ''}
+                
+                ${isCurrentPlayer && !player.commanderLocked && !player.commandersGenerated && !canGenerateCommanders(player, currentSession) ? `
+                    <div style="padding: 1rem; background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); border-radius: 4px; text-align: center;">
+                        ⏳ Please complete perk selection first
+                    </div>
                 ` : ''}
                 
                 <div class="commander-grid-small" id="commanders-${player.number}">
@@ -1961,6 +2116,19 @@
             
             // Normalize commander data
             const normalizedCommanders = commanders.map(normalizeCommanderData);
+        
+        function canGenerateCommanders(player, session) {
+            // Check if perkChoiceMode is enabled
+            const perkChoiceMode = session?.settings?.perkChoiceMode || false;
+            
+            if (perkChoiceMode) {
+                // In choice mode, must have selected all perks
+                return player.perksSelected === true;
+            }
+            
+            // In normal mode, can generate once perks are assigned
+            return true;
+        }
             
             // If player is locked, show only selected commander
             if (player.commanderLocked && player.selectedCommanderIndex !== undefined) {

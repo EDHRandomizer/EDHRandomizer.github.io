@@ -454,6 +454,175 @@ class PerkRoller:
         
         return session
     
+    def roll_perk_choices_for_session(self, session, perks_count):
+        """
+        Roll perk CHOICES for all players (choice mode).
+        
+        Instead of assigning final perks, this generates choice sets where each player
+        gets to choose between 2 perks of the same rarity for each slot.
+        
+        The rarity distribution and luck system work the same way, but players
+        get agency in which specific perks they receive.
+        
+        Args:
+            session: Session dict with 'players' list
+            perks_count: Number of perk choices per player
+        
+        Returns:
+            Updated session dict with perkChoices assigned to each player
+        """
+        print(f"🎲 Rolling {perks_count} perk CHOICES per player (2 options each)")
+        print(f"🎲 Luck system: variance={LUCK_VARIANCE}, min={LUCK_MIN_MULTIPLIER}x, max={LUCK_MAX_MULTIPLIER}x")
+        
+        num_players = len(session['players'])
+        total_perks = num_players * perks_count
+        
+        # Step 1: Calculate exact global rarity distribution (same as normal mode)
+        weights = self.perks_data.get('rarityWeights', {
+            'common': 44,
+            'uncommon': 29,
+            'rare': 17,
+            'mythic': 8
+        })
+        
+        total_weight = sum(weights.values())
+        
+        # Allocate rarities for final perks (what players will end up with)
+        global_rarity_counts = {}
+        allocated = 0
+        rarities_sorted = sorted(weights.keys(), key=lambda r: weights[r], reverse=True)
+        
+        for i, rarity in enumerate(rarities_sorted):
+            if i == len(rarities_sorted) - 1:
+                global_rarity_counts[rarity] = total_perks - allocated
+            else:
+                count = round(total_perks * weights[rarity] / total_weight)
+                global_rarity_counts[rarity] = count
+                allocated += count
+        
+        print(f"🎲 Global rarity allocation for {total_perks} final perks:")
+        for rarity in ['common', 'uncommon', 'rare', 'mythic']:
+            count = global_rarity_counts.get(rarity, 0)
+            pct = (count / total_perks * 100) if total_perks > 0 else 0
+            print(f"   {rarity}: {count} ({pct:.1f}%)")
+        
+        # Step 2: Generate luck targets from normal distribution (same as normal mode)
+        expected_total_value = self.expected_value_per_perk * perks_count
+        std_dev = expected_total_value * LUCK_VARIANCE
+        
+        luck_targets = []
+        for _ in range(num_players):
+            luck_target = random.gauss(expected_total_value, std_dev)
+            
+            min_target = expected_total_value * LUCK_MIN_MULTIPLIER
+            max_target = expected_total_value * LUCK_MAX_MULTIPLIER
+            luck_target = max(min_target, min(luck_target, max_target))
+            
+            luck_targets.append(luck_target)
+        
+        # Step 3: Generate rarity combinations (determines what rarities each player gets to choose from)
+        print(f"\n🎲 Generating rarity combinations...")
+        rarity_slots = []
+        for rarity, count in global_rarity_counts.items():
+            rarity_slots.extend([rarity] * count)
+        
+        random.shuffle(rarity_slots)
+        
+        # Split into player allocations
+        player_rarities = []
+        for i in range(num_players):
+            start_idx = i * perks_count
+            end_idx = start_idx + perks_count
+            player_rarities.append(rarity_slots[start_idx:end_idx])
+        
+        # Step 4: For each player, generate 2 perk options for each rarity slot
+        print(f"\n🎲 Generating perk choice pairs...")
+        
+        player_combinations = []
+        for player_idx, rarities in enumerate(player_rarities):
+            choice_sets = []
+            
+            for slot_idx, rarity in enumerate(rarities):
+                # Generate 2 perks of this rarity with type deduplication
+                options = []
+                used_types = set()
+                
+                for option_idx in range(2):
+                    max_attempts = 50
+                    perk = None
+                    
+                    for attempt in range(max_attempts):
+                        candidate = self.get_random_perk(preferred_rarity=rarity, fallback_allowed=False)
+                        
+                        if candidate is None:
+                            break
+                        
+                        perk_type = self.get_perk_type(candidate)
+                        
+                        if perk_type not in used_types:
+                            perk = candidate
+                            used_types.add(perk_type)
+                            break
+                    
+                    # Fallback if can't find unique
+                    if perk is None:
+                        perk = self.get_random_perk(preferred_rarity=rarity, fallback_allowed=True)
+                    
+                    options.append({
+                        'id': perk['id'],
+                        'name': perk['name'],
+                        'rarity': perk['rarity'],
+                        'description': perk.get('description', ''),
+                        'perkPhase': perk.get('perkPhase', 'drafting'),
+                        'effects': perk.get('effects', {})
+                    })
+                
+                choice_sets.append({
+                    'slotIndex': slot_idx,
+                    'rarity': rarity,
+                    'options': options,
+                    'selected': None  # Player will choose 0 or 1
+                })
+            
+            player_combinations.append(choice_sets)
+        
+        # Step 5: Sort by value and match to luck targets (for fair distribution)
+        # Calculate the "average" value of each choice set
+        combinations_with_value = []
+        for combo in player_combinations:
+            avg_value = sum(
+                sum(self.rarity_values.get(opt['rarity'], 1.0) for opt in choice_set['options']) / len(choice_set['options'])
+                for choice_set in combo
+            )
+            combinations_with_value.append((combo, avg_value))
+        
+        combinations_with_value.sort(key=lambda x: x[1])
+        luck_targets.sort()
+        
+        # Step 6: Assign choice sets to players
+        print(f"\n🎲 Assigning perk choices to players...")
+        
+        for i, player in enumerate(session['players']):
+            choice_combo, actual_value = combinations_with_value[i]
+            target_value = luck_targets[i]
+            
+            player_name = player.get('name', 'unknown')
+            luck_percentile = (actual_value / expected_total_value) * 100
+            target_percentile = (target_value / expected_total_value) * 100
+            
+            print(f"\n🎲 Player: {player_name}")
+            print(f"   Target: {target_value:.2f} ({target_percentile:.0f}%), Actual: {actual_value:.2f} ({luck_percentile:.0f}%)")
+            rarities_str = ', '.join(cs['rarity'] for cs in choice_combo)
+            print(f"   Rarities: {rarities_str}")
+            
+            player['perkChoices'] = choice_combo
+            player['perks'] = []  # Empty until player makes selections
+            player['perksSelected'] = False
+        
+        print(f"\n🎲 Choice generation complete!")
+        
+        return session
+    
     def _generate_perk_combinations(self, global_rarity_counts, num_players, perks_count):
         """
         Generate perk combinations that exactly use up the global rarity counts.
@@ -687,13 +856,22 @@ def handle_roll_perks_request(session, player_id):
     if session['hostId'] != player_id:
         return (False, 403, 'Only host can roll perks', None)
     
-    # Get perks count from session settings
-    perks_count = session.get('settings', {}).get('perksCount', 3)
-    print(f"🎲 Rolling {perks_count} perks per player")
+    # Get settings
+    settings = session.get('settings', {})
+    perks_count = settings.get('perksCount', 3)
+    perk_choice_mode = settings.get('perkChoiceMode', False)
     
-    # Initialize perk roller and roll perks
+    print(f"🎲 Rolling {perks_count} perks per player (Choice Mode: {perk_choice_mode})")
+    
+    # Initialize perk roller
     roller = PerkRoller()
-    session = roller.roll_perks_for_session(session, perks_count)
+    
+    if perk_choice_mode:
+        # Generate perk choices (2 options per slot) instead of final perks
+        session = roller.roll_perk_choices_for_session(session, perks_count)
+    else:
+        # Original behavior: directly assign perks
+        session = roller.roll_perks_for_session(session, perks_count)
     
     # Update session state
     session['state'] = 'selecting'

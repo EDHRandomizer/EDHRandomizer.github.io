@@ -99,9 +99,11 @@ class SessionManager {
      * Create a new game session
      * @param {string} playerName - Player's display name
      * @param {number} perksCount - Number of perks per player (default 3)
+     * @param {boolean} avatarMode - Enable Avatar mode
+     * @param {boolean} perkChoiceMode - Enable perk choice mode
      * @returns {Promise<Object>} - { sessionCode, playerId, sessionData }
      */
-    async createSession(playerName = '', perksCount = 3, avatarMode = false) {
+    async createSession(playerName = '', perksCount = 3, avatarMode = false, perkChoiceMode = false) {
         try {
             const response = await this.fetchWithRetry(`${this.apiBase}/create`, {
                 method: 'POST',
@@ -111,7 +113,8 @@ class SessionManager {
                 body: JSON.stringify({ 
                     playerName: playerName.trim(),
                     perksCount: parseInt(perksCount) || 3,
-                    avatarMode: !!avatarMode  // Ensure boolean
+                    avatarMode: !!avatarMode,  // Ensure boolean
+                    perkChoiceMode: !!perkChoiceMode  // Ensure boolean
                 })
             });
 
@@ -493,6 +496,44 @@ class SessionManager {
             return await response.json();
         } catch (error) {
             console.error('Error rolling perks:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Select a perk from offered choices (perkChoiceMode only)
+     * @param {number} slotIndex - Index of the choice slot
+     * @param {number} optionIndex - Index of the option (0 or 1)
+     * @returns {Promise<Object>} - Updated session data with selection recorded
+     */
+    async selectPerk(slotIndex, optionIndex) {
+        if (!this.currentSession || !this.currentPlayerId) {
+            throw new Error('No active session');
+        }
+
+        try {
+            const response = await this.fetchWithRetry(`${this.apiBase}/select-perk`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sessionCode: this.currentSession,
+                    playerId: this.currentPlayerId,
+                    slotIndex: slotIndex,
+                    optionIndex: optionIndex
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || `Failed to select perk: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Error selecting perk:', error);
             throw error;
         }
     }

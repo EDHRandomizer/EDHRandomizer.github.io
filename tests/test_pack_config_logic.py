@@ -4,8 +4,36 @@ This simulates the JavaScript PackConfigGenerator to validate powerup effects
 """
 
 import json
+import os
+import sys
+import importlib.util
 from typing import Dict, List, Any
 from copy import deepcopy
+
+CURRENT_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, '..'))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+API_DIR = os.path.abspath(os.path.join(CURRENT_DIR, '..', 'api'))
+
+if API_DIR not in sys.path:
+    sys.path.insert(0, API_DIR)
+
+spec = importlib.util.spec_from_file_location("api_index", os.path.join(API_DIR, "index.py"))
+assert spec and spec.loader
+api_index = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(api_index)
+
+sessions_spec = importlib.util.spec_from_file_location("api_sessions", os.path.join(API_DIR, "sessions.py"))
+assert sessions_spec and sessions_spec.loader
+api_sessions = importlib.util.module_from_spec(sessions_spec)
+sessions_spec.loader.exec_module(api_sessions)
+
+perk_roller_spec = importlib.util.spec_from_file_location("api_perk_roller", os.path.join(API_DIR, "perk_roller.py"))
+assert perk_roller_spec and perk_roller_spec.loader
+api_perk_roller = importlib.util.module_from_spec(perk_roller_spec)
+perk_roller_spec.loader.exec_module(api_perk_roller)
+PerkRoller = api_perk_roller.PerkRoller
 
 
 class PackConfigGenerator:
@@ -383,6 +411,99 @@ def test_special_packs():
     assert special_pack["slots"][0]["count"] == 3, "Should have 3 game changer cards"
     
     print("✅ Special pack test passed")
+
+
+def test_high_synergy_slot_selects_top_cards(monkeypatch):
+    """Test: High synergy slot pulls top synergy cards deterministically"""
+
+    fake_cardlists = [
+        {
+            "tag": "highsynergycards",
+            "cardviews": [
+                {"name": "Card Alpha", "synergy": 5.2},
+                {"name": "Card Beta", "synergy": 10.5},
+                {"name": "Card Gamma", "synergy": 7.4},
+                {"name": "Card Delta", "synergy": None},
+                {"name": "Card Epsilon", "synergy": "n/a"}
+            ]
+        },
+        {
+            "tag": "lands",
+            "cardviews": [{"name": "Forest", "synergy": 1.0}]
+        }
+    ]
+
+    fake_edhrec_data = {
+        "card": {"name": "Test Commander", "color_identity": ["G", "U"]},
+        "cardlists": fake_cardlists
+    }
+
+    def fake_fetch_edhrec_data(commander_slug, bracket, budget):
+        return deepcopy(fake_edhrec_data)
+
+    monkeypatch.setattr(api_index, "fetch_edhrec_data", fake_fetch_edhrec_data)
+    monkeypatch.setattr(api_index, "get_cached_basic_lands", lambda: set())
+    monkeypatch.setattr(api_index, "get_cached_game_changers", lambda: set())
+
+    config = {
+        "packTypes": [
+            {
+                "name": "High Synergy Test",
+                "count": 1,
+                "slots": [
+                    {"cardType": "highsynergy", "budget": "any", "bracket": "any", "count": 3}
+                ]
+            }
+        ]
+    }
+
+    packs = api_index.generate_packs("test-commander", config, bracket=2)
+
+    assert len(packs) == 1, "Expected a single pack to be generated"
+    cards = packs[0]["cards"]
+
+    assert cards == ["Card Beta", "Card Gamma", "Card Alpha"], "Cards should be ordered by synergy descending"
+    assert len(set(cards)) == 3, "Cards should be unique"
+
+
+def test_high_synergy_special_pack_template():
+    """Test: High synergy special pack template injects deterministic slot with correct count"""
+
+    handler_instance = api_sessions.handler.__new__(api_sessions.handler)
+
+    effects = {
+        'packQuantity': 0,
+        'budgetUpgradePacks': 0,
+        'fullExpensivePacks': 0,
+        'bracketUpgradePacks': 0,
+        'bracketUpgrade': None,
+        'specialPacks': [{'type': 'high_synergy', 'count': 3}]
+    }
+
+    bundle_config = handler_instance.apply_perk_to_config_internal(effects, commander_url="https://edhrec.com/commanders/test")
+
+    high_synergy_packs = [
+        pack for pack in bundle_config.get('packTypes', [])
+        if any(slot.get('cardType') == 'highsynergy' for slot in pack.get('slots', []))
+    ]
+
+    assert high_synergy_packs, "Expected at least one high synergy pack"
+    slot = high_synergy_packs[0]['slots'][0]
+    assert slot['count'] == 3, "High synergy pack should request exact synergy card count"
+
+
+def test_perk_roller_enforces_unique_ids_and_types():
+    """Perk roller should never assign duplicate perks or perk types"""
+
+    roller = PerkRoller()
+
+    for _ in range(10):
+        perks, _ = roller.roll_perks_for_player("tester", 3)
+        perk_ids = [p['id'] for p in perks]
+        assert len(perk_ids) == len(set(perk_ids)), "Perk roller should not duplicate perk IDs"
+
+        perk_types = [roller.perk_type_by_id[p['id']] for p in perks]
+        assert len(perk_types) == len(set(perk_types)), "Perk roller should not duplicate perk types"
 
 
 def test_kitchen_sink():

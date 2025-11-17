@@ -391,6 +391,10 @@ class handler(BaseHTTPRequestHandler):
             session_code = data.get('sessionCode', 'UNKNOWN')
             print(f"≡ƒæü∩╕Å [REQ-{request_id}] Marking perks as seen for session: {session_code}")
             self.handle_mark_perks_seen(data)
+        elif path == '/select-perk':
+            session_code = data.get('sessionCode', 'UNKNOWN')
+            print(f"Γ£à [REQ-{request_id}] Player selecting perk in session: {session_code}")
+            self.handle_select_perk(data)
         elif path == '/test-perks':
             print(f"≡ƒº¬ [REQ-{request_id}] Testing perks.json loading")
             self.handle_test_perks()
@@ -451,6 +455,9 @@ class handler(BaseHTTPRequestHandler):
         # Get Avatar Mode setting (default False)
         avatar_mode = data.get('avatarMode', False)
         
+        # Get Perk Choice Mode setting (default False)
+        perk_choice_mode = data.get('perkChoiceMode', False)
+        
         session_code = generate_session_code()
         while session_code in SESSIONS:
             session_code = generate_session_code()
@@ -463,7 +470,8 @@ class handler(BaseHTTPRequestHandler):
             'state': 'waiting',  # waiting, rolling, selecting, complete
             'settings': {
                 'perksCount': perks_count,
-                'avatarMode': avatar_mode
+                'avatarMode': avatar_mode,
+                'perkChoiceMode': perk_choice_mode
             },
             'players': [
                 {
@@ -471,6 +479,8 @@ class handler(BaseHTTPRequestHandler):
                     'number': 1,
                     'name': player_name,
                     'perks': [],
+                    'perkChoices': [],  # Array of choice sets when perkChoiceMode is enabled
+                    'perksSelected': False,  # Whether player has made all their perk choices
                     'hasSeenPerks': False,
                     'commanders': [],  # List of generated commanders
                     'commandersGenerated': False,  # Has this player generated commanders at least once?
@@ -527,23 +537,48 @@ class handler(BaseHTTPRequestHandler):
         if not player_name:
             player_name = f'Player {player_number}'
         
-        # If joining during 'selecting' state, copy perks from session settings to give fair start
+        # If joining during 'selecting' state, handle perks appropriately
         perks = []
+        perk_choices = []
+        perks_selected = False
+        
         if session['state'] == 'selecting':
-            # Check if there's a player with perks we can copy from (to match the session)
-            # This ensures late joiners get the same number of perks as others
-            existing_player_with_perks = next((p for p in session['players'] if p.get('perks')), None)
-            if existing_player_with_perks:
-                # Don't copy the actual perks, but we'll need to roll new ones for them
-                # For now, they'll join without perks (host will need to manage this)
-                print(f"ΓÜá∩╕Å Player joining mid-game - they will need perks rolled manually")
+            perk_choice_mode = session.get('settings', {}).get('perkChoiceMode', False)
+            perks_count = session.get('settings', {}).get('perksCount', 3)
+            
+            if perk_choice_mode:
+                # Choice mode: Auto-assign random perks to late joiner
+                # They don't get to make choices (joined too late)
+                print(f"🎲 Late joiner in choice mode - auto-assigning {perks_count} random perks")
+                from api.perk_roller import PerkRoller
+                roller = PerkRoller()
+                
+                # Roll random perks for this player
+                for _ in range(perks_count):
+                    perk = roller.get_random_perk()
+                    perks.append({
+                        'id': perk['id'],
+                        'name': perk['name'],
+                        'rarity': perk['rarity'],
+                        'description': perk.get('description', ''),
+                        'perkPhase': perk.get('perkPhase', 'drafting'),
+                        'effects': perk.get('effects', {})
+                    })
+                
+                perks_selected = True  # Mark as selected (auto-assigned)
+                print(f"✅ Auto-assigned perks: {[p['name'] for p in perks]}")
+            else:
+                # Normal mode: Late joiner needs host to re-roll or gets no perks
+                print(f"⚠️ Player joining mid-game - they will need perks rolled manually")
         
         session['players'].append({
             'id': player_id,
             'number': player_number,
             'name': player_name,
             'perks': perks,
-            'hasSeenPerks': False,
+            'perkChoices': perk_choices,  # Array of choice sets when perkChoiceMode is enabled
+            'perksSelected': perks_selected,  # Whether player has made all their perk choices
+            'hasSeenPerks': session['state'] == 'selecting',  # Skip reveal if joining mid-game
             'commanders': [],  # List of generated commanders
             'commandersGenerated': False,  # Has this player generated commanders at least once?
             'commanderUrl': None,
@@ -893,6 +928,75 @@ class handler(BaseHTTPRequestHandler):
         
         print(f"≡ƒæü∩╕Å Player {player.get('name', 'unknown')} marked perks as seen")
         self.send_json_response(200, {'success': True})
+    
+    def handle_select_perk(self, data):
+        """Handle player selecting a perk from their choices (perkChoiceMode)"""
+        session_code = data.get('sessionCode', '').upper()
+        player_id = data.get('playerId', '')
+        slot_index = data.get('slotIndex')
+        option_index = data.get('optionIndex')  # 0 or 1
+        
+        session = get_session(session_code)
+        if not session_code or not session:
+            self.send_error_response(404, 'Session not found')
+            return
+        
+        touch_session(session_code)
+        
+        # Check if perkChoiceMode is enabled
+        if not session.get('settings', {}).get('perkChoiceMode', False):
+            self.send_error_response(400, 'Perk choice mode not enabled')
+            return
+        
+        # Find player
+        player = next((p for p in session['players'] if p['id'] == player_id), None)
+        if not player:
+            self.send_error_response(404, 'Player not found')
+            return
+        
+        # Validate slot_index
+        perk_choices = player.get('perkChoices', [])
+        if slot_index is None or slot_index < 0 or slot_index >= len(perk_choices):
+            self.send_error_response(400, 'Invalid slot index')
+            return
+        
+        choice_set = perk_choices[slot_index]
+        
+        # Validate option_index
+        if option_index is None or option_index < 0 or option_index >= len(choice_set.get('options', [])):
+            self.send_error_response(400, 'Invalid option index')
+            return
+        
+        # Check if already selected
+        if choice_set.get('selected') is not None:
+            self.send_error_response(400, 'Perk already selected for this slot')
+            return
+        
+        # Mark the selection
+        choice_set['selected'] = option_index
+        selected_perk = choice_set['options'][option_index]
+        
+        # Add to player's perks list
+        if 'perks' not in player:
+            player['perks'] = []
+        player['perks'].append(selected_perk)
+        
+        # Check if all perks selected
+        all_selected = all(cs.get('selected') is not None for cs in perk_choices)
+        player['perksSelected'] = all_selected
+        
+        session['updated_at'] = time.time()
+        update_session(session_code, session)
+        
+        print(f"✅ Player {player.get('name', 'unknown')} selected perk {selected_perk['name']} (slot {slot_index})")
+        if all_selected:
+            print(f"🎉 Player {player.get('name', 'unknown')} has completed all perk selections!")
+        
+        self.send_json_response(200, {
+            'success': True,
+            'sessionData': session,
+            'allSelected': all_selected
+        })
 
     def handle_get_session(self, session_code):
         """Get current session data"""
